@@ -1,0 +1,17 @@
+<AirvoluteVersions>
+    AirvoluteSourceVersions
+    <Device>
+        xaviernx
+        <JP>
+            jp46
+           
+            <GitRepo>https://github.com/airvolute/kernel_sources_xaviernx
+                <GitBranch>JP_46_L4T_3261_airvolute</GitBranch>
+            </GitRepo>
+            
+        </JP>
+        <JP>
+            jp502
+        </JP>
+    </Device>
+</AirvoluteVersions>
