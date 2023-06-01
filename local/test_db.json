@@ -1,0 +1,26 @@
+{
+  "config_1": {
+    "device": "xavier_nx",
+    "storage": "emmc",
+    "board": "1.0",
+    "bsp": "502",
+    "image": "image100_xaviernx_jp502_rev4.raw",
+    "pinmux": "pinmuxes100_xaviernx_jp46_rev4.tar.xz"
+  },
+  "config_2": {
+    "device": "xavier_nx",
+    "storage": "emmc",
+    "board": "1.2",
+    "bsp": "502",
+    "image": "image100_xaviernx_jp502_rev5.raw",
+    "pinmux": "pinmuxes100_xaviernx_jp502_rev5.tar.xz"
+  },
+  "config_3": {
+    "device": "xavier_nx",
+    "storage": "emmc",
+    "board": "1.2",
+    "bsp": "46",
+    "image": "image100_xaviernx_jp46_rev5.raw",
+    "pinmux": "pinmuxes100_xaviernx_jp46_rev5.tar.xz"
+  }
+}
