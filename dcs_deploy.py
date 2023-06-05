@@ -3,14 +3,17 @@
 import argparse
 import json
 import subprocess
-import sys
 import os
+import wget
+import pprint
+import tarfile
 
 class DcsDeploy:
     def __init__(self):
         self.parser = self.create_parser()
         self.args = self.parser.parse_args()
         self.sanitize_args()
+        self.init_filesystem()
         self.load_db()
 
     def add_common_parser(self, subparser):
@@ -107,6 +110,12 @@ class DcsDeploy:
             self.parser.print_usage()
             quit()
 
+    def load_db(self):
+        # TODO: Load this from AirVolute's FTP
+        db_file = open('local/test_db.json')
+
+        self.config_db = json.load(db_file)
+
     def get_files_from_args(self):
         """Returns filenames of image and pinmux according to config.
 
@@ -124,11 +133,83 @@ class DcsDeploy:
 
                 return self.config_db[config]['image'], self.config_db[config]['pinmux']
 
-    def load_db(self):
-        # TODO: Load this from AirVolute's FTP
-        db_file = open('local/test_db.json')
+    def init_filesystem(self):
+        self.home = os.path.expanduser('~')
+        self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
+        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
+        self.flash_path = os.path.join(self.dsc_deploy_root, 'flash')
+        self.rootfs_file_path = os.path.join(self.download_path, 'rootfs.tbz2')
+        self.l4t_file_path = os.path.join(self.download_path, 'l4t.tbz2')
+        self.overlay_file_path = os.path.join(self.download_path, 'overlay.tbz2')
+        self.image_file_path = os.path.join(self.download_path, 'system.img')
+        self.pinmux_file_path = os.path.join(self.download_path, 'pinmuxes.tar.xz')
 
-        self.config_db = json.load(db_file)
+        # Handle dcs-deploy root dir
+        if not os.path.isdir(self.dsc_deploy_root):
+            os.mkdir(self.dsc_deploy_root)
+
+        # Handle dcs-deploy download dir
+        if not os.path.isdir(self.download_path):
+            os.mkdir(self.download_path)
+
+        # Handle dcs-deploy flash dir
+        if not os.path.isdir(self.flash_path):
+            os.mkdir(self.flash_path)
+
+    def download_resources(self):
+        # pp = pprint.PrettyPrinter(indent=4)
+        # pp.pprint(self.config)
+
+        print('Downloading rootfs:')
+        wget.download(
+            self.config['rootfs'],
+            self.rootfs_file_path
+        )
+        print()
+
+        print('Downloading Linux For Tegra:')
+        wget.download(
+            self.config['l4t'],
+            self.l4t_file_path
+        )
+        print()
+
+        if self.config['overlay'] != 'none':
+            print('Downloading overlay:')
+            wget.download(
+                self.config['overlay'],
+                self.overlay_file_path
+            )
+            print()
+        
+        print('Downloading pinmux:')
+        wget.download(
+            self.config['pinmux'],
+            self.pinmux_file_path
+        )
+        print()
+
+        print('Downloading image:')
+        wget.download(
+            self.config['image'],
+            self.image_file_path
+        )
+        print()
+
+    def prepare_sources(self):
+        # Extract Linux For Tegra
+        print('Extracting Linux For Tegra ...')
+        tar = tarfile.open(self.l4t_file_path)
+        tar.extractall(path=self.flash_path)
+        # subprocess.call(
+        #     [
+        #         'tar', 
+        #         'xf', 
+        #         'Jetson_Linux_R34.1.0_aarch64.tbz2',
+        #         '--directory', 
+        #         'test_dir'
+        #     ]
+        # )
 
     def check_compatibility(self):
         """
@@ -188,7 +269,7 @@ class DcsDeploy:
                 self.config_db[config]['board'] == self.args.hwrev and
                 self.config_db[config]['storage'] == self.args.storage
             ):
-                self.config = config
+                self.config = self.config_db[config]
 
     def airvolute_flash(self):
         # ======================= EDO REFACTOR ================================
@@ -196,7 +277,10 @@ class DcsDeploy:
             print('Unsupported configuration!')
             return
 
-        self.load_selected_config()
+        # self.load_selected_config()
+        self.prepare_sources()
+        # self.download_resources()
+        quit()
         # L_DEVICE_JP_F = 'JetPack_5.0.2_Linux_JETSON_XAVIER_NX_TARGETS/Linux_for_Tegra'
         
         # print('sdkmanager --cli install  --logintype devzone --product Jetson  --targetos Linux --version ' + SDK_MANAGER_JP + ' --target ' + SDK_MANAGER_DEVICE + ' --deselect "Jetson SDK Components" --flash skip')
