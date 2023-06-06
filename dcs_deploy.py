@@ -7,6 +7,10 @@ import os
 import wget
 import pprint
 import tarfile
+from threading import Thread
+from threading import Event
+import time
+
 
 class DcsDeploy:
     def __init__(self):
@@ -117,11 +121,11 @@ class DcsDeploy:
         self.config_db = json.load(db_file)
 
     def get_files_from_args(self):
+        # TODO: this method might be irrelevant, inspect later
         """Returns filenames of image and pinmux according to config.
 
         Returns: 
         tuple:(image, pinmux)  
-
         """
         for config in self.config_db:
             if (
@@ -133,6 +137,36 @@ class DcsDeploy:
 
                 return self.config_db[config]['image'], self.config_db[config]['pinmux']
 
+    def loading_animation(self, event):
+        cnt = 0
+
+        while True:
+            if cnt == 0:
+                print ("\r | ", end="")
+            elif cnt == 1:  
+                print ("\r / ", end="")
+            elif cnt == 2:
+                print ("\r — ", end="")
+            elif cnt == 3:
+                print ("\r \\ ", end="")
+
+            cnt += 1
+            cnt %= 4
+            time.sleep(0.5)
+            
+            if event.is_set():
+                print()
+                return
+
+    def save_downloaded_versions(self):
+        with open(self.downloaded_config_path, "w") as download_dict:
+            json.dump(self.config, download_dict, indent=4)
+
+    def run_loading_animation(self, event):
+        t = Thread(target=self.loading_animation, args=(event,))
+        t.start()
+        return t
+
     def init_filesystem(self):
         self.home = os.path.expanduser('~')
         self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
@@ -143,6 +177,9 @@ class DcsDeploy:
         self.overlay_file_path = os.path.join(self.download_path, 'overlay.tbz2')
         self.image_file_path = os.path.join(self.download_path, 'system.img')
         self.pinmux_file_path = os.path.join(self.download_path, 'pinmuxes.tar.xz')
+        self.rootfs_extract_dir = os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs')
+        self.l4t_root_dir = os.path.join(self.flash_path, 'Linux_for_Tegra')
+        self.downloaded_config_path = os.path.join(self.dsc_deploy_root, 'downloaded_versions.json')
 
         # Handle dcs-deploy root dir
         if not os.path.isdir(self.dsc_deploy_root):
@@ -156,9 +193,28 @@ class DcsDeploy:
         if not os.path.isdir(self.flash_path):
             os.mkdir(self.flash_path)
 
+    def compare_downloaded_source(self):
+        """Compares current input of the program with previously 
+        downloaded sources.
+
+        returns true, if sources are already present locally.
+        returns false, if sources need to be downloaded.
+        """
+        # downloaded_sources = open(self.downloaded_config_path)
+        downloaded_config = json.load(open(self.downloaded_config_path))
+        
+        if all((downloaded_config.get(k) == v for k, v in self.config.items())):
+            print('Resources for your config are already downloaded!')
+            return True
+        else:
+            print('New resources will be downloaded!')
+            return False    
+    
     def download_resources(self):
         # pp = pprint.PrettyPrinter(indent=4)
         # pp.pprint(self.config)
+        if self.compare_downloaded_source():
+            return
 
         print('Downloading rootfs:')
         wget.download(
@@ -196,20 +252,39 @@ class DcsDeploy:
         )
         print()
 
+        self.save_downloaded_versions()
+
     def prepare_sources(self):
+        stop_event = Event()
+
         # Extract Linux For Tegra
         print('Extracting Linux For Tegra ...')
+        stop_event.clear()
         tar = tarfile.open(self.l4t_file_path)
+        l4t_animation_thread = self.run_loading_animation(stop_event)
         tar.extractall(path=self.flash_path)
-        # subprocess.call(
-        #     [
-        #         'tar', 
-        #         'xf', 
-        #         'Jetson_Linux_R34.1.0_aarch64.tbz2',
-        #         '--directory', 
-        #         'test_dir'
-        #     ]
-        # )
+        stop_event.set()
+        l4t_animation_thread.join()
+
+        # Extract Sample Root Filesystem
+        print('Extracting Root Filesystem ...')
+        stop_event.clear()
+        print('This part needs sudo privilegies:')
+        # Run sudo identification
+        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        rootfs_animation_thread = self.run_loading_animation(stop_event)
+        subprocess.call(
+            [
+                'sudo',
+                'tar', 
+                'xpf', 
+                self.rootfs_file_path,
+                '--directory', 
+                self.rootfs_extract_dir
+            ]
+        )
+        stop_event.set()
+        rootfs_animation_thread.join()
 
     def check_compatibility(self):
         """
@@ -271,15 +346,31 @@ class DcsDeploy:
             ):
                 self.config = self.config_db[config]
 
+    def flash(self):
+        if (self.config['storage'] == 'emmc' and
+            self.config['device'] == 'xavier_nx'):
+            flash_script_path = os.path.join(self.l4t_root_dir, 'flash.sh')
+            subprocess.call(
+            [
+                'sudo',
+                'bash',
+                flash_script_path,
+                '--no-flash',
+                'jetson-xavier-nx-devkit-emmc', 
+                'mmcblk0p1'
+            ]
+        )
+
     def airvolute_flash(self):
         # ======================= EDO REFACTOR ================================
         if not self.check_compatibility():
             print('Unsupported configuration!')
             return
 
-        # self.load_selected_config()
-        self.prepare_sources()
-        # self.download_resources()
+        self.load_selected_config()
+        self.download_resources()
+        # self.prepare_sources()
+        self.flash()
         quit()
         # L_DEVICE_JP_F = 'JetPack_5.0.2_Linux_JETSON_XAVIER_NX_TARGETS/Linux_for_Tegra'
         
