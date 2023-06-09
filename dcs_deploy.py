@@ -7,9 +7,9 @@ import os
 import wget
 import pprint
 import tarfile
-from threading import Thread
-from threading import Event
+from threading import Thread, Event
 import time
+import filecmp
 
 
 class DcsDeploy:
@@ -20,8 +20,7 @@ class DcsDeploy:
         self.load_db()
         if self.args.command != 'list':
             self.load_selected_config()
-
-        self.init_filesystem()
+            self.init_filesystem()
 
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
@@ -39,14 +38,6 @@ class DcsDeploy:
         storage_help = 'REQUIRED. Which storage medium are we going to use (internal - emmc, external - nvme).'
         subparser.add_argument(
             'storage', help=storage_help)
-
-        nvidia_f_help = 'Specify nvidia folder path, use if not standard path is used.'
-        subparser.add_argument(
-            '--nvidia_f',  default='', help=nvidia_f_help)
-
-        nvidia_f_help = 'Specify download folder path, use if not standard path is used (inside nvidia folder).'
-        subparser.add_argument(
-            '--download_f',  default='', help=nvidia_f_help)
         
         force_help = 'Files will be deleted and downloaded again.'
         subparser.add_argument(
@@ -115,7 +106,6 @@ class DcsDeploy:
         if self.args.command is None:
             print("No command specified!")
             self.parser.print_usage()
-            quit()
 
     def load_db(self):
         # TODO: Load this from AirVolute's FTP
@@ -164,8 +154,17 @@ class DcsDeploy:
                 return
 
     def save_downloaded_versions(self):
-        with open(self.downloaded_config_path, "w") as download_dict:
-            json.dump(self.config, download_dict, indent=4)
+        if os.path.isfile(self.downloaded_config_path):
+            with open(self.downloaded_config_path, "r+") as download_dict:
+                file_data = json.load(download_dict)
+                file_data[self.current_config_name] = self.config
+                download_dict.seek(0)
+                json.dump(file_data, download_dict, indent = 4)
+        else:
+            with open(self.downloaded_config_path, "a") as download_dict:
+                config_to_save = {}
+                config_to_save[self.current_config_name] = self.config
+                json.dump(config_to_save, download_dict, indent=4)
 
     def run_loading_animation(self, event):
         t = Thread(target=self.loading_animation, args=(event,))
@@ -192,6 +191,7 @@ class DcsDeploy:
         self.rootfs_extract_dir = os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs')
         self.l4t_root_dir = os.path.join(self.flash_path, 'Linux_for_Tegra')
         self.downloaded_config_path = os.path.join(self.dsc_deploy_root, 'downloaded_versions.json')
+        self.resource_file_check_path = os.path.join(self.flash_path, 'check')
 
         # Handle dcs-deploy root dir
         if not os.path.isdir(self.dsc_deploy_root):
@@ -210,24 +210,58 @@ class DcsDeploy:
         downloaded sources.
 
         return True, if sources are already present locally.
-        returnk False, if sources need to be downloaded.
+        return False, if sources need to be downloaded.
         """
+        if self.args.force == True:
+            return False
+
         # downloaded_sources = open(self.downloaded_config_path)
         if os.path.exists(self.downloaded_config_path):
-            downloaded_config = json.load(open(self.downloaded_config_path))
+            downloaded_configs = json.load(open(self.downloaded_config_path))
+
+            for config in downloaded_configs:
+                if config == self.current_config_name:
+                    print('Resources for your config are already downloaded!')
+                    return True
             
-            if all((downloaded_config.get(k) == v for k, v in self.config.items())):
-                print('Resources for your config are already downloaded!')
-                return True
-            else:
-                print('New resources will be downloaded!')
-                return False 
+            print('New resources will be downloaded!')
+            return False
+
+        else:
+            return False
+        
+    def save_extracted_resources(self):
+        if not os.path.exists(self.resource_file_check_path):
+            with open(self.resource_file_check_path, "w") as resource_file:
+                for (root, dirs, files) in os.walk(self.flash_path):
+                    for name in files:
+                        resource_file.write(str(os.path.join(root, name))+"\n")
+    
+    def check_extracted_resources(self):
+        """Checks if resources were extracted before AND
+        if the resources are valid (no missing files)
+        
+        return True if resources are extracted AND valid
+        return False if resources are NOT extracted OR are invalid
+        """
+        if os.path.exists(self.resource_file_check_path):
+            resource_file = open(self.resource_file_check_path, 'r')
+            for (root, dirs, files) in os.walk(self.flash_path):
+                for name in files:
+                    line = resource_file.readline()
+                    if not line:
+                        break
+                    if str(os.path.join(root, name))+"\n" != line:
+                        print('Invalid resources')
+                        resource_file.close()
+                        return False
+                    
+            resource_file.close()
+            return True
         else:
             return False
     
     def download_resources(self):
-        # pp = pprint.PrettyPrinter(indent=4)
-        # pp.pprint(self.config)
         if self.compare_downloaded_source():
             return
 
@@ -270,6 +304,10 @@ class DcsDeploy:
         self.save_downloaded_versions()
 
     def prepare_sources(self):
+        if self.check_extracted_resources():
+            print('Resources already extracted, proceeding to next step!')
+            return
+        
         stop_event = Event()
 
         # Extract Linux For Tegra
@@ -300,6 +338,7 @@ class DcsDeploy:
         )
         stop_event.set()
         rootfs_animation_thread.join()
+        self.save_extracted_resources()
 
     def check_compatibility(self):
         """
@@ -360,6 +399,7 @@ class DcsDeploy:
                 self.config_db[config]['storage'] == self.args.storage
             ):
                 self.config = self.config_db[config]
+                self.current_config_name = config
 
     def flash(self):
         if (self.config['storage'] == 'emmc' and
@@ -384,7 +424,7 @@ class DcsDeploy:
 
         self.download_resources()
         self.prepare_sources()
-        self.flash()
+        # self.flash()
         quit() 
 
     def run(self):
