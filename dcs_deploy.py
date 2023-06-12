@@ -5,11 +5,10 @@ import json
 import subprocess
 import os
 import wget
-import pprint
 import tarfile
 from threading import Thread, Event
 import time
-import filecmp
+import shutil
 
 
 class DcsDeploy:
@@ -192,6 +191,8 @@ class DcsDeploy:
         self.l4t_root_dir = os.path.join(self.flash_path, 'Linux_for_Tegra')
         self.downloaded_config_path = os.path.join(self.dsc_deploy_root, 'downloaded_versions.json')
         self.resource_file_check_path = os.path.join(self.flash_path, 'check')
+        self.pinmux_l4t_dir = os.path.join(self.l4t_root_dir, 'bootloader', 't186ref', 'BCT')
+        self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
 
         # Handle dcs-deploy root dir
         if not os.path.isdir(self.dsc_deploy_root):
@@ -199,11 +200,11 @@ class DcsDeploy:
 
         # Handle dcs-deploy download dir
         if not os.path.isdir(self.download_path):
-            os.mkdir(self.download_path)
+            os.makedirs(self.download_path)
 
         # Handle dcs-deploy flash dir
         if not os.path.isdir(self.flash_path):
-            os.mkdir(self.flash_path)
+            os.makedirs(self.flash_path)
 
     def compare_downloaded_source(self):
         """Compares current input of the program with previously 
@@ -231,11 +232,10 @@ class DcsDeploy:
             return False
         
     def save_extracted_resources(self):
-        if not os.path.exists(self.resource_file_check_path):
-            with open(self.resource_file_check_path, "w") as resource_file:
-                for (root, dirs, files) in os.walk(self.flash_path):
-                    for name in files:
-                        resource_file.write(str(os.path.join(root, name))+"\n")
+        with open(self.resource_file_check_path, "w") as resource_file:
+            for (root, dirs, files) in os.walk(self.flash_path):
+                for name in files:
+                    resource_file.write(str(os.path.join(root, name))+"\n")
     
     def check_extracted_resources(self):
         """Checks if resources were extracted before AND
@@ -338,7 +338,34 @@ class DcsDeploy:
         )
         stop_event.set()
         rootfs_animation_thread.join()
+
+        self.prepare_pinmuxes()
+
+        # Apply binaries
+        print('Applying binaries ...')
+        print('This part needs sudo privilegies:')
+        # Run sudo identification
+        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+        
+        print('Copying image ...')
+        self.prepare_image()
+
         self.save_extracted_resources()
+
+    def prepare_pinmuxes(self):
+        print('Extracting AirVolute pinmuxes ... ')
+        tar = tarfile.open(self.pinmux_file_path)
+        for item in tar:
+            if not item.isdir():
+                tar.extract(item, self.pinmux_l4t_dir)
+
+    def prepare_image(self):
+        destination_file = os.path.join(self.l4t_root_dir, 'bootloader', 'system.img')
+        shutil.copyfile(self.image_file_path, destination_file)
+
+    def prepare_nvidia_overlay(self):
+        pass
 
     def check_compatibility(self):
         """
