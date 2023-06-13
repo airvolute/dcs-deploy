@@ -348,8 +348,11 @@ class DcsDeploy:
         subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
         subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
         
-        print('Copying image ...')
+        print('Copying AirVolute image ...')
         self.prepare_image()
+
+        print('Applying Nvidia overlay ...')
+        self.prepare_nvidia_overlay()
 
         self.save_extracted_resources()
 
@@ -365,7 +368,8 @@ class DcsDeploy:
         shutil.copyfile(self.image_file_path, destination_file)
 
     def prepare_nvidia_overlay(self):
-        pass
+        tar = tarfile.open(self.overlay_file_path)
+        tar.extractall(self.flash_path)
 
     def check_compatibility(self):
         """
