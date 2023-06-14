@@ -22,28 +22,28 @@ class DcsDeploy:
             self.init_filesystem()
 
     def add_common_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
+        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx, orin_nx]'
         subparser.add_argument(
             'target_device', help=target_device_help)
 
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use (e.g. jp46, jp502 ...).'
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [46, 502].'
         subparser.add_argument(
             'jetpack', help=jetpack_help)
 
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use (e.g. rev4, rev5 ...).'
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.0, 1.2].'
         subparser.add_argument(
             'hwrev', help=hwrev_help)
         
-        storage_help = 'REQUIRED. Which storage medium are we going to use (internal - emmc, external - nvme).'
+        storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
         subparser.add_argument(
             'storage', help=storage_help)
         
-        force_help = 'Files will be deleted and downloaded again.'
+        force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument(
             '--force', action='store_true',  default='', help=force_help)
 
-        subparser.add_argument('-v', '--verbose', action='store_true',
-                        help='Print detailed status information')
+        # subparser.add_argument('-v', '--verbose', action='store_true',
+        #                 help='Print detailed status information')
         
     def add_manual_mode_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
@@ -85,13 +85,13 @@ class DcsDeploy:
 
         self.add_common_parser(flash)
 
-        image_help = 'Specify which image revision are we going to use (e.g. image100, image101 ...), if not specified latest version will be used.'
-        flash.add_argument(
-            '--image', default='', help=image_help)
+        # image_help = 'Specify which image revision are we going to use (e.g. image100, image101 ...), if not specified latest version will be used.'
+        # flash.add_argument(
+        #     '--image', default='', help=image_help)
 
-        pinmux_help = 'Specify which pinmux revision of carrier boar are we going to use (e.g. image100, image101 ...).'
-        flash.add_argument(
-            '--pinmux',  default='', help=pinmux_help)
+        # pinmux_help = 'Specify which pinmux revision of carrier boar are we going to use (e.g. image100, image101 ...).'
+        # flash.add_argument(
+        #     '--pinmux',  default='', help=pinmux_help)
 
         self.add_common_parser(compile_flash)
         
@@ -105,6 +105,7 @@ class DcsDeploy:
         if self.args.command is None:
             print("No command specified!")
             self.parser.print_usage()
+            quit()
 
     def load_db(self):
         # TODO: Load this from AirVolute's FTP
@@ -304,9 +305,10 @@ class DcsDeploy:
         self.save_downloaded_versions()
 
     def prepare_sources(self):
-        if self.check_extracted_resources():
-            print('Resources already extracted, proceeding to next step!')
-            return
+        if self.args.force == False:
+            if self.check_extracted_resources():
+                print('Resources already extracted, proceeding to next step!')
+                return
         
         stop_event = Event()
 
@@ -351,8 +353,9 @@ class DcsDeploy:
         print('Copying AirVolute image ...')
         self.prepare_image()
 
-        print('Applying Nvidia overlay ...')
-        self.prepare_nvidia_overlay()
+        if self.config['overlay'] != 'none':
+            print('Applying Nvidia overlay ...')
+            self.prepare_nvidia_overlay()
 
         self.save_extracted_resources()
 
