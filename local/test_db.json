@@ -15,9 +15,9 @@
     "board": "1.2",
     "l4t_version": "502",
     "nvidia_overlay": "none",
-    "airvolute_overlay": "none",
+    "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay.tar.xz",
     "l4t": "https://developer.nvidia.com/embedded/l4t/r35_release_v1.0/release/jetson_linux_r35.1.0_aarch64.tbz2",
-    "rootfs": "https://developer.nvidia.com/embedded/l4t/r35_release_v1.0/release/tegra_linux_sample-root-filesystem_r35.1.0_aarch64.tbz2"
+    "rootfs": "https://airvolute.com/download/dcs_deployment_testing/sample_fs.tbz2"
   },
   "config_3": {
     "device": "xavier_nx",

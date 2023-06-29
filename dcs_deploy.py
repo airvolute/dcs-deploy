@@ -325,11 +325,11 @@ class DcsDeploy:
 
         # TODO: We might not want to apply binaries when we have already our filesystem ready!
         # Apply binaries
-        print('Applying binaries ...')
-        print('This part needs sudo privilegies:')
-        # Run sudo identification
-        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
-        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+        # print('Applying binaries ...')
+        # print('This part needs sudo privilegies:')
+        # # Run sudo identification
+        # subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        # subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
 
         if self.config['nvidia_overlay'] != 'none':
             print('Applying Nvidia overlay ...')
@@ -337,7 +337,50 @@ class DcsDeploy:
 
         self.save_extracted_resources()
 
-    # TODO: rm if not needed
+    # TODO: rm if not needed, left just for extracting guideline
+    # def prepare_pinmuxes(self):
+    #     print('Extracting AirVolute pinmuxes ... ')
+    #     tar = tarfile.open(self.pinmux_file_path)
+    #     for item in tar:
+    #         if not item.isdir():
+    #             tar.extract(item, self.pinmux_l4t_dir)
+
+    def prepare_sources_development(self):
+        if self.args.force == False:
+            if self.check_extracted_resources():
+                print('Resources already extracted, proceeding to next step!')
+                return
+        
+        stop_event = Event()
+
+        # Extract Linux For Tegra
+        print('Extracting Linux For Tegra ...')
+        stop_event.clear()
+        tar = tarfile.open(self.l4t_file_path)
+        l4t_animation_thread = self.run_loading_animation(stop_event)
+        tar.extractall(path=self.flash_path)
+        stop_event.set()
+        l4t_animation_thread.join()
+
+        # Build Root Filesystem
+        self.build_minimal_sample_rootfs()
+
+
+        # TODO: We might not want to apply binaries when we have already our filesystem ready!
+        # Apply binaries
+        # print('Applying binaries ...')
+        # print('This part needs sudo privilegies:')
+        # # Run sudo identification
+        # subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        # subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+
+        if self.config['nvidia_overlay'] != 'none':
+            print('Applying Nvidia overlay ...')
+            self.prepare_nvidia_overlay()
+
+        self.save_extracted_resources()
+
+    # TODO: rm if not needed, left just for extracting guideline
     # def prepare_pinmuxes(self):
     #     print('Extracting AirVolute pinmuxes ... ')
     #     tar = tarfile.open(self.pinmux_file_path)
@@ -347,6 +390,13 @@ class DcsDeploy:
 
     def prepare_airvolute_overlay(self):
         pass
+
+    def build_minimal_sample_rootfs(self):
+        self.build_fs_cript_path = os.path.join(
+            self.l4t_root_dir, 'tools', 'samplefs', 'nv_build_samplefs.sh'
+        )
+
+        # TODO: Continue here
 
     def prepare_nvidia_overlay(self):
         tar = tarfile.open(self.nvidia_overlay_file_path)
@@ -435,7 +485,10 @@ class DcsDeploy:
             return
 
         self.download_resources()
-        self.prepare_sources()
+        if not self.args.command == 'create_rootfs':
+            self.prepare_sources_production()
+        else:
+            self.prepare_sources_development()
         # self.flash()
         quit() 
 
