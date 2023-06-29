@@ -42,8 +42,6 @@ class DcsDeploy:
         subparser.add_argument(
             '--force', action='store_true',  default='', help=force_help)
 
-        # subparser.add_argument('-v', '--verbose', action='store_true',
-        #                 help='Print detailed status information')
         
     def add_manual_mode_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
@@ -71,31 +69,20 @@ class DcsDeploy:
 
         list = subparsers.add_parser(
             'list', help='list available versions')
-        
-        manual_mode = subparsers.add_parser(
-            'manual_mode', help='Just output image/pinmux files corresponding to selected configuration')
-
-        self.add_manual_mode_parser(manual_mode)
 
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
+        
+        create_rootfs = subparsers.add_parser(
+            'create_rootfs', help='Developer only! Creates root filesystem for future')
         
         compile_flash = subparsers.add_parser(
             'compile_flash', help='Run compilation with flashing')
 
         self.add_common_parser(flash)
 
-        # image_help = 'Specify which image revision are we going to use (e.g. image100, image101 ...), if not specified latest version will be used.'
-        # flash.add_argument(
-        #     '--image', default='', help=image_help)
-
-        # pinmux_help = 'Specify which pinmux revision of carrier boar are we going to use (e.g. image100, image101 ...).'
-        # flash.add_argument(
-        #     '--pinmux',  default='', help=pinmux_help)
-
         self.add_common_parser(compile_flash)
         
-
         return parser
     
     def sanitize_args(self):
@@ -123,7 +110,7 @@ class DcsDeploy:
         for config in self.config_db:
             if (
                 self.config_db[config]["device"] == self.args.target_device and
-                self.config_db[config]['bsp'] == self.args.jetpack and
+                self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
                 self.config_db[config]['storage'] == self.args.storage
             ):
@@ -176,7 +163,7 @@ class DcsDeploy:
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
             self.config['board'] + '_' +
-            self.config['bsp']
+            self.config['l4t_version']
         )
 
         self.home = os.path.expanduser('~')
@@ -185,7 +172,8 @@ class DcsDeploy:
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
         self.rootfs_file_path = os.path.join(self.download_path, 'rootfs.tbz2')
         self.l4t_file_path = os.path.join(self.download_path, 'l4t.tbz2')
-        self.overlay_file_path = os.path.join(self.download_path, 'overlay.tbz2')
+        self.nvidia_overlay_file_path = os.path.join(self.download_path, 'nvidia_overlay.tbz2')
+        self.airvolute_overlay_file_path = os.path.join(self.download_path, 'airvolute_overlay.tbz2')
         self.image_file_path = os.path.join(self.download_path, 'system.img')
         self.pinmux_file_path = os.path.join(self.download_path, 'pinmuxes.tar.xz')
         self.rootfs_extract_dir = os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs')
@@ -266,12 +254,13 @@ class DcsDeploy:
         if self.compare_downloaded_source():
             return
 
-        print('Downloading rootfs:')
-        wget.download(
-            self.config['rootfs'],
-            self.rootfs_file_path
-        )
-        print()
+        if not self.args.command == 'create_rootfs':
+            print('Downloading rootfs:')
+            wget.download(
+                self.config['rootfs'],
+                self.rootfs_file_path
+            )
+            print()
 
         print('Downloading Linux For Tegra:')
         wget.download(
@@ -280,31 +269,24 @@ class DcsDeploy:
         )
         print()
 
-        if self.config['overlay'] != 'none':
-            print('Downloading overlay:')
+        if self.config['nvidia_overlay'] != 'none':
+            print('Downloading Nvidia overlay:')
             wget.download(
-                self.config['overlay'],
-                self.overlay_file_path
+                self.config['nvidia_overlay'],
+                self.nvidia_overlay_file_path
             )
             print()
-        
-        print('Downloading pinmux:')
-        wget.download(
-            self.config['pinmux'],
-            self.pinmux_file_path
-        )
-        print()
 
-        print('Downloading image:')
+        print('Downloading Airvolute overlay:')
         wget.download(
-            self.config['image'],
-            self.image_file_path
+            self.config['airvolute_overlay'],
+            self.airvolute_overlay_file_path
         )
         print()
 
         self.save_downloaded_versions()
 
-    def prepare_sources(self):
+    def prepare_sources_production(self):
         if self.args.force == False:
             if self.check_extracted_resources():
                 print('Resources already extracted, proceeding to next step!')
@@ -321,7 +303,7 @@ class DcsDeploy:
         stop_event.set()
         l4t_animation_thread.join()
 
-        # Extract Sample Root Filesystem
+        # Extract Root Filesystem
         print('Extracting Root Filesystem ...')
         stop_event.clear()
         print('This part needs sudo privilegies:')
@@ -341,37 +323,33 @@ class DcsDeploy:
         stop_event.set()
         rootfs_animation_thread.join()
 
-        self.prepare_pinmuxes()
-
+        # TODO: We might not want to apply binaries when we have already our filesystem ready!
         # Apply binaries
         print('Applying binaries ...')
         print('This part needs sudo privilegies:')
         # Run sudo identification
         subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
         subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
-        
-        print('Copying AirVolute image ...')
-        self.prepare_image()
 
-        if self.config['overlay'] != 'none':
+        if self.config['nvidia_overlay'] != 'none':
             print('Applying Nvidia overlay ...')
             self.prepare_nvidia_overlay()
 
         self.save_extracted_resources()
 
-    def prepare_pinmuxes(self):
-        print('Extracting AirVolute pinmuxes ... ')
-        tar = tarfile.open(self.pinmux_file_path)
-        for item in tar:
-            if not item.isdir():
-                tar.extract(item, self.pinmux_l4t_dir)
+    # TODO: rm if not needed
+    # def prepare_pinmuxes(self):
+    #     print('Extracting AirVolute pinmuxes ... ')
+    #     tar = tarfile.open(self.pinmux_file_path)
+    #     for item in tar:
+    #         if not item.isdir():
+    #             tar.extract(item, self.pinmux_l4t_dir)
 
-    def prepare_image(self):
-        destination_file = os.path.join(self.l4t_root_dir, 'bootloader', 'system.img')
-        shutil.copyfile(self.image_file_path, destination_file)
+    def prepare_airvolute_overlay(self):
+        pass
 
     def prepare_nvidia_overlay(self):
-        tar = tarfile.open(self.overlay_file_path)
+        tar = tarfile.open(self.nvidia_overlay_file_path)
         tar.extractall(self.flash_path)
 
     def check_compatibility(self):
@@ -380,8 +358,8 @@ class DcsDeploy:
         """
         for config in self.config_db:
             if (
-                self.config_db[config]["device"] == self.args.target_device and
-                self.config_db[config]['bsp'] == self.args.jetpack and
+                self.config_db[config]['device'] == self.args.target_device and
+                self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
                 self.config_db[config]['storage'] == self.args.storage
             ):
@@ -392,10 +370,10 @@ class DcsDeploy:
     def list_all_versions(self):
         for config in self.config_db:
             print('====', config, '====')
-            print('Device:', self.config_db[config]["device"])
-            print('BSP:', self.config_db[config]["bsp"])
-            print('Board:', self.config_db[config]["board"])
-            print('Storage:', self.config_db[config]["storage"])
+            print('Device:', self.config_db[config]['device'])
+            print('L4T version:', self.config_db[config]['l4t_version'])
+            print('Board:', self.config_db[config]['board'])
+            print('Storage:', self.config_db[config]['storage'])
             print('====================')
             print()
 
@@ -412,7 +390,7 @@ class DcsDeploy:
         for config in self.config_db:
             if (
                 self.config_db[config]["device"] == DEVICE and
-                self.config_db[config]['bsp'] == JETPACK and
+                self.config_db[config]['l4t_version'] == JETPACK and
                 self.config_db[config]['board'] == HWREV and
                 self.config_db[config]['storage'] == STORAGE
             ):
@@ -427,8 +405,8 @@ class DcsDeploy:
         
         for config in self.config_db:
             if (
-                self.config_db[config]["device"] == self.args.target_device and
-                self.config_db[config]['bsp'] == self.args.jetpack and
+                self.config_db[config]['device'] == self.args.target_device and
+                self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
                 self.config_db[config]['storage'] == self.args.storage
             ):
