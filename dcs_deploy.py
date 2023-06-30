@@ -9,6 +9,8 @@ import tarfile
 from threading import Thread, Event
 import time
 import shutil
+import git
+import tegrity
 
 
 class DcsDeploy:
@@ -41,7 +43,31 @@ class DcsDeploy:
         force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument(
             '--force', action='store_true',  default='', help=force_help)
+        
+    def add_flash_parser(self, subparser):
+        target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
+        subparser.add_argument(
+            'target_device', help=target_device_help)
 
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use (e.g. jp46, jp502 ...).'
+        subparser.add_argument(
+            'jetpack', help=jetpack_help)
+
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use (e.g. rev4, rev5 ...).'
+        subparser.add_argument(
+            'hwrev', help=hwrev_help)
+        
+        storage_help = 'REQUIRED. Which storage medium are we going to use (internal - emmc, external - nvme).'
+        subparser.add_argument(
+            'storage', help=storage_help)
+
+        create_rootfs_help = 'Developer only! Creates root filesystem for future use.'
+        subparser.add_argument(
+            '--create_rootfs', action='store_true',  default='', help=create_rootfs_help)
+        
+        force_help = 'Files will be deleted, downloaded and extracted again.'
+        subparser.add_argument(
+            '--force', action='store_true',  default='', help=force_help)
         
     def add_manual_mode_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
@@ -73,14 +99,10 @@ class DcsDeploy:
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
         
-        create_rootfs = subparsers.add_parser(
-            'create_rootfs', help='Developer only! Creates root filesystem for future')
-        
         compile_flash = subparsers.add_parser(
             'compile_flash', help='Run compilation with flashing')
 
-        self.add_common_parser(flash)
-
+        self.add_flash_parser(flash)
         self.add_common_parser(compile_flash)
         
         return parser
@@ -109,7 +131,7 @@ class DcsDeploy:
         """
         for config in self.config_db:
             if (
-                self.config_db[config]["device"] == self.args.target_device and
+                self.config_db[config]['device'] == self.args.target_device and
                 self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
                 self.config_db[config]['storage'] == self.args.storage
@@ -182,6 +204,13 @@ class DcsDeploy:
         self.resource_file_check_path = os.path.join(self.flash_path, 'check')
         self.pinmux_l4t_dir = os.path.join(self.l4t_root_dir, 'bootloader', 't186ref', 'BCT')
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
+        self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
+
+        if self.config['device'] == 'xavier_nx': 
+            self.device_type = 't194'
+        if self.config['device'] == 'orin_nx':
+            # TODO: set correct ref number
+            self.device_type = 'txxx'
 
         # Handle dcs-deploy root dir
         if not os.path.isdir(self.dsc_deploy_root):
@@ -254,7 +283,7 @@ class DcsDeploy:
         if self.compare_downloaded_source():
             return
 
-        if not self.args.command == 'create_rootfs':
+        if not self.args.create_rootfs:
             print('Downloading rootfs:')
             wget.download(
                 self.config['rootfs'],
@@ -353,50 +382,154 @@ class DcsDeploy:
         
         stop_event = Event()
 
-        # Extract Linux For Tegra
-        print('Extracting Linux For Tegra ...')
-        stop_event.clear()
-        tar = tarfile.open(self.l4t_file_path)
-        l4t_animation_thread = self.run_loading_animation(stop_event)
-        tar.extractall(path=self.flash_path)
-        stop_event.set()
-        l4t_animation_thread.join()
+        # # Extract Linux For Tegra
+        # print('Extracting Linux For Tegra ...')
+        # stop_event.clear()
+        # tar = tarfile.open(self.l4t_file_path)
+        # l4t_animation_thread = self.run_loading_animation(stop_event)
+        # tar.extractall(path=self.flash_path)
+        # stop_event.set()
+        # l4t_animation_thread.join()
+
+        # if self.config['nvidia_overlay'] != 'none':
+        #     print('Applying Nvidia overlay ...')
+        #     self.prepare_nvidia_overlay()
+
+        # print('Applying Airvolute overlay ...')
+        # self.prepare_airvolute_overlay()
 
         # Build Root Filesystem
-        self.build_minimal_sample_rootfs()
-
-
-        # TODO: We might not want to apply binaries when we have already our filesystem ready!
-        # Apply binaries
-        # print('Applying binaries ...')
-        # print('This part needs sudo privilegies:')
-        # # Run sudo identification
-        # subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
-        # subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
-
-        if self.config['nvidia_overlay'] != 'none':
-            print('Applying Nvidia overlay ...')
-            self.prepare_nvidia_overlay()
+        self.prepare_minimal_sample_rootfs()
 
         self.save_extracted_resources()
 
-    # TODO: rm if not needed, left just for extracting guideline
-    # def prepare_pinmuxes(self):
-    #     print('Extracting AirVolute pinmuxes ... ')
-    #     tar = tarfile.open(self.pinmux_file_path)
-    #     for item in tar:
-    #         if not item.isdir():
-    #             tar.extract(item, self.pinmux_l4t_dir)
-
     def prepare_airvolute_overlay(self):
-        pass
+        tar = tarfile.open(self.airvolute_overlay_file_path)
+        tar.extractall(self.flash_path)
 
-    def build_minimal_sample_rootfs(self):
+    def prepare_minimal_sample_rootfs(self):
         self.build_fs_cript_path = os.path.join(
             self.l4t_root_dir, 'tools', 'samplefs', 'nv_build_samplefs.sh'
         )
+        
+        self.sample_minimal_rootfs_path = os.path.join(
+            self.l4t_root_dir, 'tools', 'samplefs', 'sample_fs.tbz2'
+        )
 
-        # TODO: Continue here
+        self.apt_sources_file_path = os.path.join(
+            self.rootfs_extract_dir,
+            'etc',
+            'apt',
+            'sources.list.d',
+            'nvidia-l4t-apt-source.list'
+        )
+
+        print('Building rootfs ...')
+        print('This part needs sudo privilegies:')
+        # Run sudo identification
+        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        # Build minimal sample rootfs
+        # TODO: look into CTRL-C while this process is happenning (it won't shut down)
+        # subprocess.call(
+        #     [
+        #         'sudo',
+        #         self.build_fs_cript_path, 
+        #         '--abi', 
+        #         'aarch64',
+        #         '--distro', 
+        #         'ubuntu',
+        #         '--flavor',
+        #         'minimal',
+        #         '--version',
+        #         'focal'
+        #     ]
+        # )
+
+        print('Extracting rootfs ...')
+        # # Extract rootfs to correct dir
+        # subprocess.call(
+        #     [
+        #         'sudo',
+        #         'tar', 
+        #         'xpf', 
+        #         self.sample_minimal_rootfs_path,
+        #         '--directory', 
+        #         self.rootfs_extract_dir
+        #     ]
+        # )
+
+        # # Apply binaries
+        # print('Applying binaries ...')
+        # subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+
+        # TODO: Do I need to run sudo ident before each sudo command?
+        # See if this throws sudo identification prompt
+        # print('Creating default user ...')
+        # subprocess.call(
+        #     [
+        #         'sudo',
+        #         self.create_user_script_path,
+        #         '-u',
+        #         'dcs_user',
+        #         '-p',
+        #         'dronecore',
+        #         '-n',
+        #         'dcs'
+        #     ]
+        # )
+
+        # Set correct apt sources
+        # TODO: parametrize this based on device type!
+        device_type_sed_str = 's/<SOC>/' +  self.device_type + '/g'
+        subprocess.call(
+            [
+                'sudo',
+                'sed',
+                '-i',
+                device_type_sed_str,
+                self.apt_sources_file_path
+            ]
+        )
+
+        self.install_airvolute_packages_chroot()
+
+    def install_airvolute_packages_chroot(self):
+        """
+        This method installs Airvolute packages inside 
+        generated rootfs (chroot) using tegrity tool
+        https://github.com/mdegans/tegrity/
+        """
+        # clone_path = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'dcs-setup')
+
+        # # TODO: be aware that this needs to be put on some public server
+        # # This works only if you are ssh-key synchronized with 
+        # # gitlab.airvolute.com from the machine you are trying this script from
+        # repo = git.Repo.clone_from(
+        #     'git@gitlab.airvolute.com:sw/linux/app/dcs-setup.git',
+        #     clone_path
+        # )
+
+        # repo.git.checkout('ros2_airvolute_dev_NG')
+        # subprocess.call(
+        #     [
+        #         'sudo',
+        #         'tegrity-qemu',
+        #         self.rootfs_extract_dir,
+        #         '--enter',
+        #         '--userspec',
+        #         'dcs_user:dcs_user'
+        #     ]
+        # )
+        # Run tegrity
+        subprocess.call(
+            [
+                'sudo',
+                'python',
+                'tegrity_rootfs_install.py',
+            ]
+        )
+        print('Running dcs_setup ...')
+
 
     def prepare_nvidia_overlay(self):
         tar = tarfile.open(self.nvidia_overlay_file_path)
@@ -476,7 +609,7 @@ class DcsDeploy:
                 'jetson-xavier-nx-devkit-emmc', 
                 'mmcblk0p1'
             ]
-        )
+        )   
 
     def airvolute_flash(self):
         # ======================= EDO REFACTOR ================================
@@ -485,10 +618,10 @@ class DcsDeploy:
             return
 
         self.download_resources()
-        if not self.args.command == 'create_rootfs':
-            self.prepare_sources_production()
-        else:
+        if self.args.create_rootfs:
             self.prepare_sources_development()
+        else:
+            self.prepare_sources_production()
         # self.flash()
         quit() 
 
