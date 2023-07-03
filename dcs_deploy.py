@@ -446,37 +446,38 @@ class DcsDeploy:
         # )
 
         print('Extracting rootfs ...')
-        # # Extract rootfs to correct dir
-        # subprocess.call(
-        #     [
-        #         'sudo',
-        #         'tar', 
-        #         'xpf', 
-        #         self.sample_minimal_rootfs_path,
-        #         '--directory', 
-        #         self.rootfs_extract_dir
-        #     ]
-        # )
+        # Extract rootfs to correct dir
+        subprocess.call(
+            [
+                'sudo',
+                'tar', 
+                'xpf', 
+                self.sample_minimal_rootfs_path,
+                '--directory', 
+                self.rootfs_extract_dir
+            ]
+        )
 
         # # Apply binaries
-        # print('Applying binaries ...')
-        # subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+        print('Applying binaries ...')
+        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
 
         # TODO: Do I need to run sudo ident before each sudo command?
         # See if this throws sudo identification prompt
         # print('Creating default user ...')
-        # subprocess.call(
-        #     [
-        #         'sudo',
-        #         self.create_user_script_path,
-        #         '-u',
-        #         'dcs_user',
-        #         '-p',
-        #         'dronecore',
-        #         '-n',
-        #         'dcs'
-        #     ]
-        # )
+        subprocess.call(
+            [
+                'sudo',
+                self.create_user_script_path,
+                '-u',
+                'dcs_user',
+                '-p',
+                'dronecore',
+                '-n',
+                'dcs',
+                '--accept-license'
+            ]
+        )
 
         # Set correct apt sources
         # TODO: parametrize this based on device type!
@@ -491,7 +492,7 @@ class DcsDeploy:
             ]
         )
 
-        self.install_airvolute_packages_chroot()
+        # self.install_airvolute_packages_chroot()
 
     def install_airvolute_packages_chroot(self):
         """
