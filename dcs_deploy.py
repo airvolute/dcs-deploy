@@ -366,14 +366,6 @@ class DcsDeploy:
 
         self.save_extracted_resources()
 
-    # TODO: rm if not needed, left just for extracting guideline
-    # def prepare_pinmuxes(self):
-    #     print('Extracting AirVolute pinmuxes ... ')
-    #     tar = tarfile.open(self.pinmux_file_path)
-    #     for item in tar:
-    #         if not item.isdir():
-    #             tar.extract(item, self.pinmux_l4t_dir)
-
     def prepare_sources_development(self):
         if self.args.force == False:
             if self.check_extracted_resources():
@@ -382,26 +374,27 @@ class DcsDeploy:
         
         stop_event = Event()
 
-        # # Extract Linux For Tegra
-        # print('Extracting Linux For Tegra ...')
-        # stop_event.clear()
-        # tar = tarfile.open(self.l4t_file_path)
-        # l4t_animation_thread = self.run_loading_animation(stop_event)
-        # tar.extractall(path=self.flash_path)
-        # stop_event.set()
-        # l4t_animation_thread.join()
+        # Extract Linux For Tegra
+        print('Extracting Linux For Tegra ...')
+        stop_event.clear()
+        tar = tarfile.open(self.l4t_file_path)
+        l4t_animation_thread = self.run_loading_animation(stop_event)
+        tar.extractall(path=self.flash_path)
+        stop_event.set()
+        l4t_animation_thread.join()
 
-        # if self.config['nvidia_overlay'] != 'none':
-        #     print('Applying Nvidia overlay ...')
-        #     self.prepare_nvidia_overlay()
+        if self.config['nvidia_overlay'] != 'none':
+            print('Applying Nvidia overlay ...')
+            self.prepare_nvidia_overlay()
 
-        # print('Applying Airvolute overlay ...')
-        # self.prepare_airvolute_overlay()
+        print('Applying Airvolute overlay ...')
+        self.prepare_airvolute_overlay()
 
         # Build Root Filesystem
         self.prepare_minimal_sample_rootfs()
 
         self.save_extracted_resources()
+        self.clone_dcs_setup()
 
     def prepare_airvolute_overlay(self):
         tar = tarfile.open(self.airvolute_overlay_file_path)
@@ -430,23 +423,23 @@ class DcsDeploy:
         subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
         # Build minimal sample rootfs
         # TODO: look into CTRL-C while this process is happenning (it won't shut down)
-        # subprocess.call(
-        #     [
-        #         'sudo',
-        #         self.build_fs_cript_path, 
-        #         '--abi', 
-        #         'aarch64',
-        #         '--distro', 
-        #         'ubuntu',
-        #         '--flavor',
-        #         'minimal',
-        #         '--version',
-        #         'focal'
-        #     ]
-        # )
+        subprocess.call(
+            [
+                'sudo',
+                self.build_fs_cript_path, 
+                '--abi', 
+                'aarch64',
+                '--distro', 
+                'ubuntu',
+                '--flavor',
+                'minimal',
+                '--version',
+                'focal'
+            ]
+        )
 
-        print('Extracting rootfs ...')
         # Extract rootfs to correct dir
+        print('Extracting rootfs ...')
         subprocess.call(
             [
                 'sudo',
@@ -458,13 +451,13 @@ class DcsDeploy:
             ]
         )
 
-        # # Apply binaries
+        # Apply binaries
         print('Applying binaries ...')
         subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
 
         # TODO: Do I need to run sudo ident before each sudo command?
         # See if this throws sudo identification prompt
-        # print('Creating default user ...')
+        print('Creating default user ...')
         subprocess.call(
             [
                 'sudo',
@@ -480,7 +473,6 @@ class DcsDeploy:
         )
 
         # Set correct apt sources
-        # TODO: parametrize this based on device type!
         device_type_sed_str = 's/<SOC>/' +  self.device_type + '/g'
         subprocess.call(
             [
@@ -492,45 +484,22 @@ class DcsDeploy:
             ]
         )
 
-        # self.install_airvolute_packages_chroot()
-
-    def install_airvolute_packages_chroot(self):
+    def clone_dcs_setup(self):
         """
-        This method installs Airvolute packages inside 
-        generated rootfs (chroot) using tegrity tool
-        https://github.com/mdegans/tegrity/
+        This method clones dcs_setup package inside chroot home
         """
-        # clone_path = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'dcs-setup')
-
-        # # TODO: be aware that this needs to be put on some public server
-        # # This works only if you are ssh-key synchronized with 
-        # # gitlab.airvolute.com from the machine you are trying this script from
-        # repo = git.Repo.clone_from(
-        #     'git@gitlab.airvolute.com:sw/linux/app/dcs-setup.git',
-        #     clone_path
-        # )
-
-        # repo.git.checkout('ros2_airvolute_dev_NG')
-        # subprocess.call(
-        #     [
-        #         'sudo',
-        #         'tegrity-qemu',
-        #         self.rootfs_extract_dir,
-        #         '--enter',
-        #         '--userspec',
-        #         'dcs_user:dcs_user'
-        #     ]
-        # )
-        # Run tegrity
-        subprocess.call(
-            [
-                'sudo',
-                'python',
-                'tegrity_rootfs_install.py',
-            ]
-        )
         print('Running dcs_setup ...')
+        clone_path = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'dcs-setup')
 
+        # TODO: be aware that this needs to be put on some public server
+        # This works only if you are ssh-key synchronized with 
+        # gitlab.airvolute.com from the machine you are trying this script from
+        repo = git.Repo.clone_from(
+            'git@gitlab.airvolute.com:sw/linux/app/dcs-setup.git',
+            clone_path
+        )
+
+        repo.git.checkout('ros2_airvolute_dev_NG')
 
     def prepare_nvidia_overlay(self):
         tar = tarfile.open(self.nvidia_overlay_file_path)
