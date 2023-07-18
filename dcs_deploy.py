@@ -352,17 +352,35 @@ class DcsDeploy:
         stop_event.set()
         rootfs_animation_thread.join()
 
-        # TODO: We might not want to apply binaries when we have already our filesystem ready!
-        # Apply binaries
-        # print('Applying binaries ...')
-        # print('This part needs sudo privilegies:')
-        # # Run sudo identification
-        # subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
-        # subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
-
         if self.config['nvidia_overlay'] != 'none':
             print('Applying Nvidia overlay ...')
             self.prepare_nvidia_overlay()
+
+        print('Applying Airvolute overlay ...')
+        self.prepare_airvolute_overlay()
+
+        # Apply binaries
+        print('Applying binaries ...')
+        print('This part needs sudo privilegies:')
+        # Run sudo identification
+        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path, '-t  False'])
+
+        print('Creating default user ...')
+        subprocess.call(
+            [
+                'sudo',
+                self.create_user_script_path,
+                '-u',
+                'dcs_user',
+                '-p',
+                'dronecore',
+                '-n',
+                'dcs',
+                '--accept-license'
+            ]
+        )
 
         self.save_extracted_resources()
 
@@ -567,19 +585,43 @@ class DcsDeploy:
                 self.current_config_name = config
 
     def flash(self):
+        flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
+
         if (self.config['storage'] == 'emmc' and
             self.config['device'] == 'xavier_nx'):
-            flash_script_path = os.path.join(self.l4t_root_dir, 'flash.sh')
+            os.chdir(self.l4t_root_dir)
+
             subprocess.call(
             [
                 'sudo',
                 'bash',
                 flash_script_path,
-                '--no-flash',
-                'jetson-xavier-nx-devkit-emmc', 
+                'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
                 'mmcblk0p1'
             ]
-        )   
+        )
+        # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --no-flash --external-only --external-device nvme0n1p1 -c ./tools/kernel_flash/flash_l4t_nvme_custom.xml -S 110GiB  --showlogs jetson-xavier-nx-devkit-emmc nvme0n1p1
+
+        if (self.config['storage'] == 'nvme' and
+            self.config['device'] == 'xavier_nx'):
+            external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
+            os.chdir(self.l4t_root_dir)
+
+            subprocess.call(
+            [
+                'sudo',
+                'bash',
+                flash_script_path,
+                '--external-only',
+                '--external-device',
+                'nvme0n1p1',
+                '-c',
+                external_xml_config_path,
+                '--showlogs',
+                'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
+                'nvme0n1p1'
+            ]
+        )
 
     def airvolute_flash(self):
         # ======================= EDO REFACTOR ================================
@@ -592,7 +634,7 @@ class DcsDeploy:
             self.prepare_sources_development()
         else:
             self.prepare_sources_production()
-        # self.flash()
+        self.flash()
         quit() 
 
     def run(self):
