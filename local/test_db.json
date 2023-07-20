@@ -46,7 +46,7 @@
     "board": "1.2",
     "l4t_version": "51",
     "nvidia_overlay": "none",
-    "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay.tbz2",
+    "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
     "rootfs": "https://airvolute.com/download/dcs_deployment_testing/jp_51_clean_rootfs.tbz2"
     

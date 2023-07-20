@@ -10,7 +10,6 @@ from threading import Thread, Event
 import time
 import shutil
 import git
-import tegrity
 
 
 class DcsDeploy:
@@ -205,6 +204,7 @@ class DcsDeploy:
         self.pinmux_l4t_dir = os.path.join(self.l4t_root_dir, 'bootloader', 't186ref', 'BCT')
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
+        self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
         if self.config['device'] == 'xavier_nx': 
             self.device_type = 't194'
@@ -223,6 +223,7 @@ class DcsDeploy:
         # Handle dcs-deploy flash dir
         if not os.path.isdir(self.flash_path):
             os.makedirs(self.flash_path)
+
 
     def compare_downloaded_source(self):
         """Compares current input of the program with previously 
@@ -382,6 +383,8 @@ class DcsDeploy:
             ]
         )
 
+        self.install_first_boot_setup()
+
         self.save_extracted_resources()
 
     def prepare_sources_development(self):
@@ -523,6 +526,158 @@ class DcsDeploy:
         tar = tarfile.open(self.nvidia_overlay_file_path)
         tar.extractall(self.flash_path)
 
+    def install_first_boot_setup(self):
+        """
+        Installs script that would be run on a device after the
+        very first boot.
+        """
+        # Create firstboot check file.
+        subprocess.call(
+            [
+                'sudo',
+                'touch',
+                self.first_boot_file_path
+            ]
+        )
+
+        # Setup systemd first boot
+        service_destination = os.path.join(
+            self.rootfs_extract_dir,
+            'etc',
+            'systemd',
+            'system'
+        )
+
+        # Bin destination
+        bin_destination = os.path.join(
+            self.rootfs_extract_dir,
+            'usr',
+            'local',
+            'bin'
+        )
+        
+        # USB3_CONTROL service
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/usb3_control/usb3_control.service',
+                service_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/usb3_control/usb3_control.sh',
+                bin_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'chmod',
+                '+x',
+                os.path.join(bin_destination,'usb3_control.sh'),
+            ]
+        )
+
+        # USB3_CONTROL service
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/usb3_control/usb3_control.service',
+                service_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/usb3_control/usb3_control.sh',
+                bin_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'chmod',
+                '+x',
+                os.path.join(bin_destination,'usb3_control.sh'),
+            ]
+        )
+
+        # USB_HUB_CONTROL service
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/usb_hub_control/usb_hub_control.service',
+                service_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/usb_hub_control/usb_hub_control.sh',
+                bin_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'chmod',
+                '+x',
+                os.path.join(bin_destination,'usb_hub_control.sh'),
+            ]
+        )
+
+        # FIRST_BOOT service
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/dcs_first_boot.service',
+                service_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/dcs_first_boot.sh',
+                bin_destination
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'chmod',
+                '+x',
+                os.path.join(bin_destination,'dcs_first_boot.sh'),
+            ]
+        )
+
+        subprocess.call(
+            [
+                'sudo',
+                'ln',
+                '-s',
+                '/etc/systemd/system/dcs_first_boot.service',
+                os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service')
+            ]
+        )
+
     def check_compatibility(self):
         """
         Check compatibility based on user input config.
@@ -600,7 +755,6 @@ class DcsDeploy:
                 'mmcblk0p1'
             ]
         )
-        # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --no-flash --external-only --external-device nvme0n1p1 -c ./tools/kernel_flash/flash_l4t_nvme_custom.xml -S 110GiB  --showlogs jetson-xavier-nx-devkit-emmc nvme0n1p1
 
         if (self.config['storage'] == 'nvme' and
             self.config['device'] == 'xavier_nx'):
@@ -622,6 +776,8 @@ class DcsDeploy:
                 'nvme0n1p1'
             ]
         )
+            
+        self.save_extracted_resources()
 
     def airvolute_flash(self):
         # ======================= EDO REFACTOR ================================

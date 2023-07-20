@@ -1,0 +1,10 @@
+[Unit]
+Description=DCS_first_boot_setup
+ConditionPathExists=/etc/first_boot
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/dcs_first_boot.sh
+
+[Install]
+WantedBy=multi-user.target
