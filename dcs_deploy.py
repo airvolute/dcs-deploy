@@ -356,8 +356,6 @@ class DcsDeploy:
             print('Applying Nvidia overlay ...')
             self.prepare_nvidia_overlay()
 
-        print('Applying Airvolute overlay ...')
-        self.prepare_airvolute_overlay()
 
         # Apply binaries
         print('Applying binaries ...')
@@ -365,6 +363,10 @@ class DcsDeploy:
         # Run sudo identification
         subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
         subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+
+        print('Applying Airvolute overlay ...')
+        self.prepare_airvolute_overlay()
+
         subprocess.call(['/usr/bin/sudo', self.apply_binaries_path, '-t  False'])
 
         print('Creating default user ...')
