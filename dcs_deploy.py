@@ -357,7 +357,6 @@ class DcsDeploy:
             print('Applying Nvidia overlay ...')
             self.prepare_nvidia_overlay()
 
-
         # Apply binaries
         print('Applying binaries ...')
         print('This part needs sudo privilegies:')
@@ -386,38 +385,9 @@ class DcsDeploy:
         )
 
         self.install_first_boot_setup()
+        self.clone_uhubctl()
 
         self.save_extracted_resources()
-
-    def prepare_sources_development(self):
-        if self.args.force == False:
-            if self.check_extracted_resources():
-                print('Resources already extracted, proceeding to next step!')
-                return
-        
-        stop_event = Event()
-
-        # Extract Linux For Tegra
-        print('Extracting Linux For Tegra ...')
-        stop_event.clear()
-        tar = tarfile.open(self.l4t_file_path)
-        l4t_animation_thread = self.run_loading_animation(stop_event)
-        tar.extractall(path=self.flash_path)
-        stop_event.set()
-        l4t_animation_thread.join()
-
-        if self.config['nvidia_overlay'] != 'none':
-            print('Applying Nvidia overlay ...')
-            self.prepare_nvidia_overlay()
-
-        print('Applying Airvolute overlay ...')
-        self.prepare_airvolute_overlay()
-
-        # Build Root Filesystem
-        self.prepare_minimal_sample_rootfs()
-
-        self.save_extracted_resources()
-        self.clone_dcs_setup()
 
     def prepare_airvolute_overlay(self):
         tar = tarfile.open(self.airvolute_overlay_file_path)
@@ -507,22 +477,18 @@ class DcsDeploy:
             ]
         )
 
-    def clone_dcs_setup(self):
+    def clone_uhubctl(self):
         """
         This method clones dcs_setup package inside chroot home
         """
-        print('Running dcs_setup ...')
-        clone_path = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'dcs-setup')
+        clone_path = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'uhubctl')
 
-        # TODO: be aware that this needs to be put on some public server
-        # This works only if you are ssh-key synchronized with 
-        # gitlab.airvolute.com from the machine you are trying this script from
         repo = git.Repo.clone_from(
-            'git@gitlab.airvolute.com:sw/linux/app/dcs-setup.git',
+            'https://github.com/mvp/uhubctl.git',
             clone_path
         )
 
-        repo.git.checkout('ros2_airvolute_dev_NG')
+        repo.git.checkout('v2.4.0')
 
     def prepare_nvidia_overlay(self):
         tar = tarfile.open(self.nvidia_overlay_file_path)
@@ -556,6 +522,13 @@ class DcsDeploy:
             'usr',
             'local',
             'bin'
+        )
+
+        # uhubctl destination
+        uhubctl_destination = os.path.join(
+            self.rootfs_extract_dir,
+            'home',
+            'dcs_user'
         )
         
         # USB3_CONTROL service
@@ -680,6 +653,16 @@ class DcsDeploy:
             ]
         )
 
+        # uhubctl
+        subprocess.call(
+            [
+                'sudo',
+                'cp',
+                'resources/uhubctl_2.1.0-1_arm64.deb',
+                uhubctl_destination
+            ]
+        )
+
     def check_compatibility(self):
         """
         Check compatibility based on user input config.
@@ -788,10 +771,7 @@ class DcsDeploy:
             return
 
         self.download_resources()
-        if self.args.create_rootfs:
-            self.prepare_sources_development()
-        else:
-            self.prepare_sources_production()
+        self.prepare_sources_production()
         self.flash()
         quit() 
 
