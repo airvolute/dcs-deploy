@@ -13,16 +13,17 @@ pip install wget
 ```
 
 # Basic usage
-**cd into dcs-deploy repo**
+- **Put Xavier NX into force recovery mode**
+
+- **cd into dcs-deploy repo**
 ```
 cd /path/to/dcs-deploy
 ```
-**run dcs_deploy.py**:
-- nvme flash:
+- **run dcs_deploy.py**:
 ```
 python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme
 ```
-- emmc flash:
+or
 ```
 python3 dcs_deploy.py flash xavier_nx 51 1.2 emmc
 ```
