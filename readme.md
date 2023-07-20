@@ -15,7 +15,23 @@ pip install gitpython
 ```
 pip install wget  
 ```
-# Flashing the device again
+
+# Basic usage
+**cd into dcs-deploy repo**
+```
+cd /path/to/dcs-deploy
+```
+**run dcs_deploy.py**:
+- nvme flash:
+```
+python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme
+```
+- emmc flash:
+```
+python3 dcs_deploy.py flash xavier_nx 51 1.2 emmc
+```
+
+# Flashing the device again with existing config
 If you run the script with `flash` flag, it will re-initialize the Linux for Tegra folder each time. If you just want to re-use the folder and flash the same config to multiple devices, use nvidia flashing script:
  
 1. Change directory to to `kernel_flash` dir
