@@ -1,4 +1,4 @@
 #!/bin/bash
 
-uhubctl -a off -p 6
+sudo uhubctl -a off -p 6
 

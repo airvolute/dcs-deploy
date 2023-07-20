@@ -23,15 +23,15 @@ class DcsDeploy:
             self.init_filesystem()
 
     def add_common_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx, orin_nx]'
+        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
         subparser.add_argument(
             'target_device', help=target_device_help)
 
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [46, 502].'
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51].'
         subparser.add_argument(
             'jetpack', help=jetpack_help)
 
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.0, 1.2].'
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2].'
         subparser.add_argument(
             'hwrev', help=hwrev_help)
         
@@ -42,48 +42,6 @@ class DcsDeploy:
         force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument(
             '--force', action='store_true',  default='', help=force_help)
-        
-    def add_flash_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
-        subparser.add_argument(
-            'target_device', help=target_device_help)
-
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use (e.g. jp46, jp502 ...).'
-        subparser.add_argument(
-            'jetpack', help=jetpack_help)
-
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use (e.g. rev4, rev5 ...).'
-        subparser.add_argument(
-            'hwrev', help=hwrev_help)
-        
-        storage_help = 'REQUIRED. Which storage medium are we going to use (internal - emmc, external - nvme).'
-        subparser.add_argument(
-            'storage', help=storage_help)
-
-        create_rootfs_help = 'Developer only! Creates root filesystem for future use.'
-        subparser.add_argument(
-            '--create_rootfs', action='store_true',  default='', help=create_rootfs_help)
-        
-        force_help = 'Files will be deleted, downloaded and extracted again.'
-        subparser.add_argument(
-            '--force', action='store_true',  default='', help=force_help)
-        
-    def add_manual_mode_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up (e.g. xaviernx ...).'
-        subparser.add_argument(
-            'target_device', help=target_device_help)
-
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use (e.g. jp46, jp502 ...).'
-        subparser.add_argument(
-            'jetpack', help=jetpack_help)
-
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use (e.g. rev4, rev5 ...).'
-        subparser.add_argument(
-            'hwrev', help=hwrev_help)
-        
-        storage_help = 'REQUIRED. Which storage medium are we going to use (internal - emmc, external - nvme).'
-        subparser.add_argument(
-            'storage', help=storage_help)
 
     def create_parser(self):
         """
@@ -98,11 +56,8 @@ class DcsDeploy:
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
         
-        compile_flash = subparsers.add_parser(
-            'compile_flash', help='Run compilation with flashing')
 
-        self.add_flash_parser(flash)
-        self.add_common_parser(compile_flash)
+        self.add_common_parser(flash)
         
         return parser
     
@@ -116,27 +71,9 @@ class DcsDeploy:
             quit()
 
     def load_db(self):
-        # TODO: Load this from AirVolute's FTP
-        db_file = open('local/test_db.json')
+        db_file = open('local/config_db.json')
 
         self.config_db = json.load(db_file)
-
-    def get_files_from_args(self):
-        # TODO: this method might be irrelevant, inspect later
-        """Returns filenames of image and pinmux according to config.
-
-        Returns: 
-        tuple:(image, pinmux)  
-        """
-        for config in self.config_db:
-            if (
-                self.config_db[config]['device'] == self.args.target_device and
-                self.config_db[config]['l4t_version'] == self.args.jetpack and
-                self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage
-            ):
-
-                return self.config_db[config]['image'], self.config_db[config]['pinmux']
 
     def loading_animation(self, event):
         """Just animate rotating line - | / — \
@@ -195,22 +132,15 @@ class DcsDeploy:
         self.l4t_file_path = os.path.join(self.download_path, 'l4t.tbz2')
         self.nvidia_overlay_file_path = os.path.join(self.download_path, 'nvidia_overlay.tbz2')
         self.airvolute_overlay_file_path = os.path.join(self.download_path, 'airvolute_overlay.tbz2')
-        self.image_file_path = os.path.join(self.download_path, 'system.img')
-        self.pinmux_file_path = os.path.join(self.download_path, 'pinmuxes.tar.xz')
         self.rootfs_extract_dir = os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs')
         self.l4t_root_dir = os.path.join(self.flash_path, 'Linux_for_Tegra')
         self.downloaded_config_path = os.path.join(self.dsc_deploy_root, 'downloaded_versions.json')
-        self.resource_file_check_path = os.path.join(self.flash_path, 'check')
-        self.pinmux_l4t_dir = os.path.join(self.l4t_root_dir, 'bootloader', 't186ref', 'BCT')
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
         if self.config['device'] == 'xavier_nx': 
             self.device_type = 't194'
-        if self.config['device'] == 'orin_nx':
-            # TODO: set correct ref number
-            self.device_type = 'txxx'
 
         # Handle dcs-deploy root dir
         if not os.path.isdir(self.dsc_deploy_root):
@@ -223,7 +153,17 @@ class DcsDeploy:
         # Handle dcs-deploy flash dir
         if not os.path.isdir(self.flash_path):
             os.makedirs(self.flash_path)
-
+        else:
+            print('Removing previous L4T folder ...')
+            subprocess.call(
+                [
+                    'sudo',
+                    'rm', 
+                    '-r', 
+                    self.flash_path,
+                ]
+            )
+            os.makedirs(self.flash_path)
 
     def compare_downloaded_source(self):
         """Compares current input of the program with previously 
@@ -235,7 +175,6 @@ class DcsDeploy:
         if self.args.force == True:
             return False
 
-        # downloaded_sources = open(self.downloaded_config_path)
         if os.path.exists(self.downloaded_config_path):
             downloaded_configs = json.load(open(self.downloaded_config_path))
 
@@ -249,48 +188,18 @@ class DcsDeploy:
 
         else:
             return False
-        
-    def save_extracted_resources(self):
-        with open(self.resource_file_check_path, "w") as resource_file:
-            for (root, dirs, files) in os.walk(self.flash_path):
-                for name in files:
-                    resource_file.write(str(os.path.join(root, name))+"\n")
-    
-    def check_extracted_resources(self):
-        """Checks if resources were extracted before AND
-        if the resources are valid (no missing files)
-        
-        return True if resources are extracted AND valid
-        return False if resources are NOT extracted OR are invalid
-        """
-        if os.path.exists(self.resource_file_check_path):
-            resource_file = open(self.resource_file_check_path, 'r')
-            for (root, dirs, files) in os.walk(self.flash_path):
-                for name in files:
-                    line = resource_file.readline()
-                    if not line:
-                        break
-                    if str(os.path.join(root, name))+"\n" != line:
-                        print('Invalid resources')
-                        resource_file.close()
-                        return False
-                    
-            resource_file.close()
-            return True
-        else:
-            return False
+
     
     def download_resources(self):
         if self.compare_downloaded_source():
             return
 
-        if not self.args.create_rootfs:
-            print('Downloading rootfs:')
-            wget.download(
-                self.config['rootfs'],
-                self.rootfs_file_path
-            )
-            print()
+        print('Downloading rootfs:')
+        wget.download(
+            self.config['rootfs'],
+            self.rootfs_file_path
+        )
+        print()
 
         print('Downloading Linux For Tegra:')
         wget.download(
@@ -317,11 +226,6 @@ class DcsDeploy:
         self.save_downloaded_versions()
 
     def prepare_sources_production(self):
-        if self.args.force == False:
-            if self.check_extracted_resources():
-                print('Resources already extracted, proceeding to next step!')
-                return
-        
         stop_event = Event()
 
         # Extract Linux For Tegra
@@ -385,110 +289,10 @@ class DcsDeploy:
         )
 
         self.install_first_boot_setup()
-        self.clone_uhubctl()
-
-        self.save_extracted_resources()
 
     def prepare_airvolute_overlay(self):
         tar = tarfile.open(self.airvolute_overlay_file_path)
         tar.extractall(self.flash_path)
-
-    def prepare_minimal_sample_rootfs(self):
-        self.build_fs_cript_path = os.path.join(
-            self.l4t_root_dir, 'tools', 'samplefs', 'nv_build_samplefs.sh'
-        )
-        
-        self.sample_minimal_rootfs_path = os.path.join(
-            self.l4t_root_dir, 'tools', 'samplefs', 'sample_fs.tbz2'
-        )
-
-        self.apt_sources_file_path = os.path.join(
-            self.rootfs_extract_dir,
-            'etc',
-            'apt',
-            'sources.list.d',
-            'nvidia-l4t-apt-source.list'
-        )
-
-        print('Building rootfs ...')
-        print('This part needs sudo privilegies:')
-        # Run sudo identification
-        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
-        # Build minimal sample rootfs
-        # TODO: look into CTRL-C while this process is happenning (it won't shut down)
-        subprocess.call(
-            [
-                'sudo',
-                self.build_fs_cript_path, 
-                '--abi', 
-                'aarch64',
-                '--distro', 
-                'ubuntu',
-                '--flavor',
-                'minimal',
-                '--version',
-                'focal'
-            ]
-        )
-
-        # Extract rootfs to correct dir
-        print('Extracting rootfs ...')
-        subprocess.call(
-            [
-                'sudo',
-                'tar', 
-                'xpf', 
-                self.sample_minimal_rootfs_path,
-                '--directory', 
-                self.rootfs_extract_dir
-            ]
-        )
-
-        # Apply binaries
-        print('Applying binaries ...')
-        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
-
-        # TODO: Do I need to run sudo ident before each sudo command?
-        # See if this throws sudo identification prompt
-        print('Creating default user ...')
-        subprocess.call(
-            [
-                'sudo',
-                self.create_user_script_path,
-                '-u',
-                'dcs_user',
-                '-p',
-                'dronecore',
-                '-n',
-                'dcs',
-                '--accept-license'
-            ]
-        )
-
-        # Set correct apt sources
-        device_type_sed_str = 's/<SOC>/' +  self.device_type + '/g'
-        subprocess.call(
-            [
-                'sudo',
-                'sed',
-                '-i',
-                device_type_sed_str,
-                self.apt_sources_file_path
-            ]
-        )
-
-    def clone_uhubctl(self):
-        """
-        This method clones dcs_setup package inside chroot home
-        """
-        clone_path = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'uhubctl')
-
-        repo = git.Repo.clone_from(
-            'https://github.com/mvp/uhubctl.git',
-            clone_path
-        )
-
-        repo.git.checkout('v2.4.0')
 
     def prepare_nvidia_overlay(self):
         tar = tarfile.open(self.nvidia_overlay_file_path)
@@ -688,30 +492,9 @@ class DcsDeploy:
             print('====================')
             print()
 
-    def manual_mode(self):
-        if not self.check_compatibility():
-            print('Unsupported configuration provided!')
-            return
-        
-        DEVICE = self.args.target_device
-        JETPACK = self.args.jetpack
-        HWREV = self.args.hwrev
-        STORAGE = self.args.storage
-
-        for config in self.config_db:
-            if (
-                self.config_db[config]["device"] == DEVICE and
-                self.config_db[config]['l4t_version'] == JETPACK and
-                self.config_db[config]['board'] == HWREV and
-                self.config_db[config]['storage'] == STORAGE
-            ):
-                print('IMAGE to download: ', self.config_db[config]['image'])
-                print('PINMUX to download: ', self.config_db[config]['pinmux'])
-
     def load_selected_config(self):
         if not self.check_compatibility():
             print('Unsupported configuration!')
-            
             return
         
         for config in self.config_db:
@@ -761,11 +544,8 @@ class DcsDeploy:
                 'nvme0n1p1'
             ]
         )
-            
-        self.save_extracted_resources()
 
     def airvolute_flash(self):
-        # ======================= EDO REFACTOR ================================
         if not self.check_compatibility():
             print('Unsupported configuration!')
             return
@@ -776,10 +556,6 @@ class DcsDeploy:
         quit() 
 
     def run(self):
-        if self.args.command == 'manual_mode':
-            self.manual_mode()
-            quit()
-
         if self.args.command == 'list':
             self.list_all_versions()
             quit()
