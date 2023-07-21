@@ -88,3 +88,27 @@ As a root of this filesystem, `.dcs_deploy` folder is created inside **host pc H
 - Download folder is not checked, only `downloaded_versions.json` file is, so if the download folder has been altered script will throw an error.
 - Errors that might occur during deployment process are not handled very well at the moment.
 - Missing features like kernel building, or `flash-only` that would re-use already prepared flashing config folder. 
+
+### Troubleshooting
+#### 1. Verifying 1st boot configuration
+To verify, that the full deployment is sucesfull and that the first boot configuration is done you can run these commands on target:
+
+During 1st boot (right after the flashing is completed):
+```
+$ journalctl -u dcs_first_boot
+```
+Expected outcome:
+`dcs systemd[1]: dcs_first_boot.service: Succeeded.`
+
+After 1st boot.
+```
+sudo uhubctl
+```
+Expected outcome:
+`List of usb hub port with port 6 disabled.`
+
+**If the output is not as expected, please reboot the device and run after 1st boot command. If the issue with usbhub is persistent please reflash the device.**
+
+#### 2. Device is not booting
+- Check if the correct hardware revision of DCS was selected.
+- If the device is not booting from NVME, please try to reflash the device using EMMC internal memory and flash again NVME configuration. (only Xavier NX)
