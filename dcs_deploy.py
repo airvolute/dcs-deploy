@@ -155,14 +155,20 @@ class DcsDeploy:
             os.makedirs(self.flash_path)
         else:
             print('Removing previous L4T folder ...')
-            subprocess.call(
-                [
-                    'sudo',
-                    'rm', 
-                    '-r', 
-                    self.flash_path,
-                ]
-            )
+            try:
+                subprocess.call(
+                    [
+                        'sudo',
+                        'rm', 
+                        '-r', 
+                        self.flash_path,
+                    ]
+                )
+            except subprocess.CalledProcessError as e:
+                print('Removing previous L4T folder failed:')
+                print(e.output)
+                quit()
+
             os.makedirs(self.flash_path)
 
     def compare_downloaded_source(self):
@@ -195,32 +201,48 @@ class DcsDeploy:
             return
 
         print('Downloading rootfs:')
-        wget.download(
-            self.config['rootfs'],
-            self.rootfs_file_path
-        )
+        try:
+            wget.download(
+                self.config['rootfs'],
+                self.rootfs_file_path
+            )
+        except Exception as e:
+            print("Downloading rootfs failed, check internet connection!")
+            quit()
         print()
 
-        print('Downloading Linux For Tegra:')
-        wget.download(
-            self.config['l4t'],
-            self.l4t_file_path
-        )
+        try:
+            print('Downloading Linux For Tegra:')
+            wget.download(
+                self.config['l4t'],
+                self.l4t_file_path
+            )
+        except Exception as e:
+            print("Downloading L4T failed, check internet connection!")
+            quit()
         print()
 
         if self.config['nvidia_overlay'] != 'none':
             print('Downloading Nvidia overlay:')
-            wget.download(
-                self.config['nvidia_overlay'],
-                self.nvidia_overlay_file_path
-            )
+            try:
+                wget.download(
+                    self.config['nvidia_overlay'],
+                    self.nvidia_overlay_file_path
+                )
+            except Exception as e:
+                print("Downloading nvidia overlay failed, check internet connection!")
+                quit()
             print()
 
         print('Downloading Airvolute overlay:')
-        wget.download(
-            self.config['airvolute_overlay'],
-            self.airvolute_overlay_file_path
-        )
+        try:
+            wget.download(
+                self.config['airvolute_overlay'],
+                self.airvolute_overlay_file_path
+            )
+        except Exception as e:
+            print("Downloading Airvolute overlay failed, check internet connection!")
+            quit()
         print()
 
         self.save_downloaded_versions()
@@ -244,16 +266,23 @@ class DcsDeploy:
         # Run sudo identification
         subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
         rootfs_animation_thread = self.run_loading_animation(stop_event)
-        subprocess.call(
-            [
-                'sudo',
-                'tar', 
-                'xpf', 
-                self.rootfs_file_path,
-                '--directory', 
-                self.rootfs_extract_dir
-            ]
-        )
+
+        try:
+            subprocess.call(
+                [
+                    'sudo',
+                    'tar', 
+                    'xpf', 
+                    self.rootfs_file_path,
+                    '--directory', 
+                    self.rootfs_extract_dir
+                ]
+            )
+        except subprocess.CalledProcessError as e:
+            print('Extracting Root Filesystem failed:')
+            print(e.output)
+            quit()
+
         stop_event.set()
         rootfs_animation_thread.join()
 
@@ -266,27 +295,43 @@ class DcsDeploy:
         print('This part needs sudo privilegies:')
         # Run sudo identification
         subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
-        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+
+        try:
+            subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+        except subprocess.CalledProcessError as e:
+            print('Apply binaries failed:')
+            print(e.output)
+            quit()
 
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
 
-        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path, '-t  False'])
+        try: 
+            subprocess.call(['/usr/bin/sudo', self.apply_binaries_path, '-t  False'])
+        except subprocess.CalledProcessError as e:
+            print('Apply binaries -t failed:')
+            print(e.output)
+            quit()
 
         print('Creating default user ...')
-        subprocess.call(
-            [
-                'sudo',
-                self.create_user_script_path,
-                '-u',
-                'dcs_user',
-                '-p',
-                'dronecore',
-                '-n',
-                'dcs',
-                '--accept-license'
-            ]
-        )
+        try:
+            subprocess.call(
+                [
+                    'sudo',
+                    self.create_user_script_path,
+                    '-u',
+                    'dcs_user',
+                    '-p',
+                    'dronecore',
+                    '-n',
+                    'dcs',
+                    '--accept-license'
+                ]
+            )
+        except subprocess.CalledProcessError as e:
+            print('Creating default user failed:')
+            print(e.output)
+            quit()
 
         self.install_first_boot_setup()
 
@@ -333,34 +378,6 @@ class DcsDeploy:
             self.rootfs_extract_dir,
             'home',
             'dcs_user'
-        )
-        
-        # USB3_CONTROL service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.service',
-                service_destination
-            ]
-        )
-
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.sh',
-                bin_destination
-            ]
-        )
-
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'usb3_control.sh'),
-            ]
         )
 
         # USB3_CONTROL service
@@ -514,36 +531,46 @@ class DcsDeploy:
             self.config['device'] == 'xavier_nx'):
             os.chdir(self.l4t_root_dir)
 
-            subprocess.call(
-            [
-                'sudo',
-                'bash',
-                flash_script_path,
-                'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
-                'mmcblk0p1'
-            ]
-        )
+            try:
+                subprocess.call(
+                    [
+                        'sudo',
+                        'bash',
+                        flash_script_path,
+                        'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
+                        'mmcblk0p1'
+                    ]
+                )
+            except subprocess.CalledProcessError as e:
+                print('Nvidia initrd flash script failed:')
+                print(e.output)
+                quit()
 
         if (self.config['storage'] == 'nvme' and
             self.config['device'] == 'xavier_nx'):
             external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
             os.chdir(self.l4t_root_dir)
 
-            subprocess.call(
-            [
-                'sudo',
-                'bash',
-                flash_script_path,
-                '--external-only',
-                '--external-device',
-                'nvme0n1p1',
-                '-c',
-                external_xml_config_path,
-                '--showlogs',
-                'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
-                'nvme0n1p1'
-            ]
-        )
+            try:
+                subprocess.call(
+                    [
+                        'sudo',
+                        'bash',
+                        flash_script_path,
+                        '--external-only',
+                        '--external-device',
+                        'nvme0n1p1',
+                        '-c',
+                        external_xml_config_path,
+                        '--showlogs',
+                        'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
+                        'nvme0n1p1'
+                    ]
+                )
+            except subprocess.CalledProcessError as e:
+                print('Nvidia initrd flash script failed:')
+                print(e.output)
+                quit()
 
     def airvolute_flash(self):
         if not self.check_compatibility():
