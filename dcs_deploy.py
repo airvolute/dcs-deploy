@@ -39,6 +39,10 @@ class DcsDeploy:
         subparser.add_argument(
             'storage', help=storage_help)
         
+        rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
+        subparser.add_argument(
+            'rootfs_type', help=rootfs_type_help)
+        
         force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument(
             '--force', action='store_true',  default='', help=force_help)
@@ -121,7 +125,8 @@ class DcsDeploy:
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
             self.config['board'] + '_' +
-            self.config['l4t_version']
+            self.config['l4t_version'] + '_' +
+            self.config['rootfs_type']
         )
 
         self.home = os.path.expanduser('~')
@@ -493,7 +498,8 @@ class DcsDeploy:
                 self.config_db[config]['device'] == self.args.target_device and
                 self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage
+                self.config_db[config]['storage'] == self.args.storage and
+                self.config_db[config]['rootfs_type'] == self.args.rootfs_type
             ):
                 return True
                 
@@ -506,6 +512,7 @@ class DcsDeploy:
             print('L4T version:', self.config_db[config]['l4t_version'])
             print('Board:', self.config_db[config]['board'])
             print('Storage:', self.config_db[config]['storage'])
+            print('Rootfs type:', self.config_db[config]['rootfs_type'])
             print('====================')
             print()
 
@@ -519,7 +526,8 @@ class DcsDeploy:
                 self.config_db[config]['device'] == self.args.target_device and
                 self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage
+                self.config_db[config]['storage'] == self.args.storage and
+                self.config_db[config]['rootfs_type'] == self.args.rootfs_type
             ):
                 self.config = self.config_db[config]
                 self.current_config_name = config
