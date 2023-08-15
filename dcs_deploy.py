@@ -159,6 +159,13 @@ class DcsDeploy:
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
+        self.resource_paths = {
+            "rootfs": self.rootfs_file_path,
+            "l4t": self.l4t_file_path,
+            "nvidia_overlay": self.nvidia_overlay_file_path,
+            "airvolute_overlay": self.airvolute_overlay_file_path
+        }
+
         if self.config['device'] == 'xavier_nx': 
             self.device_type = 't194'
 
@@ -188,6 +195,15 @@ class DcsDeploy:
                 print("exitting!")
                 exit(1)
 
+    def check_missing_resources(self):
+        for resouce in self.resource_paths:
+            if os.path.isfile(self.resource_paths[resouce]):
+                continue
+            # return only resource which is possible to download
+            if(self.get_resource_url(resouce) != None):
+                return resouce
+        return None
+
     def compare_downloaded_source(self):
         """Compares current input of the program with previously 
         downloaded sources.
@@ -203,6 +219,14 @@ class DcsDeploy:
 
             for config in downloaded_configs:
                 if config == self.selected_config_name:
+                    while  (missing_resource := self.check_missing_resources()) != None:
+                        print("missing resource '%s'. Going to download it!" % missing_resource)    
+                    
+                        ret = self.download_resource(missing_resource, self.resource_paths[missing_resource])
+                        if ret < 0:
+                            print("can't download resource '" + missing_resource + "'!.")
+                            print("exitting!")
+                            exit(4)
                     print('Resources for your config are already downloaded!')
                     return True
             
@@ -211,14 +235,45 @@ class DcsDeploy:
 
         else:
             return False
+    
+    def get_resource_url(self, resource_name):
+        url = self.config[resource_name]
+        if url == None or url == "none" or url == "":
+            return None
+        return url
+    
+    def yes_no_question(self, question):
+        
+        yes_choices = ['yes', 'y']
+        no_choices = ['no', 'n']
+
+        while True:
+            user_input = input(question + "([y]es/[N]o): ")
+            if user_input.lower() in yes_choices:
+                return True
+            elif user_input.lower() in no_choices:
+                return False
+            elif user_input == "":
+                return False
+            else:
+                print('Type yes or no')
+            
 
     def download_resource(self, resource_name, dst_path):
         if resource_name  not in self.config:
             return 1
-        if self.config[resource_name] == None:
+        if self.get_resource_url(resource_name) == None:
             print("Skipping downloading resource" + resource_name)
-            return 0
+            return 2
         print("Downloading %s:" % resource_name)
+        # remove any existing temporary files
+        cmd_exec("rm -f " + dst_path + "*.tmp")
+
+        #check if file already exist
+        if os.path.isfile(dst_path):
+            yes = self.yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
+            if yes == False:
+                return 0
         try:
             wget.download(
                 self.config[resource_name],
@@ -226,18 +281,16 @@ class DcsDeploy:
             )
         except Exception as e:
             print("Got error while downloading resource", resource_name, "Error: ", str(e))
-            return 2
+            return -1
         print()
         return 0
     
     def download_resources(self):
         if self.compare_downloaded_source():
             return
-
-        self.download_resource("rootfs",self.rootfs_file_path)
-        self.download_resource("l4t", self.l4t_file_path)
-        self.download_resource("nvidia_overlay", self.nvidia_overlay_file_path)
-        self.download_resource("airvolute_overlay", self.airvolute_overlay_file_path)
+        
+        for resource in self.resource_paths:
+            self.download_resource(resource, self.resource_paths[resource])    
 
         self.save_downloaded_versions()
 
