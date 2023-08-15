@@ -159,14 +159,9 @@ class DcsDeploy:
             os.makedirs(self.flash_path)
         else:
             print('Removing previous L4T folder ...')
-            subprocess.call(
-                [
-                    'sudo',
-                    'rm', 
-                    '-r', 
-                    self.flash_path,
-                ]
-            )
+
+            cmd_exec("sudo rm -r " + self.flash_path)
+            
             os.makedirs(self.flash_path)
 
     def compare_downloaded_source(self):
@@ -245,19 +240,14 @@ class DcsDeploy:
         print('Extracting Root Filesystem ...')
         stop_event.clear()
         print('This part needs sudo privilegies:')
+
         # Run sudo identification
-        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+
         rootfs_animation_thread = self.run_loading_animation(stop_event)
-        subprocess.call(
-            [
-                'sudo',
-                'tar', 
-                'xpf', 
-                self.rootfs_file_path,
-                '--directory', 
-                self.rootfs_extract_dir
-            ]
-        )
+
+        cmd_exec("sudo tar xpf " + self.rootfs_file_path + " --directory " + self.rootfs_extract_dir)
+
         stop_event.set()
         rootfs_animation_thread.join()
 
@@ -278,19 +268,7 @@ class DcsDeploy:
         subprocess.call(['/usr/bin/sudo', self.apply_binaries_path, '-t  False'])
 
         print('Creating default user ...')
-        subprocess.call(
-            [
-                'sudo',
-                self.create_user_script_path,
-                '-u',
-                'dcs_user',
-                '-p',
-                'dronecore',
-                '-n',
-                'dcs',
-                '--accept-license'
-            ]
-        )
+        cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
 
         self.install_first_boot_setup()
 
@@ -308,168 +286,50 @@ class DcsDeploy:
         very first boot.
         """
         # Create firstboot check file.
-        subprocess.call(
-            [
-                'sudo',
-                'touch',
-                self.first_boot_file_path
-            ]
-        )
+        cmd_exec("sudo touch " + self.first_boot_file_path)
 
         # Setup systemd first boot
-        service_destination = os.path.join(
-            self.rootfs_extract_dir,
-            'etc',
-            'systemd',
-            'system'
-        )
+        service_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'systemd', 'system')
 
         # Bin destination
-        bin_destination = os.path.join(
-            self.rootfs_extract_dir,
-            'usr',
-            'local',
-            'bin'
-        )
+        bin_destination = os.path.join(self.rootfs_extract_dir, 'usr', 'local', 'bin')
 
         # uhubctl destination
-        uhubctl_destination = os.path.join(
-            self.rootfs_extract_dir,
-            'home',
-            'dcs_user'
-        )
+        uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
         
         # USB3_CONTROL service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.service',
-                service_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.sh',
-                bin_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'usb3_control.sh'),
-            ]
-        )
-
+        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
+        
         # USB3_CONTROL service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.service',
-                service_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb3_control/usb3_control.service " +  service_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.sh',
-                bin_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'usb3_control.sh'),
-            ]
-        )
+        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
 
         # USB_HUB_CONTROL service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb_hub_control/usb_hub_control.service',
-                service_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb_hub_control/usb_hub_control.sh',
-                bin_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'usb_hub_control.sh'),
-            ]
-        )
+        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
 
         # FIRST_BOOT service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/dcs_first_boot.service',
-                service_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/dcs_first_boot.sh',
-                bin_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'dcs_first_boot.sh'),
-            ]
-        )
+        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
 
-        subprocess.call(
-            [
-                'sudo',
-                'ln',
-                '-s',
-                '/etc/systemd/system/dcs_first_boot.service',
-                os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service')
-            ]
-        )
+        cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
+                 os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
 
         # uhubctl
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/uhubctl_2.1.0-1_arm64.deb',
-                uhubctl_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
 
     def check_compatibility(self):
         """
@@ -513,41 +373,21 @@ class DcsDeploy:
 
     def flash(self):
         flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
+        
+        cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
 
-        if (self.config['storage'] == 'emmc' and
-            self.config['device'] == 'xavier_nx'):
+        if (self.config['storage'] == 'emmc' and self.config['device'] == 'xavier_nx'):
             os.chdir(self.l4t_root_dir)
 
-            subprocess.call(
-            [
-                'sudo',
-                'bash',
-                flash_script_path,
-                'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
-                'mmcblk0p1'
-            ]
-        )
+            cmd_exec("sudo bash " + flash_script_path + " " + cfg_file_name + " mmcblk0p1")
 
-        if (self.config['storage'] == 'nvme' and
-            self.config['device'] == 'xavier_nx'):
+        if (self.config['storage'] == 'nvme' and self.config['device'] == 'xavier_nx'):
             external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
             os.chdir(self.l4t_root_dir)
 
-            subprocess.call(
-            [
-                'sudo',
-                'bash',
-                flash_script_path,
-                '--external-only',
-                '--external-device',
-                'nvme0n1p1',
-                '-c',
-                external_xml_config_path,
-                '--showlogs',
-                'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
-                'nvme0n1p1'
-            ]
-        )
+            cmd_exec("sudo bash " + flash_script_path + " --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
+                     " --showlogs " + cfg_file_name + " nvme0n1p1")
+
 
     def airvolute_flash(self):
         if not self.check_compatibility():
