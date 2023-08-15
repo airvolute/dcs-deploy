@@ -8,8 +8,7 @@ import wget
 import tarfile
 from threading import Thread, Event
 import time
-import shutil
-import git
+
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
 def cmd_exec(command_line:str) -> int:        
