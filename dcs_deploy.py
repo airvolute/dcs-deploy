@@ -39,24 +39,19 @@ class DcsDeploy:
 
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
-        subparser.add_argument(
-            'target_device', help=target_device_help)
+        subparser.add_argument('target_device', help=target_device_help)
 
         jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51].'
-        subparser.add_argument(
-            'jetpack', help=jetpack_help)
+        subparser.add_argument('jetpack', help=jetpack_help)
 
         hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2].'
-        subparser.add_argument(
-            'hwrev', help=hwrev_help)
+        subparser.add_argument('hwrev', help=hwrev_help)
         
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
-        subparser.add_argument(
-            'storage', help=storage_help)
+        subparser.add_argument('storage', help=storage_help)
         
         force_help = 'Files will be deleted, downloaded and extracted again.'
-        subparser.add_argument(
-            '--force', action='store_true',  default='', help=force_help)
+        subparser.add_argument('--force', action='store_true',  default='', help=force_help)
 
     def create_parser(self):
         """
