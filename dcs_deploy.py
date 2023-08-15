@@ -361,14 +361,21 @@ class DcsDeploy:
                 return True
                 
         return False
+    def print_config(self, config, items):
+        for item in items:
+            print("%s: %s" % (item, config[item]))
+
+    def print_user_config(self):
+        items = ["target_device", "jetpack", "hwrev", "storage" ]
+        #print("==== user configuration ====")
+        self.print_config(self.args.__dict__, items)
 
     def list_all_versions(self):
         for config in self.config_db:
-            headers = ['device', 'l4t_version', 'board', 'storage']
+            items = ['device', 'l4t_version', 'board', 'storage']
             print('====', config, '====')
-            for header in headers:
-                print("%s: %s" % (header, self.config_db[config]['device']))    
-            print('====================')
+            self.print_config(self.config_db[config], items)  
+            
             print()
 
     def load_selected_config(self):
