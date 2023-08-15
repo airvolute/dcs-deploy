@@ -212,39 +212,32 @@ class DcsDeploy:
         else:
             return False
 
+    def download_resource(self, resource_name, dst_path):
+        if resource_name  not in self.config:
+            return 1
+        if self.config[resource_name] == None:
+            print("Skipping downloading resource" + resource_name)
+            return 0
+        print("Downloading %s:" % resource_name)
+        try:
+            wget.download(
+                self.config[resource_name],
+                dst_path
+            )
+        except Exception as e:
+            print("Got error while downloading resource", resource_name, "Error: ", str(e))
+            return 2
+        print()
+        return 0
     
     def download_resources(self):
         if self.compare_downloaded_source():
             return
 
-        print('Downloading rootfs:')
-        wget.download(
-            self.config['rootfs'],
-            self.rootfs_file_path
-        )
-        print()
-
-        print('Downloading Linux For Tegra:')
-        wget.download(
-            self.config['l4t'],
-            self.l4t_file_path
-        )
-        print()
-
-        if self.config['nvidia_overlay'] != 'none':
-            print('Downloading Nvidia overlay:')
-            wget.download(
-                self.config['nvidia_overlay'],
-                self.nvidia_overlay_file_path
-            )
-            print()
-
-        print('Downloading Airvolute overlay:')
-        wget.download(
-            self.config['airvolute_overlay'],
-            self.airvolute_overlay_file_path
-        )
-        print()
+        self.download_resource("rootfs",self.rootfs_file_path)
+        self.download_resource("l4t", self.l4t_file_path)
+        self.download_resource("nvidia_overlay", self.nvidia_overlay_file_path)
+        self.download_resource("airvolute_overlay", self.airvolute_overlay_file_path)
 
         self.save_downloaded_versions()
 
