@@ -360,11 +360,10 @@ class DcsDeploy:
 
     def list_all_versions(self):
         for config in self.config_db:
+            headers = ['device', 'l4t_version', 'board', 'storage']
             print('====', config, '====')
-            print('Device:', self.config_db[config]['device'])
-            print('L4T version:', self.config_db[config]['l4t_version'])
-            print('Board:', self.config_db[config]['board'])
-            print('Storage:', self.config_db[config]['storage'])
+            for header in headers:
+                print("%s: %s" % (header, self.config_db[config]['device']))    
             print('====================')
             print()
 
