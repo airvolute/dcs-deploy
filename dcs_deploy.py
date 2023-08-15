@@ -279,13 +279,14 @@ class DcsDeploy:
         print('Applying binaries ...')
         print('This part needs sudo privilegies:')
         # Run sudo identification
-        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
-        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+        
+        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path)
 
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
 
-        subprocess.call(['/usr/bin/sudo', self.apply_binaries_path, '-t  False'])
+        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + "-t False")
 
         print('Creating default user ...')
         cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
