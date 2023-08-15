@@ -19,9 +19,16 @@ def extract(source_file_path:str, destination_path:str) -> int:
     else:
         return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path)
 
+def cmd_exist(name: str) -> bool:
+    """Check whether command `name` exist in system"""
+    return cmd_exec("which " + name + " > /dev/null") == 0
+
+def package_installed(name:str) -> bool:
+    return cmd_exec("dpkg -l " + name + "> /dev/null 2>&1") == 0
 
 class DcsDeploy:
     def __init__(self):
+        self.check_dependencies()
         self.parser = self.create_parser()
         self.args = self.parser.parse_args()
         self.sanitize_args()
@@ -167,6 +174,14 @@ class DcsDeploy:
             cmd_exec("sudo rm -r " + self.flash_path)
             
             os.makedirs(self.flash_path)
+
+    def check_dependencies(self):
+        dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2"]
+        for dependency in dependencies:
+            if package_installed(dependency) == False:
+                print("please install %s tool. eg: sudo apt-get install %s" % (dependency, dependency))
+                print("exitting!")
+                exit(1)
 
     def compare_downloaded_source(self):
         """Compares current input of the program with previously 
