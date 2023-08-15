@@ -321,13 +321,6 @@ class DcsDeploy:
         cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
 
         cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
-        
-        # USB3_CONTROL service
-        cmd_exec("sudo cp resources/usb3_control/usb3_control.service " +  service_destination)
-
-        cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
-
-        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
 
         # USB_HUB_CONTROL service
         cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
