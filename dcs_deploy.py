@@ -81,7 +81,16 @@ class DcsDeploy:
             quit()
 
     def load_db(self):
-        db_file = open('local/config_db.json')
+        """ 
+        Load db from server. 
+        Warning! currently it is local file!
+        """
+        try:
+            db_file = open('local/config_db.json')
+        except Exception as e:
+            print("could not open local/config_db.json!" + str(e))
+            print("exitting!")
+            exit(2)
 
         self.config_db = json.load(db_file)
 
