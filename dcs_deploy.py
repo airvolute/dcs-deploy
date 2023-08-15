@@ -31,6 +31,7 @@ class DcsDeploy:
         self.check_dependencies()
         self.parser = self.create_parser()
         self.args = self.parser.parse_args()
+        self.selected_config_name = None
         self.sanitize_args()
         self.load_db()
         if self.args.command != 'list':
@@ -121,13 +122,13 @@ class DcsDeploy:
         if os.path.isfile(self.downloaded_config_path):
             with open(self.downloaded_config_path, "r+") as download_dict:
                 file_data = json.load(download_dict)
-                file_data[self.current_config_name] = self.config
+                file_data[self.selected_config_name] = self.config
                 download_dict.seek(0)
                 json.dump(file_data, download_dict, indent = 4)
         else:
             with open(self.downloaded_config_path, "a") as download_dict:
                 config_to_save = {}
-                config_to_save[self.current_config_name] = self.config
+                config_to_save[self.selected_config_name] = self.config
                 json.dump(config_to_save, download_dict, indent=4)
 
     def run_loading_animation(self, event):
@@ -201,7 +202,7 @@ class DcsDeploy:
             downloaded_configs = json.load(open(self.downloaded_config_path))
 
             for config in downloaded_configs:
-                if config == self.current_config_name:
+                if config == self.selected_config_name:
                     print('Resources for your config are already downloaded!')
                     return True
             
@@ -347,20 +348,23 @@ class DcsDeploy:
         # uhubctl
         cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
 
-    def check_compatibility(self):
+    def match_selected_config(self):
         """
-        Check compatibility based on user input config.
+        Get selected config based on loaded database from console arguments enterred by user
         """
+        # do not search again
+        if self.selected_config_name != None:
+            return self.selected_config_name
+        
         for config in self.config_db:
-            if (
-                self.config_db[config]['device'] == self.args.target_device and
+            if (self.config_db[config]['device'] == self.args.target_device and
                 self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage
-            ):
-                return True
+                self.config_db[config]['storage'] == self.args.storage):
+                return config
                 
-        return False
+        return None
+    
     def print_config(self, config, items):
         for item in items:
             print("%s: %s" % (item, config[item]))
@@ -379,19 +383,18 @@ class DcsDeploy:
             print()
 
     def load_selected_config(self):
-        if not self.check_compatibility():
-            print('Unsupported configuration!')
-            return
-        
-        for config in self.config_db:
-            if (
-                self.config_db[config]['device'] == self.args.target_device and
-                self.config_db[config]['l4t_version'] == self.args.jetpack and
-                self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage
-            ):
-                self.config = self.config_db[config]
-                self.current_config_name = config
+        config = self.match_selected_config()
+        if config == None:
+            print('WARNING! Unsupported configuration! - enterred:')
+            self.print_user_config()
+            print()
+            print("Please use one configuration from list:")
+            self.list_all_versions()
+            print("Exitting!")
+            exit(3)
+       
+        self.config = self.config_db[config]
+        self.selected_config_name = config
 
     def flash(self):
         flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
@@ -412,7 +415,7 @@ class DcsDeploy:
 
 
     def airvolute_flash(self):
-        if not self.check_compatibility():
+        if self.match_selected_config() == None:
             print('Unsupported configuration!')
             return
 
