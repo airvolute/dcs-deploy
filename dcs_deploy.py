@@ -5,7 +5,6 @@ import json
 import subprocess
 import os
 import wget
-import tarfile
 from threading import Thread, Event
 import time
 
@@ -13,6 +12,12 @@ import time
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
 def cmd_exec(command_line:str) -> int:        
     return subprocess.call(command_line, shell=True)
+
+def extract(source_file_path:str, destination_path:str) -> int:
+    if ".tbz2" in source_file_path or ".tar.bz2" in source_file_path:
+        return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path + " -I lbzip2")
+    else:
+        return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path)
 
 
 class DcsDeploy:
@@ -229,9 +234,10 @@ class DcsDeploy:
         # Extract Linux For Tegra
         print('Extracting Linux For Tegra ...')
         stop_event.clear()
-        tar = tarfile.open(self.l4t_file_path)
         l4t_animation_thread = self.run_loading_animation(stop_event)
-        tar.extractall(path=self.flash_path)
+        
+        extract(self.l4t_file_path, self.flash_path)
+        
         stop_event.set()
         l4t_animation_thread.join()
 
@@ -245,7 +251,7 @@ class DcsDeploy:
 
         rootfs_animation_thread = self.run_loading_animation(stop_event)
 
-        cmd_exec("sudo tar xpf " + self.rootfs_file_path + " --directory " + self.rootfs_extract_dir)
+        extract(self.rootfs_file_path, self.rootfs_extract_dir)
 
         stop_event.set()
         rootfs_animation_thread.join()
@@ -272,12 +278,10 @@ class DcsDeploy:
         self.install_first_boot_setup()
 
     def prepare_airvolute_overlay(self):
-        tar = tarfile.open(self.airvolute_overlay_file_path)
-        tar.extractall(self.flash_path)
+        extract(self.airvolute_overlay_file_path, self.flash_path)
 
     def prepare_nvidia_overlay(self):
-        tar = tarfile.open(self.nvidia_overlay_file_path)
-        tar.extractall(self.flash_path)
+        extract(self.nvidia_overlay_file_path, self.flash_path)
 
     def install_first_boot_setup(self):
         """
