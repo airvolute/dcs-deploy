@@ -55,6 +55,9 @@ class DcsDeploy:
         
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
         subparser.add_argument('storage', help=storage_help)
+
+        rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
+        subparser.add_argument('rootfs_type', help=rootfs_type_help)
         
         force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument('--force', action='store_true',  default='', help=force_help)
@@ -146,7 +149,8 @@ class DcsDeploy:
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
             self.config['board'] + '_' +
-            self.config['l4t_version']
+            self.config['l4t_version'] + '_' +
+            self.config['rootfs_type']
         )
 
         self.home = os.path.expanduser('~')
@@ -411,7 +415,8 @@ class DcsDeploy:
             if (self.config_db[config]['device'] == self.args.target_device and
                 self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage):
+                self.config_db[config]['storage'] == self.args.storage and
+                self.config_db[config]['rootfs_type'] == self.args.rootfs_type):
                 return config
                 
         return None
@@ -421,13 +426,13 @@ class DcsDeploy:
             print("%s: %s" % (item, config[item]))
 
     def print_user_config(self):
-        items = ["target_device", "jetpack", "hwrev", "storage" ]
+        items = ["target_device", "jetpack", "hwrev", "storage", "rootfs_type" ]
         #print("==== user configuration ====")
         self.print_config(self.args.__dict__, items)
 
     def list_all_versions(self):
         for config in self.config_db:
-            items = ['device', 'l4t_version', 'board', 'storage']
+            items = ['device', 'l4t_version', 'board', 'storage', 'rootfs_type']
             print('====', config, '====')
             self.print_config(self.config_db[config], items)  
             
