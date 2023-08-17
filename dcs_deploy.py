@@ -31,6 +31,21 @@ def cmd_exist(name: str) -> bool:
 def package_installed(name:str) -> bool:
     return cmd_exec("dpkg -l " + name + "> /dev/null 2>&1") == 0
 
+def yes_no_question(self, question):
+    yes_choices = ['yes', 'y']
+    no_choices = ['no', 'n']
+
+    while True:
+        user_input = input(question + "([y]es/[N]o): ")
+        if user_input.lower() in yes_choices:
+            return True
+        elif user_input.lower() in no_choices:
+            return False
+        elif user_input == "":
+            return False
+        else:
+            print('Type yes or no')
+
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
@@ -250,23 +265,6 @@ class DcsDeploy:
         if url == None or url == "none" or url == "":
             return None
         return url
-    
-    def yes_no_question(self, question):
-        
-        yes_choices = ['yes', 'y']
-        no_choices = ['no', 'n']
-
-        while True:
-            user_input = input(question + "([y]es/[N]o): ")
-            if user_input.lower() in yes_choices:
-                return True
-            elif user_input.lower() in no_choices:
-                return False
-            elif user_input == "":
-                return False
-            else:
-                print('Type yes or no')
-            
 
     def download_resource(self, resource_name, dst_path):
         if resource_name  not in self.config:
@@ -280,7 +278,7 @@ class DcsDeploy:
 
         #check if file already exist
         if os.path.isfile(dst_path):
-            yes = self.yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
+            yes = yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
             if yes == False:
                 return 0
         try:
