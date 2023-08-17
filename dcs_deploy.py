@@ -204,14 +204,15 @@ class DcsDeploy:
                 print("exitting!")
                 exit(1)
 
-    def check_missing_resources(self):
+    def get_missing_resources(self):
+        res = []
         for resouce in self.resource_paths:
             if os.path.isfile(self.resource_paths[resouce]):
                 continue
             # return only resource which is possible to download
             if(self.get_resource_url(resouce) != None):
-                return resouce
-        return None
+                res += [resouce]
+        return res
 
     def compare_downloaded_source(self):
         """Compares current input of the program with previously 
@@ -228,9 +229,8 @@ class DcsDeploy:
 
             for config in downloaded_configs:
                 if config == self.selected_config_name:
-                    while  (missing_resource := self.check_missing_resources()) != None:
+                    for missing_resource in self.get_missing_resources():
                         print("missing resource '%s'. Going to download it!" % missing_resource)    
-                    
                         ret = self.download_resource(missing_resource, self.resource_paths[missing_resource])
                         if ret < 0:
                             print("can't download resource '" + missing_resource + "'!.")
