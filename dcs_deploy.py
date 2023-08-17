@@ -10,8 +10,13 @@ import time
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
-def cmd_exec(command_line:str) -> int:        
-    return subprocess.call(command_line, shell=True)
+def cmd_exec(command_line:str) -> int:
+    try:
+        return subprocess.call(command_line, shell=True)
+    except Exception as e:
+        print("Command %s execution failed!!. Error %s" % (command_line, str(e)))
+        print("Exitting!")
+        exit(5)
 
 def extract(source_file_path:str, destination_path:str) -> int:
     if ".tbz2" in source_file_path or ".tar.bz2" in source_file_path:
