@@ -19,7 +19,7 @@ def cmd_exec(command_line:str) -> int:
         exit(5)
 
 def extract(source_file_path:str, destination_path:str) -> int:
-    if ".tbz2" in source_file_path or ".tar.bz2" in source_file_path:
+    if "tbz2" in source_file_path or "tar.bz2" in source_file_path:
         return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path + " -I lbzip2")
     else:
         return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path)
