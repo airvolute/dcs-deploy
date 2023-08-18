@@ -230,8 +230,7 @@ class DcsDeploy:
         return res
 
     def compare_downloaded_source(self):
-        """Compares current input of the program with previously 
-        downloaded sources.
+        """Compares current input of the program with previously downloaded sources. If resouces are not complete, try to fullfill them
 
         return True, if sources are already present locally.
         return False, if sources need to be downloaded.
