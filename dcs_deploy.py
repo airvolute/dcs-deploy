@@ -31,7 +31,7 @@ def cmd_exist(name: str) -> bool:
 def package_installed(name:str) -> bool:
     return cmd_exec("dpkg -l " + name + "> /dev/null 2>&1") == 0
 
-def yes_no_question(self, question):
+def yes_no_question(question):
     yes_choices = ['yes', 'y']
     no_choices = ['no', 'n']
 
