@@ -7,6 +7,7 @@ import os
 import wget
 from threading import Thread, Event
 import time
+from urllib.parse import urlparse
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
@@ -158,6 +159,19 @@ class DcsDeploy:
         t = Thread(target=self.loading_animation, args=(event,))
         t.start()
         return t
+    def get_download_file_path(self, url:str) -> str:
+        if url == None:
+            return ""
+        path = self.download_path
+        u = urlparse(url)
+        path += "/" + u.hostname
+        replace_str = "/download"
+        if "downloads" in u.path:
+            replace_str = "/downloads"
+        path += u.path.replace(replace_str, '')
+        return path
+        #return os.path.dirname(path)
+
 
     def init_filesystem(self):
         config_relative_path = (
