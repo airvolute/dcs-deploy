@@ -302,7 +302,7 @@ class DcsDeploy:
         cmd_exec("rm -f " + dst_path + "*.tmp")
 
         #check if file already exist
-        if os.path.isfile(dst_path):
+        if os.path.isfile(dst_path) and self.args.force == False:
             yes = yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
             if yes == False:
                 return 0
