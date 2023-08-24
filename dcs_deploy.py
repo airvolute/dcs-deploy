@@ -325,36 +325,31 @@ class DcsDeploy:
             self.download_resource(resource, self.resource_paths[resource])    
 
         self.save_downloaded_versions()
-
-    def prepare_sources_production(self):
+    
+    def extract_resource(self, resource, extract_path = None, need_sudo = False):
+        if extract_path == None:
+            extract_path = self.flash_path
         stop_event = Event()
-
-        # Extract Linux For Tegra
-        print('Extracting Linux For Tegra ...')
+        print('Extracting ' + resource + " ... (" + self.resource_paths[resource] + ")" )
+        if need_sudo:
+            print('This part needs sudo privilegies:')
+            # Run sudo identification
+            cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         stop_event.clear()
         l4t_animation_thread = self.run_loading_animation(stop_event)
-        
-        extract(self.resource_paths["l4t"], self.flash_path)
-        
+        ret = extract(self.resource_paths[resource], extract_path)
         stop_event.set()
         l4t_animation_thread.join()
+        return ret
+        
 
+    def prepare_sources_production(self):
+        # Extract Linux For Tegra
+        self.extract_resource("l4t")
         # Extract Root Filesystem
-        print('Extracting Root Filesystem ...')
-        stop_event.clear()
-        print('This part needs sudo privilegies:')
-
-        # Run sudo identification
-        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
-
-        rootfs_animation_thread = self.run_loading_animation(stop_event)
-
-        extract(self.resource_paths['rootfs'], self.rootfs_extract_dir)
-
-        stop_event.set()
-        rootfs_animation_thread.join()
-
-        if self.config['nvidia_overlay'] != 'none':
+        self.extract_resource("rootfs", self.rootfs_extract_dir, need_sudo=True)
+        # Extract Nvidia overlay if needed
+        if self.get_resource_url('nvidia_overlay') != None:
             print('Applying Nvidia overlay ...')
             self.prepare_nvidia_overlay()
 
@@ -377,10 +372,10 @@ class DcsDeploy:
         self.install_first_boot_setup()
 
     def prepare_airvolute_overlay(self):
-        extract(self.resource_paths['airvolute_overlay'], self.flash_path)
+        return self.extract_resource('airvolute_overlay')
 
     def prepare_nvidia_overlay(self):
-        extract(self.resource_paths['nvidia_overlay'], self.flash_path)
+        return self.extract_resource('nvidia_overlay')
 
     def install_first_boot_setup(self):
         """
