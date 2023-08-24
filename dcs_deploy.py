@@ -277,11 +277,14 @@ class DcsDeploy:
         # Handle dcs-deploy flash dir
         if not os.path.isdir(self.flash_path):
             os.makedirs(self.flash_path)
-        else:
+        elif self.args.force == True:
             print('Removing previous L4T folder ...')
+            self.cleanup_flash_dir()
 
+        self.prepare_status = PrepareSourcesStatus(os.path.join(self.flash_path, "prepare_status.json"))
+    
+    def cleanup_flash_dir(self):
             cmd_exec("sudo rm -r " + self.flash_path)
-            
             os.makedirs(self.flash_path)
 
     def check_dependencies(self):
@@ -378,6 +381,7 @@ class DcsDeploy:
             extract_path = self.flash_path
         stop_event = Event()
         print('Extracting ' + resource + " ... (" + self.resource_paths[resource] + ")" )
+        self.prepare_status.set_processing_step("extract_" + resource)
         if need_sudo:
             print('This part needs sudo privilegies:')
             # Run sudo identification
@@ -385,12 +389,20 @@ class DcsDeploy:
         stop_event.clear()
         l4t_animation_thread = self.run_loading_animation(stop_event)
         ret = extract(self.resource_paths[resource], extract_path)
+        self.prepare_status.set_status(ret)
         stop_event.set()
         l4t_animation_thread.join()
         return ret
         
 
     def prepare_sources_production(self):
+        if self.prepare_status.get_status() == True:
+            print("Binaries already prepared!. Skipping!")
+            return 0
+        else:
+            self.cleanup_flash_dir()
+            self.prepare_status.load()
+
         # Extract Linux For Tegra
         self.extract_resource("l4t")
         # Extract Root Filesystem
@@ -406,17 +418,25 @@ class DcsDeploy:
         # Run sudo identification
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         
-        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path)
+        self.prepare_status.set_processing_step("apply_binaries")
+        ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path)
+        self.prepare_status.set_status(ret)
 
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
-
-        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
+        
+        self.prepare_status.set_processing_step("apply_binaries_t")
+        ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
+        self.prepare_status.set_status(ret)
 
         print('Creating default user ...')
-        cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
+        self.prepare_status.set_processing_step("creating_default_user")
+        ret = cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
+        self.prepare_status.set_status(ret)
 
-        self.install_first_boot_setup()
+        self.prepare_status.set_processing_step("install_first_boot_setup")
+        ret = self.install_first_boot_setup()
+        self.prepare_status.set_status(ret, last_step = True)
 
     def prepare_airvolute_overlay(self):
         return self.extract_resource('airvolute_overlay')
