@@ -383,7 +383,8 @@ class DcsDeploy:
         very first boot.
         """
         # Create firstboot check file.
-        cmd_exec("sudo touch " + self.first_boot_file_path)
+        ret = 0
+        ret += cmd_exec("sudo touch " + self.first_boot_file_path)
 
         # Setup systemd first boot
         service_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'systemd', 'system')
@@ -395,31 +396,32 @@ class DcsDeploy:
         uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
         
         # USB3_CONTROL service
-        cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
 
-        cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
+        ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
 
-        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
 
         # USB_HUB_CONTROL service
-        cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
 
-        cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
+        ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
 
-        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
 
         # FIRST_BOOT service
-        cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
 
-        cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
+        ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
 
-        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
 
-        cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
+        ret += cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
                  os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
 
         # uhubctl
-        cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
+        ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
+        return ret
 
     def match_selected_config(self):
         """
