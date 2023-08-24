@@ -364,7 +364,7 @@ class DcsDeploy:
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
 
-        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + "-t False")
+        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
 
         print('Creating default user ...')
         cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
