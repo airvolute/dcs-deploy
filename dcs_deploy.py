@@ -47,6 +47,53 @@ def yes_no_question(question):
         else:
             print('Type yes or no')
 
+class PrepareSourcesStatus:
+    def __init__(self, status_file_name):
+        self.status_file_name = status_file_name
+        self.load()
+        
+    def load(self):
+        if os.path.isfile(self.status_file_name):
+            with open(self.status_file_name, "r") as status_file:
+                self.status = json.load(status_file)
+            return
+        self.status = {
+            "status" : False,
+            "last_processing_step" : "",
+            "states": {}
+        }
+
+    def save(self):
+        with open(self.status_file_name, "w") as status_file:
+            json.dump(self.status, status_file,  indent = 4)
+    
+    def set_processing_step(self, processing_step_name:str):
+        self.last_processing_step = processing_step_name
+        self.status["last_processing_step"] = processing_step_name
+        self.status["states"][processing_step_name] = -1
+        self.status["status"] = False
+        self.save()
+
+    def set_status(self, status:int, processing_step_name:str = None, last_step = False):
+        if processing_step_name == None:
+            processing_step_name = self.last_processing_step
+        states = self.status["states"]
+        states[processing_step_name] = status
+        if last_step == True:
+            # check all status codes
+            self.check_status()
+        self.save()
+    
+    def check_status(self):
+        states = self.status["states"]
+        self.status["status"] = True
+        for key in states:
+            if states[key] != 0:
+                self.status["status"] = False
+                break
+    
+    def get_status(self):
+        return self.status["status"]
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
