@@ -47,7 +47,7 @@ def yes_no_question(question):
         else:
             print('Type yes or no')
 
-class PrepareSourcesStatus:
+class ProcessingStatus:
     def __init__(self, status_file_name):
         self.status_file_name = status_file_name
         self.load()
@@ -94,6 +94,7 @@ class PrepareSourcesStatus:
     
     def get_status(self):
         return self.status["status"]
+    
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
@@ -281,7 +282,7 @@ class DcsDeploy:
             print('Removing previous L4T folder ...')
             self.cleanup_flash_dir()
 
-        self.prepare_status = PrepareSourcesStatus(os.path.join(self.flash_path, "prepare_status.json"))
+        self.prepare_status = ProcessingStatus(os.path.join(self.flash_path, "prepare_status.json"))
     
     def cleanup_flash_dir(self):
             cmd_exec("sudo rm -r " + self.flash_path)
