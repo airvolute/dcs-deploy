@@ -126,6 +126,8 @@ class DcsDeploy:
         force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument('--force', action='store_true',  default='', help=force_help)
 
+        regen_help = 'Regenerate files. Extract resources and apply them again'
+        subparser.add_argument('--regen', action='store_true',  default='', help=regen_help)
     def create_parser(self):
         """
         Create an ArgumentParser and all its options
@@ -278,7 +280,7 @@ class DcsDeploy:
         # Handle dcs-deploy flash dir
         if not os.path.isdir(self.flash_path):
             os.makedirs(self.flash_path)
-        elif self.args.force == True:
+        elif self.args.force == True or self.args.regen == True:
             print('Removing previous L4T folder ...')
             self.cleanup_flash_dir()
 
