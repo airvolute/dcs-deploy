@@ -9,6 +9,8 @@ from threading import Thread, Event
 import time
 from urllib.parse import urlparse
 
+dcs_deploy_version = "0.1.0"
+
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
 def cmd_exec(command_line:str) -> int:
@@ -100,12 +102,14 @@ class DcsDeploy:
         self.check_dependencies()
         self.parser = self.create_parser()
         self.args = self.parser.parse_args()
+        self.process_optional_args()
         self.selected_config_name = None
         self.sanitize_args()
         self.load_db()
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
+
 
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
@@ -143,8 +147,15 @@ class DcsDeploy:
         
 
         self.add_common_parser(flash)
+
+        parser.add_argument('--version', action='store_true',  default='', help="Show version")
         
         return parser
+
+    def process_optional_args(self):
+        if self.args.version == True:
+            print("dcs_deploy version: " + dcs_deploy_version)
+            exit(0)
     
     def sanitize_args(self):
         """
