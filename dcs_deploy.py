@@ -597,22 +597,53 @@ class DcsDeploy:
         self.config = self.config_db[config]
         self.selected_config_name = config
 
+    def generate_images(self):
+        self.prepare_status.change_group("images")
+        self.prepare_status.set_processing_step("generate_images")
+        print("Generating images! ...")
+        
+        os.chdir(self.l4t_root_dir)
+        
+        flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
+        cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+
+        ret = -2
+        # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
+        if (self.config['storage'] == 'emmc' and self.config['device'] == 'xavier_nx'):
+            ret = cmd_exec("sudo bash " + flash_script_path + " --no-flash " + cfg_file_name + " mmcblk0p1")
+        
+        elif (self.config['storage'] == 'nvme' and self.config['device'] == 'xavier_nx'):
+            external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
+            #file to check: initrdflashparam.txt - contains last enterred parameters
+            #--external-device nvme0n1p1 -c "/home/michal/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra/tools/kernel_flash/flash_l4t_external_custom.xml" airvolute-dcs1.2+p3668-0001-qspi-emmc nvme0n1p1
+            
+            ret = cmd_exec("sudo bash " + flash_script_path + " --no-flash --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
+                     " --showlogs " + cfg_file_name + " nvme0n1p1")
+        self.prepare_status.set_status(ret, last_step= True)
+        return ret
+
     def flash(self):
         flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
         
-        cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
-
-        if (self.config['storage'] == 'emmc' and self.config['device'] == 'xavier_nx'):
-            os.chdir(self.l4t_root_dir)
-
-            cmd_exec("sudo bash " + flash_script_path + " " + cfg_file_name + " mmcblk0p1")
-
-        if (self.config['storage'] == 'nvme' and self.config['device'] == 'xavier_nx'):
-            external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
-            os.chdir(self.l4t_root_dir)
-
-            cmd_exec("sudo bash " + flash_script_path + " --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
-                     " --showlogs " + cfg_file_name + " nvme0n1p1")
+        # generate images
+        # check commandline parameter if they are same as previous and images are already generated
+        # if already generated
+        self.prepare_status.change_group("images")
+        if self.prepare_status.is_identifier_same_as_prev() and self.prepare_status.get_status() == True:
+            print("Images already generated! Skipping generating images!")
+        else:
+            ret = self.generate_images()
+            if ret != 0:
+                print("Generating images was not sucessfull! ret = %d", ret)
+                print("Exitting!")
+                exit(7)
+        # flash device
+        print("Flash images! ...")
+        self.prepare_status.change_group("flash")
+        self.prepare_status.set_processing_step("flash_only")
+        os.chdir(self.l4t_root_dir)
+        ret = cmd_exec("sudo bash " + flash_script_path + " --flash-only")
+        self.prepare_status.set_status(ret, last_step= True)
 
 
     def airvolute_flash(self):
