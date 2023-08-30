@@ -14,7 +14,9 @@ dcs_deploy_version = "0.1.0"
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
-def cmd_exec(command_line:str) -> int:
+def cmd_exec(command_line:str, print_command = False) -> int:
+    if print_command:
+        print("calling: " + command_line)
     try:
         return subprocess.call(command_line, shell=True)
     except Exception as e:
