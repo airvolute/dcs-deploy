@@ -8,6 +8,7 @@ import wget
 from threading import Thread, Event
 import time
 from urllib.parse import urlparse
+import sys as _sys
 
 dcs_deploy_version = "0.1.0"
 
@@ -50,53 +51,96 @@ def yes_no_question(question):
             print('Type yes or no')
 
 class ProcessingStatus:
-    def __init__(self, status_file_name):
+    def __init__(self, status_file_name:str, initial_group:str = "general", default_identifier:list = None):
+        self.group = initial_group
         self.status_file_name = status_file_name
         self.load()
+        self.prev_identifier = self.status["identifier"]
+        if default_identifier == None:
+            self.status["identifier"] = _sys.argv[1:]
+            print("identifier: %s" % str(self.status["identifier"]))
+        else:
+            self.status["identifier"] = default_identifier
         
     def load(self):
         if os.path.isfile(self.status_file_name):
             with open(self.status_file_name, "r") as status_file:
                 self.status = json.load(status_file)
-            return
+            #check if old status is loaded without groups. If yes, regenerate status
+            if not "last_processing_step" in self.status:
+                return
         self.status = {
+            "identifier" : [],
+        }
+        self._init_group_status()
+    
+    def _init_group_status(self, group = None):
+        if group == None:
+            group = self.group
+        self.status[group] = {
             "status" : False,
             "last_processing_step" : "",
             "states": {}
         }
 
+
     def save(self):
         with open(self.status_file_name, "w") as status_file:
             json.dump(self.status, status_file,  indent = 4)
     
+    def get_prev_identifier(self):
+        return self.prev_identifier
+    
+    def get_identifier(self):
+        return self.status["identifier"]
+
+    def is_identifier_same_as_prev(self):
+        identifier = self.status["identifier"]
+        if len(identifier) != len(self.prev_identifier):
+            return False
+        if len(set(identifier).difference(set(self.prev_identifier))) != 0:
+            print("identifier not same as previous!")
+            return False
+        return True
+
+    def change_group(self, group):
+        self.group = group
+        if not group in self.status:
+            self._init_group_status()
+
+    
     def set_processing_step(self, processing_step_name:str):
         self.last_processing_step = processing_step_name
-        self.status["last_processing_step"] = processing_step_name
-        self.status["states"][processing_step_name] = -1
-        self.status["status"] = False
+        self.status[self.group]["last_processing_step"] = processing_step_name
+        self.status[self.group]["states"][processing_step_name] = -1
+        self.status[self.group]["status"] = False
         self.save()
 
     def set_status(self, status:int, processing_step_name:str = None, last_step = False):
         if processing_step_name == None:
             processing_step_name = self.last_processing_step
-        states = self.status["states"]
+        states = self.status[self.group]["states"]
         states[processing_step_name] = status
         if last_step == True:
             # check all status codes
             self.check_status()
         self.save()
     
-    def check_status(self):
-        states = self.status["states"]
-        self.status["status"] = True
+    def check_status(self, group = None):
+        if group == None:
+            group = self.group
+        states = self.status[group]["states"]
+        self.status[group]["status"] = True
         for key in states:
             if states[key] != 0:
-                self.status["status"] = False
+                self.status[group]["status"] = False
                 break
     
-    def get_status(self):
-        return self.status["status"]
-    
+    def get_status(self, group = None):
+        if group == None:
+            group = self.group
+        return self.status[group]["status"]
+   
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
@@ -295,7 +339,7 @@ class DcsDeploy:
             print('Removing previous L4T folder ...')
             self.cleanup_flash_dir()
 
-        self.prepare_status = ProcessingStatus(os.path.join(self.flash_path, "prepare_status.json"))
+        self.prepare_status = ProcessingStatus(os.path.join(self.flash_path, "prepare_status.json"), initial_group="prepare")
     
     def cleanup_flash_dir(self):
             cmd_exec("sudo rm -r " + self.flash_path)
