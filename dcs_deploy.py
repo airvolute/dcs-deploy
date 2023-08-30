@@ -177,7 +177,7 @@ class DcsDeploy:
         subparser.add_argument('--force', action='store_true',  default='', help=force_help)
 
         regen_help = 'Regenerate files. Extract resources and apply them again'
-        subparser.add_argument('--regen', action='store_true',  default='', help=regen_help)
+        subparser.add_argument('--regen', action='store_true', help=regen_help)
     def create_parser(self):
         """
         Create an ArgumentParser and all its options
