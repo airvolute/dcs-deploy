@@ -149,12 +149,13 @@ class DcsDeploy:
         self.parser = self.create_parser()
         self.args = self.parser.parse_args()
         self.process_optional_args()
-        self.selected_config_name = None
         self.sanitize_args()
+        self.selected_config_name = None
         self.load_db()
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
+            self.check_optional_arguments()
 
 
     def add_common_parser(self, subparser):
@@ -178,6 +179,10 @@ class DcsDeploy:
 
         regen_help = 'Regenerate files. Extract resources and apply them again'
         subparser.add_argument('--regen', action='store_true', help=regen_help)
+
+        ab_partition_help = 'Prepare ab partion for system update. Only available for nvme devices'
+        subparser.add_argument('--ab_partition', action='store_true', help=ab_partition_help)
+
     def create_parser(self):
         """
         Create an ArgumentParser and all its options
@@ -197,6 +202,12 @@ class DcsDeploy:
         parser.add_argument('--version', action='store_true',  default='', help="Show version")
         
         return parser
+
+    def check_optional_arguments(self):
+        if self.args.ab_partition == True and self.config['storage'] != 'nvme':
+            print("AB partition is allowed only for nvme devices! (%s)" % self.config['storage'])
+            print("Exitting!")
+            exit(6)
 
     def process_optional_args(self):
         if self.args.version == True:
@@ -617,10 +628,15 @@ class DcsDeploy:
         elif (self.config['storage'] == 'nvme' and self.config['device'] == 'xavier_nx'):
             external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
             #file to check: initrdflashparam.txt - contains last enterred parameters
-            #--external-device nvme0n1p1 -c "/home/michal/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra/tools/kernel_flash/flash_l4t_external_custom.xml" airvolute-dcs1.2+p3668-0001-qspi-emmc nvme0n1p1
-            
-            ret = cmd_exec("sudo bash " + flash_script_path + " --no-flash --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
-                     " --showlogs " + cfg_file_name + " nvme0n1p1")
+            optional_variables = ""
+            app_size_partition = ""
+            if self.args.ab_partition == True:
+                optional_variables = "ROOTFS_AB=1 "
+                external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+                app_size_partition = " -S 8GiB "
+
+            ret = cmd_exec("sudo " + optional_variables + flash_script_path + app_size_partition + " --no-flash --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
+                     " --showlogs " + cfg_file_name + " nvme0n1p1", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
 
