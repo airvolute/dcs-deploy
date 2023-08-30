@@ -650,6 +650,7 @@ class DcsDeploy:
         if self.match_selected_config() == None:
             print('Unsupported configuration!')
             return
+        print("matched configuration: " + self.selected_config_name)
 
         self.download_resources()
         self.prepare_sources_production()
