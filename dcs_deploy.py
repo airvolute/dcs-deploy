@@ -610,57 +610,81 @@ class DcsDeploy:
         self.config = self.config_db[config]
         self.selected_config_name = config
 
+    def setup_initrd_flashing(self):
+        os.chdir(self.l4t_root_dir)
+        #set variables for initrd flash
+        self.flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
+        
+        if self.config['device'] == 'xavier_nx':
+            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+        elif self.config['device'] == 'orin_nx':
+            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+        else:
+            print("Unknown device! [%s] exitting" % self.config['device'])
+            exit(8)
+         
+        if self.config['storage'] == 'emmc':
+            self.rootdev = "mmcblk0p1"
+        elif self.config['storage'] == 'nvme':
+            self.rootdev = "nvme0n1p1"
+            if self.args.ab_partition == True:
+                # setup multiple app partitions
+                self.ext_partition_layout = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+            else:
+                # setup no multiple app partitions
+                self.ext_partition_layout = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
+        else:
+            print("Unknown storage [%s]! exitting" % self.config['storage'])
+            exit(9)
+
     def generate_images(self):
         self.prepare_status.change_group("images")
+        # check commandline parameter if they are same as previous and images are already generated skip generation
+        if self.prepare_status.is_identifier_same_as_prev() and self.prepare_status.get_status() == True:
+            print("Images already generated! Skipping generating images!")
+            return 0
+
         self.prepare_status.set_processing_step("generate_images")
+        print("-"*80)
         print("Generating images! ...")
-        
-        os.chdir(self.l4t_root_dir)
-        
-        flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
-        cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
-
         ret = -2
-        # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
-        if (self.config['storage'] == 'emmc' and self.config['device'] == 'xavier_nx'):
-            ret = cmd_exec("sudo bash " + flash_script_path + " --no-flash " + cfg_file_name + " mmcblk0p1")
-        
-        elif (self.config['storage'] == 'nvme' and self.config['device'] == 'xavier_nx'):
-            external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
-            #file to check: initrdflashparam.txt - contains last enterred parameters
-            optional_variables = ""
-            app_size_partition = ""
-            if self.args.ab_partition == True:
-                optional_variables = "ROOTFS_AB=1 "
-                external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
-                app_size_partition = " -S 8GiB "
 
-            ret = cmd_exec("sudo " + optional_variables + flash_script_path + app_size_partition + " --no-flash --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
-                     " --showlogs " + cfg_file_name + " nvme0n1p1", print_command=True)
+        # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
+        # flash internal emmc"
+        if self.config['storage'] == 'emmc':
+            ret = cmd_exec(f"sudo {self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
+        # flash external nvme drive
+        elif self.config['storage'] == 'nvme':
+            #file to check: initrdflashparam.txt - contains last enterred parameters
+            env_vars = ""
+            opt_app_size = ""
+            external_only = "--external-only" # flash only external device
+            if self.args.ab_partition == True:
+                env_vars = "ROOTFS_AB=1"
+                opt_app_size = "-S 4GiB "
+                external_only = "" # flash internal and external device
+                #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
+            ret = cmd_exec(f"sudo {env_vars} {self.flash_script_path} {opt_app_size} --no-flash {external_only} --external-device nvme0n1p1 " +
+                           f"-c {self.ext_partition_layout} --showlogs {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
 
     def flash(self):
-        flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
+        # setup flashing
+        self.setup_initrd_flashing()
         
         # generate images
-        # check commandline parameter if they are same as previous and images are already generated
-        # if already generated
-        self.prepare_status.change_group("images")
-        if self.prepare_status.is_identifier_same_as_prev() and self.prepare_status.get_status() == True:
-            print("Images already generated! Skipping generating images!")
-        else:
-            ret = self.generate_images()
-            if ret != 0:
-                print("Generating images was not sucessfull! ret = %d", ret)
-                print("Exitting!")
-                exit(7)
+        ret = self.generate_images()
+        if ret != 0:
+            print("Generating images was not sucessfull! ret = %d", ret)
+            print("Exitting!")
+            exit(7)
         # flash device
+        print("-"*80)
         print("Flash images! ...")
         self.prepare_status.change_group("flash")
         self.prepare_status.set_processing_step("flash_only")
-        os.chdir(self.l4t_root_dir)
-        ret = cmd_exec("sudo bash " + flash_script_path + " --flash-only")
+        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
 
 
