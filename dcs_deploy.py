@@ -397,6 +397,8 @@ class DcsDeploy:
                             print("can't download resource '" + missing_resource + "'!.")
                             print("exitting!")
                             exit(4)
+                        # regenerate
+                        self.cleanup_flash_dir()
                     print('Resources for your config are already downloaded!')
                     return True
             
