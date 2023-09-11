@@ -353,7 +353,9 @@ class DcsDeploy:
         self.prepare_status = ProcessingStatus(os.path.join(self.flash_path, "prepare_status.json"), initial_group="prepare")
     
     def cleanup_flash_dir(self):
-            cmd_exec("sudo rm -r " + self.flash_path)
+            print("cleanup_flash_dir...")
+            cmd_exec(f"sudo rm -rf {self.flash_path} && sync")
+            print("creating: " + self.flash_path)
             os.makedirs(self.flash_path)
 
     def check_dependencies(self):
