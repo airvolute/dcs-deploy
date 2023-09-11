@@ -147,6 +147,10 @@ class ProcessingStatus:
                 break
     
     def get_status(self, group = None):
+        #check if configuration was deleled. If yes, reload default configuration
+        if not os.path.isfile(self.status_file_name):
+            self.load()
+
         if group == None:
             group = self.group
         return self.status[group]["status"]
