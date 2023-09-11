@@ -56,29 +56,37 @@ class ProcessingStatus:
     def __init__(self, status_file_name:str, initial_group:str = "general", default_identifier:list = None):
         self.group = initial_group
         self.status_file_name = status_file_name
+        self.current_identifier = default_identifier
         self.load()
-        self.prev_identifier = self.status["identifier"]
-        if default_identifier == None:
-            self.status["identifier"] = _sys.argv[1:]
-            print("identifier: %s" % str(self.status["identifier"]))
-        else:
-            self.status["identifier"] = default_identifier
+
         
     def load(self):
         if os.path.isfile(self.status_file_name):
             with open(self.status_file_name, "r") as status_file:
                 self.status = json.load(status_file)
-            #check if old status is loaded without groups. If yes, regenerate status
-            if not "last_processing_step" in self.status:
-                return
-        self.status = {
-            "identifier" : [],
-        }
+        else:
+            self.status = {}
+        self._init_identifier()
         self._init_group_status()
     
+    def _init_identifier(self):
+        if "identifier" in self.status:
+            self.prev_identifier = self.status["identifier"]
+        else:
+            self.prev_identifier = []
+        
+        if self.current_identifier == None:
+            self.status["identifier"] = _sys.argv[1:]
+        else:
+            self.status["identifier"] = self.current_identifier
+        print("identifier: %s" % str(self.status["identifier"]))
+        print("prev_identifier: %s" % str(self.prev_identifier))
+
     def _init_group_status(self, group = None):
         if group == None:
             group = self.group
+        if group in self.status:
+            return
         self.status[group] = {
             "status" : False,
             "last_processing_step" : "",
