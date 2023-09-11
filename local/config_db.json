@@ -7,6 +7,7 @@
     "nvidia_overlay": "none",
     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
+    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
     "rootfs": "https://airvolute.com/download/dcs_deployment_testing/jp_51_clean_rootfs.tbz2",
     "rootfs_type": "minimal"
     
@@ -19,6 +20,7 @@
     "nvidia_overlay": "none",
     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
+    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
     "rootfs": "https://airvolute.com/download/dcs_deployment_testing/jp_51_clean_rootfs.tbz2",
     "rootfs_type": "minimal"
   },
@@ -30,6 +32,7 @@
     "nvidia_overlay": "none",
     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
+    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
     "rootfs_type": "full"
   },
@@ -41,6 +44,7 @@
     "nvidia_overlay": "none",
     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
+    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
     "rootfs_type": "full"
   }
