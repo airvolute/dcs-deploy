@@ -307,7 +307,7 @@ class DcsDeploy:
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
         # generate download resource paths
-        resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay"]
+        resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
         self.resource_paths = {}
 
         for res_name in resource_keys:
@@ -468,6 +468,10 @@ class DcsDeploy:
         self.prepare_status.set_processing_step("creating_default_user")
         ret = cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
         self.prepare_status.set_status(ret)
+
+        if self.get_resource_url('nv_ota_tools') != None:
+            print('Applying Nvidia OTA tools ...')
+            ret = self.extract_resource('nv_ota_tools')
 
         self.prepare_status.set_processing_step("install_first_boot_setup")
         ret = self.install_first_boot_setup()
