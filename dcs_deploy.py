@@ -74,6 +74,10 @@ class DcsDeploy:
         rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
         subparser.add_argument('rootfs_type', help=rootfs_type_help)
         
+        rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
+        subparser.add_argument(
+            'rootfs_type', help=rootfs_type_help)
+        
         force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument('--force', action='store_true',  default='', help=force_help)
 
@@ -206,9 +210,7 @@ class DcsDeploy:
             os.makedirs(self.flash_path)
         else:
             print('Removing previous L4T folder ...')
-
             cmd_exec("sudo rm -r " + self.flash_path)
-            
             os.makedirs(self.flash_path)
 
     def check_dependencies(self):
@@ -288,6 +290,7 @@ class DcsDeploy:
         except Exception as e:
             print("Got error while downloading resource", resource_name, "Error: ", str(e))
             return -1
+          
         print()
         return 0
     
@@ -322,7 +325,6 @@ class DcsDeploy:
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
 
         rootfs_animation_thread = self.run_loading_animation(stop_event)
-
         extract(self.rootfs_file_path, self.rootfs_extract_dir)
 
         stop_event.set()
@@ -336,18 +338,15 @@ class DcsDeploy:
         print('Applying binaries ...')
         print('This part needs sudo privilegies:')
         # Run sudo identification
-        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
-        
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")   
         cmd_exec("/usr/bin/sudo " + self.apply_binaries_path)
+
 
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
-
         cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + "-t False")
-
         print('Creating default user ...')
         cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
-
         self.install_first_boot_setup()
 
     def prepare_airvolute_overlay(self):
@@ -375,25 +374,18 @@ class DcsDeploy:
         
         # USB3_CONTROL service
         cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
-
         cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
-
         cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
 
         # USB_HUB_CONTROL service
         cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
-
         cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
-
         cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
 
         # FIRST_BOOT service
         cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
-
         cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
-
         cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
-
         cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
                  os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
 
@@ -456,7 +448,6 @@ class DcsDeploy:
 
         if (self.config['storage'] == 'emmc' and self.config['device'] == 'xavier_nx'):
             os.chdir(self.l4t_root_dir)
-
             cmd_exec("sudo bash " + flash_script_path + " " + cfg_file_name + " mmcblk0p1")
 
         if (self.config['storage'] == 'nvme' and self.config['device'] == 'xavier_nx'):
@@ -465,7 +456,6 @@ class DcsDeploy:
 
             cmd_exec("sudo bash " + flash_script_path + " --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
                      " --showlogs " + cfg_file_name + " nvme0n1p1")
-
 
     def airvolute_flash(self):
         if self.match_selected_config() == None:

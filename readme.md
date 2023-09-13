@@ -8,6 +8,7 @@
 sudo apt install qemu-user-static sshpass abootimg lbzip2  
 ```    
 ### Python
+
 ```
 pip install wget  
 ```
@@ -21,11 +22,11 @@ cd /path/to/dcs-deploy
 ```
 - **run dcs_deploy.py**:
 ```
-python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme
+python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme full
 ```
 or
 ```
-python3 dcs_deploy.py flash xavier_nx 51 1.2 emmc
+python3 dcs_deploy.py flash xavier_nx 51 1.2 emmc full
 ```
 
 # Flashing the device again with existing config
