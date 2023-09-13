@@ -8,9 +8,6 @@
 sudo apt install qemu-user-static sshpass abootimg lbzip2  
 ```    
 ### Python
-```
-pip install gitpython
-```
 
 ```
 pip install wget  
