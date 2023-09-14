@@ -5,17 +5,53 @@ import json
 import subprocess
 import os
 import wget
-import tarfile
 from threading import Thread, Event
 import time
-import shutil
-import git
 
+
+# example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
+def cmd_exec(command_line:str) -> int:
+    try:
+        return subprocess.call(command_line, shell=True)
+    except Exception as e:
+        print("Command %s execution failed!!. Error %s" % (command_line, str(e)))
+        print("Exitting!")
+        exit(5)
+
+def extract(source_file_path:str, destination_path:str) -> int:
+    if "tbz2" in source_file_path or "tar.bz2" in source_file_path:
+        return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path + " -I lbzip2")
+    else:
+        return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path)
+
+def cmd_exist(name: str) -> bool:
+    """Check whether command `name` exist in system"""
+    return cmd_exec("which " + name + " > /dev/null") == 0
+
+def package_installed(name:str) -> bool:
+    return cmd_exec("dpkg -l " + name + "> /dev/null 2>&1") == 0
+
+def yes_no_question(question):
+    yes_choices = ['yes', 'y']
+    no_choices = ['no', 'n']
+
+    while True:
+        user_input = input(question + "([y]es/[N]o): ")
+        if user_input.lower() in yes_choices:
+            return True
+        elif user_input.lower() in no_choices:
+            return False
+        elif user_input == "":
+            return False
+        else:
+            print('Type yes or no')
 
 class DcsDeploy:
     def __init__(self):
+        self.check_dependencies()
         self.parser = self.create_parser()
         self.args = self.parser.parse_args()
+        self.selected_config_name = None
         self.sanitize_args()
         self.load_db()
         if self.args.command != 'list':
@@ -24,28 +60,26 @@ class DcsDeploy:
 
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
-        subparser.add_argument(
-            'target_device', help=target_device_help)
+        subparser.add_argument('target_device', help=target_device_help)
 
         jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51].'
-        subparser.add_argument(
-            'jetpack', help=jetpack_help)
+        subparser.add_argument('jetpack', help=jetpack_help)
 
         hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2].'
-        subparser.add_argument(
-            'hwrev', help=hwrev_help)
+        subparser.add_argument('hwrev', help=hwrev_help)
         
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
-        subparser.add_argument(
-            'storage', help=storage_help)
+        subparser.add_argument('storage', help=storage_help)
+
+        rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
+        subparser.add_argument('rootfs_type', help=rootfs_type_help)
         
         rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
         subparser.add_argument(
             'rootfs_type', help=rootfs_type_help)
         
         force_help = 'Files will be deleted, downloaded and extracted again.'
-        subparser.add_argument(
-            '--force', action='store_true',  default='', help=force_help)
+        subparser.add_argument('--force', action='store_true',  default='', help=force_help)
 
     def create_parser(self):
         """
@@ -75,7 +109,16 @@ class DcsDeploy:
             quit()
 
     def load_db(self):
-        db_file = open('local/config_db.json')
+        """ 
+        Load db from server. 
+        Warning! currently it is local file!
+        """
+        try:
+            db_file = open('local/config_db.json')
+        except Exception as e:
+            print("could not open local/config_db.json!" + str(e))
+            print("exitting!")
+            exit(2)
 
         self.config_db = json.load(db_file)
 
@@ -106,13 +149,13 @@ class DcsDeploy:
         if os.path.isfile(self.downloaded_config_path):
             with open(self.downloaded_config_path, "r+") as download_dict:
                 file_data = json.load(download_dict)
-                file_data[self.current_config_name] = self.config
+                file_data[self.selected_config_name] = self.config
                 download_dict.seek(0)
                 json.dump(file_data, download_dict, indent = 4)
         else:
             with open(self.downloaded_config_path, "a") as download_dict:
                 config_to_save = {}
-                config_to_save[self.current_config_name] = self.config
+                config_to_save[self.selected_config_name] = self.config
                 json.dump(config_to_save, download_dict, indent=4)
 
     def run_loading_animation(self, event):
@@ -144,6 +187,13 @@ class DcsDeploy:
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
+        self.resource_paths = {
+            "rootfs": self.rootfs_file_path,
+            "l4t": self.l4t_file_path,
+            "nvidia_overlay": self.nvidia_overlay_file_path,
+            "airvolute_overlay": self.airvolute_overlay_file_path
+        }
+
         if self.config['device'] == 'xavier_nx': 
             self.device_type = 't194'
 
@@ -160,25 +210,31 @@ class DcsDeploy:
             os.makedirs(self.flash_path)
         else:
             print('Removing previous L4T folder ...')
-            try:
-                subprocess.call(
-                    [
-                        'sudo',
-                        'rm', 
-                        '-r', 
-                        self.flash_path,
-                    ]
-                )
-            except subprocess.CalledProcessError as e:
-                print('Removing previous L4T folder failed:')
-                print(e.output)
-                quit()
 
+            cmd_exec("sudo rm -r " + self.flash_path)
+            
             os.makedirs(self.flash_path)
 
+    def check_dependencies(self):
+        dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2"]
+        for dependency in dependencies:
+            if package_installed(dependency) == False:
+                print("please install %s tool. eg: sudo apt-get install %s" % (dependency, dependency))
+                print("exitting!")
+                exit(1)
+
+    def get_missing_resources(self):
+        res = []
+        for resouce in self.resource_paths:
+            if os.path.isfile(self.resource_paths[resouce]):
+                continue
+            # return only resource which is possible to download
+            if(self.get_resource_url(resouce) != None):
+                res += [resouce]
+        return res
+
     def compare_downloaded_source(self):
-        """Compares current input of the program with previously 
-        downloaded sources.
+        """Compares current input of the program with previously downloaded sources. If resouces are not complete, try to fullfill them
 
         return True, if sources are already present locally.
         return False, if sources need to be downloaded.
@@ -190,7 +246,14 @@ class DcsDeploy:
             downloaded_configs = json.load(open(self.downloaded_config_path))
 
             for config in downloaded_configs:
-                if config == self.current_config_name:
+                if config == self.selected_config_name:
+                    for missing_resource in self.get_missing_resources():
+                        print("missing resource '%s'. Going to download it!" % missing_resource)    
+                        ret = self.download_resource(missing_resource, self.resource_paths[missing_resource])
+                        if ret < 0:
+                            print("can't download resource '" + missing_resource + "'!.")
+                            print("exitting!")
+                            exit(4)
                     print('Resources for your config are already downloaded!')
                     return True
             
@@ -199,56 +262,45 @@ class DcsDeploy:
 
         else:
             return False
+    
+    def get_resource_url(self, resource_name):
+        url = self.config[resource_name]
+        if url == None or url == "none" or url == "":
+            return None
+        return url
 
+    def download_resource(self, resource_name, dst_path):
+        if resource_name  not in self.config:
+            return 1
+        if self.get_resource_url(resource_name) == None:
+            print("Skipping downloading resource" + resource_name)
+            return 2
+        print("Downloading %s:" % resource_name)
+        # remove any existing temporary files
+        cmd_exec("rm -f " + dst_path + "*.tmp")
+
+        #check if file already exist
+        if os.path.isfile(dst_path):
+            yes = yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
+            if yes == False:
+                return 0
+        try:
+            wget.download(
+                self.config[resource_name],
+                dst_path
+            )
+        except Exception as e:
+            print("Got error while downloading resource", resource_name, "Error: ", str(e))
+            return -1
+        print()
+        return 0
     
     def download_resources(self):
         if self.compare_downloaded_source():
             return
-
-        print('Downloading rootfs:')
-        try:
-            wget.download(
-                self.config['rootfs'],
-                self.rootfs_file_path
-            )
-        except Exception as e:
-            print("Downloading rootfs failed, check internet connection!")
-            quit()
-        print()
-
-        try:
-            print('Downloading Linux For Tegra:')
-            wget.download(
-                self.config['l4t'],
-                self.l4t_file_path
-            )
-        except Exception as e:
-            print("Downloading L4T failed, check internet connection!")
-            quit()
-        print()
-
-        if self.config['nvidia_overlay'] != 'none':
-            print('Downloading Nvidia overlay:')
-            try:
-                wget.download(
-                    self.config['nvidia_overlay'],
-                    self.nvidia_overlay_file_path
-                )
-            except Exception as e:
-                print("Downloading nvidia overlay failed, check internet connection!")
-                quit()
-            print()
-
-        print('Downloading Airvolute overlay:')
-        try:
-            wget.download(
-                self.config['airvolute_overlay'],
-                self.airvolute_overlay_file_path
-            )
-        except Exception as e:
-            print("Downloading Airvolute overlay failed, check internet connection!")
-            quit()
-        print()
+        
+        for resource in self.resource_paths:
+            self.download_resource(resource, self.resource_paths[resource])    
 
         self.save_downloaded_versions()
 
@@ -258,9 +310,10 @@ class DcsDeploy:
         # Extract Linux For Tegra
         print('Extracting Linux For Tegra ...')
         stop_event.clear()
-        tar = tarfile.open(self.l4t_file_path)
         l4t_animation_thread = self.run_loading_animation(stop_event)
-        tar.extractall(path=self.flash_path)
+        
+        extract(self.l4t_file_path, self.flash_path)
+        
         stop_event.set()
         l4t_animation_thread.join()
 
@@ -268,25 +321,13 @@ class DcsDeploy:
         print('Extracting Root Filesystem ...')
         stop_event.clear()
         print('This part needs sudo privilegies:')
+
         # Run sudo identification
-        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+
         rootfs_animation_thread = self.run_loading_animation(stop_event)
 
-        try:
-            subprocess.call(
-                [
-                    'sudo',
-                    'tar', 
-                    'xpf', 
-                    self.rootfs_file_path,
-                    '--directory', 
-                    self.rootfs_extract_dir
-                ]
-            )
-        except subprocess.CalledProcessError as e:
-            print('Extracting Root Filesystem failed:')
-            print(e.output)
-            quit()
+        extract(self.rootfs_file_path, self.rootfs_extract_dir)
 
         stop_event.set()
         rootfs_animation_thread.join()
@@ -299,54 +340,25 @@ class DcsDeploy:
         print('Applying binaries ...')
         print('This part needs sudo privilegies:')
         # Run sudo identification
-        subprocess.call(["/usr/bin/sudo", "/usr/bin/id"], stdout=subprocess.DEVNULL)
-
-        try:
-            subprocess.call(['/usr/bin/sudo', self.apply_binaries_path])
-        except subprocess.CalledProcessError as e:
-            print('Apply binaries failed:')
-            print(e.output)
-            quit()
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+        
+        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path)
 
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
 
-        try: 
-            subprocess.call(['/usr/bin/sudo', self.apply_binaries_path, '-t  False'])
-        except subprocess.CalledProcessError as e:
-            print('Apply binaries -t failed:')
-            print(e.output)
-            quit()
+        cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + "-t False")
 
         print('Creating default user ...')
-        try:
-            subprocess.call(
-                [
-                    'sudo',
-                    self.create_user_script_path,
-                    '-u',
-                    'dcs_user',
-                    '-p',
-                    'dronecore',
-                    '-n',
-                    'dcs',
-                    '--accept-license'
-                ]
-            )
-        except subprocess.CalledProcessError as e:
-            print('Creating default user failed:')
-            print(e.output)
-            quit()
+        cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
 
         self.install_first_boot_setup()
 
     def prepare_airvolute_overlay(self):
-        tar = tarfile.open(self.airvolute_overlay_file_path)
-        tar.extractall(self.flash_path)
+        extract(self.airvolute_overlay_file_path, self.flash_path)
 
     def prepare_nvidia_overlay(self):
-        tar = tarfile.open(self.nvidia_overlay_file_path)
-        tar.extractall(self.flash_path)
+        extract(self.nvidia_overlay_file_path, self.flash_path)
 
     def install_first_boot_setup(self):
         """
@@ -354,234 +366,113 @@ class DcsDeploy:
         very first boot.
         """
         # Create firstboot check file.
-        subprocess.call(
-            [
-                'sudo',
-                'touch',
-                self.first_boot_file_path
-            ]
-        )
+        cmd_exec("sudo touch " + self.first_boot_file_path)
 
         # Setup systemd first boot
-        service_destination = os.path.join(
-            self.rootfs_extract_dir,
-            'etc',
-            'systemd',
-            'system'
-        )
+        service_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'systemd', 'system')
 
         # Bin destination
-        bin_destination = os.path.join(
-            self.rootfs_extract_dir,
-            'usr',
-            'local',
-            'bin'
-        )
+        bin_destination = os.path.join(self.rootfs_extract_dir, 'usr', 'local', 'bin')
 
         # uhubctl destination
-        uhubctl_destination = os.path.join(
-            self.rootfs_extract_dir,
-            'home',
-            'dcs_user'
-        )
-
+        uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+        
         # USB3_CONTROL service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.service',
-                service_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb3_control/usb3_control.sh',
-                bin_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'usb3_control.sh'),
-            ]
-        )
+        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
 
         # USB_HUB_CONTROL service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb_hub_control/usb_hub_control.service',
-                service_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/usb_hub_control/usb_hub_control.sh',
-                bin_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'usb_hub_control.sh'),
-            ]
-        )
+        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
 
         # FIRST_BOOT service
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/dcs_first_boot.service',
-                service_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/dcs_first_boot.sh',
-                bin_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
 
-        subprocess.call(
-            [
-                'sudo',
-                'chmod',
-                '+x',
-                os.path.join(bin_destination,'dcs_first_boot.sh'),
-            ]
-        )
+        cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
 
-        subprocess.call(
-            [
-                'sudo',
-                'ln',
-                '-s',
-                '/etc/systemd/system/dcs_first_boot.service',
-                os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service')
-            ]
-        )
+        cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
+                 os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
 
         # uhubctl
-        subprocess.call(
-            [
-                'sudo',
-                'cp',
-                'resources/uhubctl_2.1.0-1_arm64.deb',
-                uhubctl_destination
-            ]
-        )
+        cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
 
-    def check_compatibility(self):
+    def match_selected_config(self):
         """
-        Check compatibility based on user input config.
+        Get selected config based on loaded database from console arguments enterred by user
         """
+        # do not search again
+        if self.selected_config_name != None:
+            return self.selected_config_name
+        
         for config in self.config_db:
-            if (
-                self.config_db[config]['device'] == self.args.target_device and
+            if (self.config_db[config]['device'] == self.args.target_device and
                 self.config_db[config]['l4t_version'] == self.args.jetpack and
                 self.config_db[config]['board'] == self.args.hwrev and
                 self.config_db[config]['storage'] == self.args.storage and
-                self.config_db[config]['rootfs_type'] == self.args.rootfs_type
-            ):
-                return True
+                self.config_db[config]['rootfs_type'] == self.args.rootfs_type):
+                return config
                 
-        return False
+        return None
+    
+    def print_config(self, config, items):
+        for item in items:
+            print("%s: %s" % (item, config[item]))
+
+    def print_user_config(self):
+        items = ["target_device", "jetpack", "hwrev", "storage", "rootfs_type" ]
+        #print("==== user configuration ====")
+        self.print_config(self.args.__dict__, items)
 
     def list_all_versions(self):
         for config in self.config_db:
+            items = ['device', 'l4t_version', 'board', 'storage', 'rootfs_type']
             print('====', config, '====')
-            print('Device:', self.config_db[config]['device'])
-            print('L4T version:', self.config_db[config]['l4t_version'])
-            print('Board:', self.config_db[config]['board'])
-            print('Storage:', self.config_db[config]['storage'])
-            print('Rootfs type:', self.config_db[config]['rootfs_type'])
-            print('====================')
+            self.print_config(self.config_db[config], items)  
+            
             print()
 
     def load_selected_config(self):
-        if not self.check_compatibility():
-            print('Unsupported configuration!')
-            return
-        
-        for config in self.config_db:
-            if (
-                self.config_db[config]['device'] == self.args.target_device and
-                self.config_db[config]['l4t_version'] == self.args.jetpack and
-                self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage and
-                self.config_db[config]['rootfs_type'] == self.args.rootfs_type
-            ):
-                self.config = self.config_db[config]
-                self.current_config_name = config
+        config = self.match_selected_config()
+        if config == None:
+            print('WARNING! Unsupported configuration! - enterred:')
+            self.print_user_config()
+            print()
+            print("Please use one configuration from list:")
+            self.list_all_versions()
+            print("Exitting!")
+            exit(3)
+       
+        self.config = self.config_db[config]
+        self.selected_config_name = config
 
     def flash(self):
         flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
+        
+        cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
 
-        if (self.config['storage'] == 'emmc' and
-            self.config['device'] == 'xavier_nx'):
+        if (self.config['storage'] == 'emmc' and self.config['device'] == 'xavier_nx'):
             os.chdir(self.l4t_root_dir)
 
-            try:
-                subprocess.call(
-                    [
-                        'sudo',
-                        'bash',
-                        flash_script_path,
-                        'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
-                        'mmcblk0p1'
-                    ]
-                )
-            except subprocess.CalledProcessError as e:
-                print('Nvidia initrd flash script failed:')
-                print(e.output)
-                quit()
+            cmd_exec("sudo bash " + flash_script_path + " " + cfg_file_name + " mmcblk0p1")
 
-        if (self.config['storage'] == 'nvme' and
-            self.config['device'] == 'xavier_nx'):
+        if (self.config['storage'] == 'nvme' and self.config['device'] == 'xavier_nx'):
             external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
             os.chdir(self.l4t_root_dir)
 
-            try:
-                subprocess.call(
-                    [
-                        'sudo',
-                        'bash',
-                        flash_script_path,
-                        '--external-only',
-                        '--external-device',
-                        'nvme0n1p1',
-                        '-c',
-                        external_xml_config_path,
-                        '--showlogs',
-                        'airvolute-dcs' + self.config['board'] + '+p3668-0001-qspi-emmc', 
-                        'nvme0n1p1'
-                    ]
-                )
-            except subprocess.CalledProcessError as e:
-                print('Nvidia initrd flash script failed:')
-                print(e.output)
-                quit()
+            cmd_exec("sudo bash " + flash_script_path + " --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
+                     " --showlogs " + cfg_file_name + " nvme0n1p1")
+
 
     def airvolute_flash(self):
-        if not self.check_compatibility():
+        if self.match_selected_config() == None:
             print('Unsupported configuration!')
             return
 
