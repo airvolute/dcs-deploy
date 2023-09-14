@@ -43,5 +43,16 @@
     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
     "rootfs_type": "full"
+  },
+  "config_5": {
+    "device": "orin_nx",
+    "storage": "nvme",
+    "board": "2.0",
+    "l4t_version": "51",
+    "nvidia_overlay": "none",
+    "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_dcs20.tbz2",
+    "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
+    "rootfs": "https://airvolute.com/download/dcs_deployment_testing/rootfs_dcs20_jp51_orin.tbz2",
+    "rootfs_type": "airvolute" 
   }
 }

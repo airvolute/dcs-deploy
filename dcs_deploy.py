@@ -343,7 +343,8 @@ class DcsDeploy:
         cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + "-t False")
         print('Creating default user ...')
         cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
-        self.install_first_boot_setup()
+        if  self.config['rootfs_type'] != 'airvolute':
+            self.install_first_boot_setup()
 
     def prepare_airvolute_overlay(self):
         extract(self.airvolute_overlay_file_path, self.flash_path)
@@ -439,8 +440,11 @@ class DcsDeploy:
 
     def flash(self):
         flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
-        
-        cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+        if (self.config['device'] == 'xavier_nx'):
+            cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+        elif (self.config['device'] == 'orin_nx'):
+            cfg_file_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+
 
         if (self.config['storage'] == 'emmc' and self.config['device'] == 'xavier_nx'):
             os.chdir(self.l4t_root_dir)
@@ -452,7 +456,14 @@ class DcsDeploy:
 
             cmd_exec("sudo bash " + flash_script_path + " --external-only --external-device nvme0n1p1 -c " + external_xml_config_path +
                      " --showlogs " + cfg_file_name + " nvme0n1p1")
+            
+        if (self.config['storage'] == 'nvme' and self.config['device'] == 'orin_nx'):
+            external_xml_config_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
+            os.chdir(self.l4t_root_dir)
 
+            cmd_exec("sudo bash " + flash_script_path + " --external-device nvme0n1p1 -c " + external_xml_config_path +
+                     " --showlogs  -p \"-c bootloader/t186ref/cfg/flash_t234_qspi.xml\" --network usb0 " + cfg_file_name + " internal")
+            
     def airvolute_flash(self):
         if self.match_selected_config() == None:
             print('Unsupported configuration!')
