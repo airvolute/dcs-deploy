@@ -74,10 +74,6 @@ class DcsDeploy:
         rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
         subparser.add_argument('rootfs_type', help=rootfs_type_help)
         
-        rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
-        subparser.add_argument(
-            'rootfs_type', help=rootfs_type_help)
-        
         force_help = 'Files will be deleted, downloaded and extracted again.'
         subparser.add_argument('--force', action='store_true',  default='', help=force_help)
 
