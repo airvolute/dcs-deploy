@@ -56,6 +56,7 @@
     "nvidia_overlay": "none",
     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_dcs20.tbz2",
     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
+    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
     "rootfs": "https://airvolute.com/download/dcs_deployment_testing/rootfs_dcs20_jp51_orin.tbz2",
     "rootfs_type": "airvolute" 
   }

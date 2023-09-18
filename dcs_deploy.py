@@ -292,7 +292,7 @@ class DcsDeploy:
 
     def cleanup_old_download_dir(self):
         old_download_dir = self.config['device'] + '_' + self.config['storage'] + '_' + self.config['board'] + '_'
-
+        
         for dir in [f for f in os.listdir(self.download_path) if not os.path.isfile(f)]:
             if old_download_dir in dir:
                 del_dir = self.download_path + "/" + dir
@@ -325,6 +325,9 @@ class DcsDeploy:
         for res_name in resource_keys:
             #print(" %s key: %s" % (res_name, self.config[res_name]))
             self.resource_paths[res_name] = self.get_download_file_path(self.get_resource_url(res_name))
+
+        if not os.path.isdir(self.download_path):
+            os.makedirs(self.download_path)
 
         # remove old download directories
         self.cleanup_old_download_dir()
