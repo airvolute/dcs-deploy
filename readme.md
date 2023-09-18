@@ -8,7 +8,6 @@
 sudo apt install qemu-user-static sshpass abootimg lbzip2  
 ```    
 ### Python
-
 ```
 pip install wget  
 ```
@@ -64,8 +63,7 @@ As a root of this filesystem, `.dcs_deploy` folder is created inside **host pc H
 ```
 .dcs_deploy/
 ├─ download/
-│  ├─ config_1/
-│  ├─ config_2/
+│  ├─ <source webpage hostname>/<path to resource without "download/downloads">
 │  ├─ .../
 ├─ flash/
 │  ├─ config_1/
