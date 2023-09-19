@@ -508,7 +508,7 @@ class DcsDeploy:
         """            
         # Create firstboot check file.
         ret = 0
-        if  self.config['rootfs_type'] != 'airvolute':
+        if  self.config['rootfs_type'] == 'airvolute':
             return ret
         ret += cmd_exec("sudo touch " + self.first_boot_file_path)
 
