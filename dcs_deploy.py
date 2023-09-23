@@ -475,9 +475,17 @@ class DcsDeploy:
         ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path)
         self.prepare_status.set_status(ret)
 
+        self.prepare_status.set_processing_step("modify_rootfs")
+        ret = cmd_exec("/usr/bin/sudo rm -rf " +  self.rootfs_extract_dir + "/lib/modules/5.10.104-tegra/extra")
+        self.prepare_status.set_status(ret)
+
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
-        
+
+        self.prepare_status.set_processing_step("delete_kernel_display_supplements")
+        ret = cmd_exec("/usr/bin/sudo rm -rf " + self.l4t_root_dir + "/kernel/kernel_display_supplements.tbz2")
+        self.prepare_status.set_status(ret)
+
         self.prepare_status.set_processing_step("apply_binaries_t")
         ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
         self.prepare_status.set_status(ret)
@@ -607,6 +615,8 @@ class DcsDeploy:
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
         elif self.config['device'] == 'orin_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+            self.qspi_partition_layout = '-p" -c bootloader/t186ref/cfg/flash_t234_qspi.xml"'
+            self.end_of_line = 'internal'
         else:
             print("Unknown device! [%s] exitting" % self.config['device'])
             exit(8)
@@ -646,16 +656,23 @@ class DcsDeploy:
             #file to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = ""
             opt_app_size = ""
-            external_only = "--external-only" # flash only external device
+            external_only = "" # flash only external device
             if self.args.ab_partition == True:
                 env_vars = "ROOTFS_AB=1"
                 opt_app_size = "-S 4GiB "
                 external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
-            ret = cmd_exec(f"sudo {env_vars} {self.flash_script_path} {opt_app_size} --no-flash {external_only} --external-device nvme0n1p1 " +
-                           f"-c {self.ext_partition_layout} --showlogs {self.board_name} {self.rootdev}", print_command=True)
+            
+            if self.config['device'] == 'xavier_nx':
+                ret = cmd_exec(f"sudo {env_vars} {self.flash_script_path} {opt_app_size} --no-flash {external_only} --external-device nvme0n1p1 --showlogs {self.board_name} {self.rootdev}", print_command=True)
+                pass
+            elif self.config['device'] == 'orin_nx':   
+                os.chdir(self.l4t_root_dir)
+                ret = cmd_exec(f"sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1  -c tools/kernel_flash/flash_l4t_external_custom.xml -p \"-c bootloader/t186ref/cfg/flash_t234_qspi.xml\" --no-flash --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 internal", print_command=True)
+                print('sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1  -c tools/kernel_flash/flash_l4t_external_custom.xml -p \"-c bootloader/t186ref/cfg/flash_t234_qspi.xml\"  --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 internal')
+                
         self.prepare_status.set_status(ret, last_step= True)
-        return ret
+        return ret 
 
     def flash(self):
         # setup flashing
@@ -672,7 +689,14 @@ class DcsDeploy:
         print("Flash images! ...")
         self.prepare_status.change_group("flash")
         self.prepare_status.set_processing_step("flash_only")
-        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.board_name} {self.rootdev}", print_command=True)
+        if self.config['device'] == 'xavier_nx':
+            ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.board_name} {self.qspi_partition_layout} {self.rootdev} {self.end_of_line}", print_command=True)
+            pass
+        elif self.config['device'] == 'orin_nx':
+            os.chdir(self.l4t_root_dir)
+            print('sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1  -c tools/kernel_flash/flash_l4t_external_custom.xml -p \"-c bootloader/t186ref/cfg/flash_t234_qspi.xml\" --flash-only --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 internal')
+            ret = cmd_exec(f"sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1  -c tools/kernel_flash/flash_l4t_external_custom.xml -p \"-c bootloader/t186ref/cfg/flash_t234_qspi.xml\" --flash-only --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 internal", print_command=True)
+
         self.prepare_status.set_status(ret, last_step= True)
 
 
