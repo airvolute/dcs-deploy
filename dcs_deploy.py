@@ -103,12 +103,26 @@ class ProcessingStatus:
     
     def get_identifier(self):
         return self.status["identifier"]
+    
+    def _remove_identifier(self, identifier, remove_list):
+        print("input from removing identifier:", identifier)
+        if remove_list == []:
+            return identifier
+        # remove not matching identifiers
+        cleaned_identifier = identifier[:] # copy identifiers into new list
+        for remove in remove_list:
+            if remove in cleaned_identifier:
+                cleaned_identifier.remove(remove)
+        print("output from removing identifier:", cleaned_identifier)
+        return cleaned_identifier
 
-    def is_identifier_same_as_prev(self):
-        identifier = self.status["identifier"]
-        if len(identifier) != len(self.prev_identifier):
+
+    def is_identifier_same_as_prev(self, no_match_list=[]):
+        identifier = self._remove_identifier(self.status["identifier"], no_match_list)
+        prev_identifier = self._remove_identifier(self.prev_identifier, no_match_list)
+        if len(identifier) != len(prev_identifier):
             return False
-        if len(set(identifier).difference(set(self.prev_identifier))) != 0:
+        if len(set(identifier).difference(set(prev_identifier))) != 0:
             print("identifier not same as previous!")
             return False
         return True
@@ -344,6 +358,7 @@ class DcsDeploy:
             if self.resource_paths[key] == "":
                 continue
             if not os.path.isdir(os.path.dirname(self.resource_paths[key])):
+                print("Creating directory: ",self.resource_paths[key])
                 os.makedirs(os.path.dirname(self.resource_paths[key]))
 
         # Handle dcs-deploy flash dir
@@ -625,7 +640,7 @@ class DcsDeploy:
     def generate_images(self):
         self.prepare_status.change_group("images")
         # check commandline parameter if they are same as previous and images are already generated skip generation
-        if self.prepare_status.is_identifier_same_as_prev() and self.prepare_status.get_status() == True:
+        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
             print("Images already generated! Skipping generating images!")
             return 0
 
