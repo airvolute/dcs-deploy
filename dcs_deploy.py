@@ -105,7 +105,7 @@ class ProcessingStatus:
         return self.status["identifier"]
     
     def _remove_identifier(self, identifier, remove_list):
-        print("input from removing identifier:", identifier)
+        #print("input from removing identifier:", identifier)
         if remove_list == []:
             return identifier
         # remove not matching identifiers
@@ -113,7 +113,7 @@ class ProcessingStatus:
         for remove in remove_list:
             if remove in cleaned_identifier:
                 cleaned_identifier.remove(remove)
-        print("output from removing identifier:", cleaned_identifier)
+        #print("output from removing identifier:", cleaned_identifier)
         return cleaned_identifier
 
 
