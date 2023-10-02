@@ -676,7 +676,7 @@ class DcsDeploy:
         # generate images
         ret = self.generate_images()
         if ret != 0:
-            print("Generating images was not sucessfull! ret = %d", ret)
+            print("Generating images was not sucessfull! ret = %d" % (ret))
             print("Exitting!")
             exit(7)
         # flash device
