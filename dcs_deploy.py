@@ -377,12 +377,29 @@ class DcsDeploy:
             os.makedirs(self.flash_path)
 
     def check_dependencies(self):
-        dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2"]
+        l4t_tool = ["abootimg", "binfmt-support", "binutils", "cpp", "device-tree-compiler", "dosfstools", "lbzip2",
+                     "libxml2-utils", "nfs-kernel-server", "python3", "python3-yaml", "qemu-user-static", "sshpass",
+                     "udev", "uuid-runtime", "whois", "openssl", "cpio", "lz4"]
+        l4t_other_dependencies = ["python-is-python3"]
+        dcs_deploy_dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2"]
+        
+        dependencies = l4t_tool
+        # append dcs_deploy_dependencies which are unique
+        for dependency in dcs_deploy_dependencies + l4t_other_dependencies:
+            if dependency not in dependencies:
+                dependencies.append(dependency)
+        
+        to_install = []
         for dependency in dependencies:
             if package_installed(dependency) == False:
-                print("please install %s tool. eg: sudo apt-get install %s" % (dependency, dependency))
-                print("exitting!")
-                exit(1)
+                to_install.append(dependency)
+
+        if len(to_install) != 0:
+            print("please install %s tools. eg: sudo apt-get install -y %s" % (to_install, " ".join(to_install)))
+            print("exitting!")
+            exit(1)
+        return 0
+
 
     def get_missing_resources(self, force_all_missing = False):
         res = []
