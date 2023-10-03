@@ -630,29 +630,38 @@ class DcsDeploy:
     def setup_initrd_flashing(self):
         os.chdir(self.l4t_root_dir)
         #set variables for initrd flash
-        self.flash_script_path = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/l4t_initrd_flash.sh')
+        self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         
         if self.config['device'] == 'xavier_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+            self.orin_options = ""
         elif self.config['device'] == 'orin_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+            # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
+            # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
+            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
         else:
             print("Unknown device! [%s] exitting" % self.config['device'])
             exit(8)
          
         if self.config['storage'] == 'emmc':
             self.rootdev = "mmcblk0p1"
+            self.external_device = ""
         elif self.config['storage'] == 'nvme':
             self.rootdev = "nvme0n1p1"
+            self.external_device = "--external-device nvme0n1p1 "
             if self.args.ab_partition == True:
                 # setup multiple app partitions
-                self.ext_partition_layout = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+                self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
             else:
                 # setup no multiple app partitions
-                self.ext_partition_layout = os.path.join(self.l4t_root_dir, 'tools/kernel_flash/flash_l4t_external_custom.xml')
+                self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external_custom.xml')
         else:
             print("Unknown storage [%s]! exitting" % self.config['storage'])
             exit(9)
+        # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
+        if self.config['device'] == 'orin_nx':
+            self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
 
     def generate_images(self):
         self.prepare_status.change_group("images")
@@ -669,20 +678,25 @@ class DcsDeploy:
         # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
         # flash internal emmc"
         if self.config['storage'] == 'emmc':
-            ret = cmd_exec(f"sudo {self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
+            ret = cmd_exec(f"sudo ./{self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
         # flash external nvme drive
         elif self.config['storage'] == 'nvme':
             #file to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = ""
             opt_app_size = ""
             external_only = "--external-only" # flash only external device
+            
             if self.args.ab_partition == True:
                 env_vars = "ROOTFS_AB=1"
                 opt_app_size = "-S 4GiB "
                 external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
-            ret = cmd_exec(f"sudo {env_vars} {self.flash_script_path} {opt_app_size} --no-flash {external_only} --external-device nvme0n1p1 " +
-                           f"-c {self.ext_partition_layout} --showlogs {self.board_name} {self.rootdev}", print_command=True)
+            if self.config['device'] == 'orin_nx':
+                external_only = "" # don't flash only external device
+                
+            cmd_exec("pwd")
+            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size} --no-flash {external_only} {self.external_device} " +
+                           f"-c {self.ext_partition_layout} {self.orin_options} --showlogs {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
 
@@ -701,7 +715,7 @@ class DcsDeploy:
         print("Flash images! ...")
         self.prepare_status.change_group("flash")
         self.prepare_status.set_processing_step("flash_only")
-        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.board_name} {self.rootdev}", print_command=True)
+        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.orin_options} {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
 
 
