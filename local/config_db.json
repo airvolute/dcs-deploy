@@ -59,5 +59,17 @@
     "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
     "rootfs_type": "full"
+  },
+  "jetson_linux_r35.3.1": {
+  "device": "orin_nx",
+  "storage": "nvme",
+  "board": "1.2",
+  "l4t_version": "51_R3531",
+  "nvidia_overlay": "none",
+  "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_dcs20.tbz2",
+  "l4t": "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v3.1/release/jetson_linux_r35.3.1_aarch64.tbz2",
+  "nv_ota_tools" : "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v3.1/release/ota_tools_r35.3.1_aarch64.tbz2",
+  "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
+  "rootfs_type": "full"
   }
 }
