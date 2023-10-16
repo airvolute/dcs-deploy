@@ -683,19 +683,23 @@ class DcsDeploy:
         elif self.config['storage'] == 'nvme':
             #file to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = ""
-            opt_app_size = ""
+            opt_app_size_arg = ""
             external_only = "--external-only" # flash only external device
             
             if self.args.ab_partition == True:
                 env_vars = "ROOTFS_AB=1"
-                opt_app_size = "-S 4GiB "
+                if self.args.rootfs_type == "minimal":
+                    opt_app_size = 4
+                else:
+                    opt_app_size = 8
+                opt_app_size_arg = f"-S {opt_app_size}GiB"
                 external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
             if self.config['device'] == 'orin_nx':
                 external_only = "" # don't flash only external device
                 
             cmd_exec("pwd")
-            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size} --no-flash {external_only} {self.external_device} " +
+            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} " +
                            f"-c {self.ext_partition_layout} {self.orin_options} --showlogs {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
