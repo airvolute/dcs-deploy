@@ -7,6 +7,7 @@ import os
 import wget
 from threading import Thread, Event
 import time
+from urllib.parse import urlparse
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
@@ -158,6 +159,28 @@ class DcsDeploy:
         t = Thread(target=self.loading_animation, args=(event,))
         t.start()
         return t
+    
+    def get_download_file_path(self, url:str) -> str:
+        if url == None:
+            return ""
+        path = self.download_path
+        u = urlparse(url)
+        path += "/" + u.hostname
+        replace_str = "/download"
+        if "downloads" in u.path:
+            replace_str = "/downloads"
+        path += u.path.replace(replace_str, '')
+        return path
+        #return os.path.dirname(path)
+
+    def cleanup_old_download_dir(self):
+        old_download_dir = self.config['device'] + '_' + self.config['storage'] + '_' + self.config['board'] + '_'
+
+        for dir in [f for f in os.listdir(self.download_path) if not os.path.isfile(f)]:
+            if old_download_dir in dir:
+                del_dir = self.download_path + "/" + dir
+                print("download dir to delete: " + del_dir)
+                cmd_exec("rm -rf " + del_dir)
 
     def init_filesystem(self):
         config_relative_path = (
@@ -170,12 +193,8 @@ class DcsDeploy:
 
         self.home = os.path.expanduser('~')
         self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
-        self.download_path = os.path.join(self.dsc_deploy_root, 'download', config_relative_path)
+        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
-        self.rootfs_file_path = os.path.join(self.download_path, 'rootfs.tbz2')
-        self.l4t_file_path = os.path.join(self.download_path, 'l4t.tbz2')
-        self.nvidia_overlay_file_path = os.path.join(self.download_path, 'nvidia_overlay.tbz2')
-        self.airvolute_overlay_file_path = os.path.join(self.download_path, 'airvolute_overlay.tbz2')
         self.rootfs_extract_dir = os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs')
         self.l4t_root_dir = os.path.join(self.flash_path, 'Linux_for_Tegra')
         self.downloaded_config_path = os.path.join(self.dsc_deploy_root, 'downloaded_versions.json')
@@ -183,12 +202,16 @@ class DcsDeploy:
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
-        self.resource_paths = {
-            "rootfs": self.rootfs_file_path,
-            "l4t": self.l4t_file_path,
-            "nvidia_overlay": self.nvidia_overlay_file_path,
-            "airvolute_overlay": self.airvolute_overlay_file_path
-        }
+        # generate download resource paths
+        resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay"]
+        self.resource_paths = {}
+
+        for res_name in resource_keys:
+            #print(" %s key: %s" % (res_name, self.config[res_name]))
+            self.resource_paths[res_name] = self.get_download_file_path(self.get_resource_url(res_name))
+
+        # remove old download directories
+        self.cleanup_old_download_dir()
 
         if self.config['device'] == 'xavier_nx': 
             self.device_type = 't194'
@@ -197,9 +220,12 @@ class DcsDeploy:
         if not os.path.isdir(self.dsc_deploy_root):
             os.mkdir(self.dsc_deploy_root)
 
-        # Handle dcs-deploy download dir
-        if not os.path.isdir(self.download_path):
-            os.makedirs(self.download_path)
+        # create dcs-deploy download dir
+        for key in self.resource_paths:
+            if self.resource_paths[key] == "":
+                continue
+            if not os.path.isdir(os.path.dirname(self.resource_paths[key])):
+                os.makedirs(os.path.dirname(self.resource_paths[key]))
 
         # Handle dcs-deploy flash dir
         if not os.path.isdir(self.flash_path):
@@ -276,7 +302,7 @@ class DcsDeploy:
         cmd_exec("rm -f " + dst_path + "*.tmp")
 
         #check if file already exist
-        if os.path.isfile(dst_path):
+        if os.path.isfile(dst_path) and self.args.force == False:
             yes = yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
             if yes == False:
                 return 0
@@ -308,7 +334,7 @@ class DcsDeploy:
         stop_event.clear()
         l4t_animation_thread = self.run_loading_animation(stop_event)
         
-        extract(self.l4t_file_path, self.flash_path)
+        extract(self.resource_paths["l4t"], self.flash_path)
         
         stop_event.set()
         l4t_animation_thread.join()
@@ -323,7 +349,7 @@ class DcsDeploy:
 
         rootfs_animation_thread = self.run_loading_animation(stop_event)
 
-        extract(self.rootfs_file_path, self.rootfs_extract_dir)
+        extract(self.resource_paths['rootfs'], self.rootfs_extract_dir)
 
         stop_event.set()
         rootfs_animation_thread.join()
@@ -351,10 +377,10 @@ class DcsDeploy:
         self.install_first_boot_setup()
 
     def prepare_airvolute_overlay(self):
-        extract(self.airvolute_overlay_file_path, self.flash_path)
+        extract(self.resource_paths['airvolute_overlay'], self.flash_path)
 
     def prepare_nvidia_overlay(self):
-        extract(self.nvidia_overlay_file_path, self.flash_path)
+        extract(self.resource_paths['nvidia_overlay'], self.flash_path)
 
     def install_first_boot_setup(self):
         """
