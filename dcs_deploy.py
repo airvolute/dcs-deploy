@@ -675,7 +675,7 @@ class DcsDeploy:
             #file to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = ""
             opt_app_size = ""
-            external_only = "--external-only" # flash only external device
+            external_only = "" # flash only external device
             if self.args.ab_partition == True:
                 env_vars = "ROOTFS_AB=1"
                 opt_app_size = "-S 4GiB "
