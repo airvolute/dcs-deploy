@@ -634,8 +634,10 @@ class DcsDeploy:
         
         if self.config['device'] == 'xavier_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+            self.qspi_conf = ""
         elif self.config['device'] == 'orin_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+            self.qspi_conf = '"-p -c bootloader/t186ref/cfg/flash_t234_qspi.xml"'
         else:
             print("Unknown device! [%s] exitting" % self.config['device'])
             exit(8)
@@ -675,14 +677,16 @@ class DcsDeploy:
             #file to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = ""
             opt_app_size = ""
-            external_only = "" # flash only external device
+            if self.config['device'] == 'orin_nx':
+                 self.rootdev = "internal"
+            external_only = ""    
             if self.args.ab_partition == True:
                 env_vars = "ROOTFS_AB=1"
                 opt_app_size = "-S 4GiB "
                 external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
-            ret = cmd_exec(f"sudo {env_vars} {self.flash_script_path} {opt_app_size} --no-flash {external_only} --external-device nvme0n1p1 " +
-                           f"-c {self.ext_partition_layout} --showlogs {self.board_name} {self.rootdev}", print_command=True)
+            ret = cmd_exec(f"sudo {env_vars} {self.flash_script_path} --no-flash {opt_app_size} {external_only} --external-device nvme0n1p1 " +
+                           f"-c {self.ext_partition_layout} {self.qspi_conf}  --showlogs --network usb0 {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
 
@@ -701,7 +705,7 @@ class DcsDeploy:
         print("Flash images! ...")
         self.prepare_status.change_group("flash")
         self.prepare_status.set_processing_step("flash_only")
-        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.board_name} {self.rootdev}", print_command=True)
+        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only --network usb0 {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
 
 
