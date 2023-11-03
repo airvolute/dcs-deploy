@@ -262,7 +262,13 @@ class DcsDeploy:
             exit(2)
 
         self.config_db = json.load(db_file)
-
+        # unify specific parameters into list
+        update_to_list_fields = ['device', 'board', 'storage']
+        for config in self.config_db:
+            for update_field in update_to_list_fields:
+                if (type(self.config_db[config][update_field]) is not list):
+                    self.config_db[config][update_field] = [self.config_db[config][update_field]]
+                
     def loading_animation(self, event):
         """Just animate rotating line - | / — \
         """
@@ -587,11 +593,11 @@ class DcsDeploy:
             return self.selected_config_name
         
         for config in self.config_db:
-            if (self.config_db[config]['device'] == self.args.target_device and
-                self.config_db[config]['l4t_version'] == self.args.jetpack and
-                self.config_db[config]['board'] == self.args.hwrev and
-                self.config_db[config]['storage'] == self.args.storage and
-                self.config_db[config]['rootfs_type'] == self.args.rootfs_type):
+            if (self.args.target_device in self.config_db[config]['device'] and
+                self.args.jetpack == self.config_db[config]['l4t_version'] and
+                self.args.hwrev in self.config_db[config]['board'] and
+                self.args.storage in self.config_db[config]['storage'] and
+                self.args.rootfs_type == self.config_db[config]['rootfs_type']):
                 return config
                 
         return None
@@ -624,7 +630,14 @@ class DcsDeploy:
             print("Exitting!")
             exit(3)
        
-        self.config = self.config_db[config]
+        self.config_db = self.config_db[config]
+        
+        # update selected config according user enterred parameters
+        self.config = self.config_db
+        self.config['device'] = self.args.target_device
+        self.config['board'] = self.args.hwrev
+        self.config['storage'] = self.args.storage
+
         self.selected_config_name = config
 
     def setup_initrd_flashing(self):
