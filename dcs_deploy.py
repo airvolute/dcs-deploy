@@ -337,6 +337,7 @@ class DcsDeploy:
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
+        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
 
         # generate download resource paths
         resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
@@ -537,6 +538,28 @@ class DcsDeploy:
 
     def prepare_nvidia_overlay(self):
         return self.extract_resource('nvidia_overlay')
+    
+
+    def list_local_overlays(self):
+        print("overlay dir:", self.local_overlay_dir)
+        overlays = {
+            "dirs": [x for x in os.listdir(self.local_overlay_dir) if os.path.isdir(os.path.join(self.local_overlay_dir, x))],
+            "files": [x for x in os.listdir(self.local_overlay_dir) if os.path.isfile(os.path.join(self.local_overlay_dir, x))],
+        }
+        print("directories:" + str(overlays))
+        return overlays
+    
+    def install_overlays(self):
+        overlays = self.list_local_overlays()
+        for overlay in overlays["dirs"]:
+            print(f"install overlay {overlay}")
+            self.install_overlay_dir(overlay)
+
+    def install_overlay_dir(self, overlay_name):
+        overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name, "apply_" + overlay_name + ".sh")
+
+        cmd_exec(f"sudo {overlay_script_name} {self.l4t_root_dir}", print_command=True)
+
 
     def install_first_boot_setup(self):
         """
