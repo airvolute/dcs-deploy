@@ -181,6 +181,8 @@ class DcsDeploy:
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
+            self.install_overlays()
+            exit(1)
             self.check_optional_arguments()
 
 
@@ -528,10 +530,9 @@ class DcsDeploy:
         if self.get_resource_url('nv_ota_tools') != None:
             print('Applying Nvidia OTA tools ...')
             ret = self.extract_resource('nv_ota_tools')
-
-        self.prepare_status.set_processing_step("install_first_boot_setup")
-        ret = self.install_first_boot_setup()
-        self.prepare_status.set_status(ret, last_step = True)
+        
+        print('Installing overlays ...')
+        ret = self.install_overlays() # last step applied in install_overlays fnc. 
 
     def prepare_airvolute_overlay(self):
         return self.extract_resource('airvolute_overlay')
@@ -551,60 +552,23 @@ class DcsDeploy:
     
     def install_overlays(self):
         overlays = self.list_local_overlays()
+        i = 0
+        cnt = len(overlays["dirs"])
         for overlay in overlays["dirs"]:
-            print(f"install overlay {overlay}")
-            self.install_overlay_dir(overlay)
+            i = i + 1
+            print(f"[{i}/{cnt}] installing overlay {overlay}")
+            self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
+            ret = self.install_overlay_dir(overlay)
+            self.prepare_status.set_status(ret, last_step = (i == cnt))
+            with_error="."
+            if ret:
+                with_error = " with error!"    
+            print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+        # TODO extract files and run apply install script if exist
 
     def install_overlay_dir(self, overlay_name):
         overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name, "apply_" + overlay_name + ".sh")
-
-        cmd_exec(f"sudo {overlay_script_name} {self.l4t_root_dir}", print_command=True)
-
-
-    def install_first_boot_setup(self):
-        """
-        Installs script that would be run on a device after the
-        very first boot.
-        """
-        # Create firstboot check file.
-        ret = 0
-        ret += cmd_exec("sudo touch " + self.first_boot_file_path)
-
-        # Setup systemd first boot
-        service_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'systemd', 'system')
-
-        # Bin destination
-        bin_destination = os.path.join(self.rootfs_extract_dir, 'usr', 'local', 'bin')
-
-        # uhubctl destination
-        uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
-        
-        # USB3_CONTROL service
-        ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
-
-        ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
-
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
-
-        # USB_HUB_CONTROL service
-        ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
-
-        ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
-
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
-
-        # FIRST_BOOT service
-        ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
-
-        ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
-
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
-
-        ret += cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
-                 os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
-
-        # uhubctl
-        ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
+        ret = cmd_exec(f"sudo {overlay_script_name} {self.rootfs_extract_dir}", print_command=True)
         return ret
 
     def match_selected_config(self):
