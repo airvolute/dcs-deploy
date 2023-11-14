@@ -181,8 +181,6 @@ class DcsDeploy:
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
-            self.install_overlays()
-            exit(1)
             self.check_optional_arguments()
 
 
