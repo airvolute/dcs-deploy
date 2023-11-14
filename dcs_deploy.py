@@ -541,11 +541,19 @@ class DcsDeploy:
 
     def list_local_overlays(self):
         print("overlay dir:", self.local_overlay_dir)
+        if "local_overlays" in self.config:
+            print("Selecting ovelays list from configuration['local_overlays']")
+            all_overlays_list = self.config["local_overlays"]
+        else:
+            print("Selecting ovelays list from local/overlays directory")
+            all_overlays_list = os.listdir(self.local_overlay_dir)
+        print("all_overlays_list:" + str(all_overlays_list))
+
         overlays = {
-            "dirs": [x for x in os.listdir(self.local_overlay_dir) if os.path.isdir(os.path.join(self.local_overlay_dir, x))],
-            "files": [x for x in os.listdir(self.local_overlay_dir) if os.path.isfile(os.path.join(self.local_overlay_dir, x))],
+            "dirs": [x for x in all_overlays_list if os.path.isdir(os.path.join(self.local_overlay_dir, x))],
+            "files": [x for x in all_overlays_list if os.path.isfile(os.path.join(self.local_overlay_dir, x))],
         }
-        print("directories:" + str(overlays))
+        print("overlays:" + str(overlays))
         return overlays
     
     def install_overlays(self, is_last_install_step = False ):
