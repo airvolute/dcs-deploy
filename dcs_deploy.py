@@ -530,7 +530,7 @@ class DcsDeploy:
             ret = self.extract_resource('nv_ota_tools')
         
         print('Installing overlays ...')
-        ret = self.install_overlays() # last step applied in install_overlays fnc. 
+        ret = self.install_overlays(is_last_install_step = True)
 
     def prepare_airvolute_overlay(self):
         return self.extract_resource('airvolute_overlay')
@@ -548,7 +548,7 @@ class DcsDeploy:
         print("directories:" + str(overlays))
         return overlays
     
-    def install_overlays(self):
+    def install_overlays(self, is_last_install_step = False ):
         overlays = self.list_local_overlays()
         i = 0
         cnt = len(overlays["dirs"])
@@ -557,11 +557,14 @@ class DcsDeploy:
             print(f"[{i}/{cnt}] installing overlay {overlay}")
             self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
             ret = self.install_overlay_dir(overlay)
-            self.prepare_status.set_status(ret, last_step = (i == cnt))
+            self.prepare_status.set_status(ret, last_step = ((i == cnt) and is_last_install_step))
             with_error="."
             if ret:
                 with_error = " with error!"    
             print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+            if ret:
+                exit(10)
+            
         # TODO extract files and run apply install script if exist
 
     def install_overlay_dir(self, overlay_name):
