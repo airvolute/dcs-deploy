@@ -178,9 +178,10 @@ class DcsDeploy:
         self.sanitize_args()
         self.selected_config_name = None
         self.load_db()
-        if self.args.command != 'list':
+        self.init_common_paths()
+        if self.args.command == 'flash':
             self.load_selected_config()
-            self.init_filesystem()
+            self.init_flash_paths()
             self.check_optional_arguments()
 
 
@@ -213,11 +214,14 @@ class DcsDeploy:
         """
         Create an ArgumentParser and all its options
         """
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
         subparsers = parser.add_subparsers(dest='command', help='Command')
 
         list = subparsers.add_parser(
             'list', help='list available versions')
+        
+        list_local_overlays_help = 'List existing local overlays'
+        list.add_argument('--local_overlays', action='store_true', help=list_local_overlays_help)
 
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
@@ -225,6 +229,9 @@ class DcsDeploy:
 
         self.add_common_parser(flash)
 
+        parser.epilog = f"command list usage:\n {list.format_usage()}\n" + \
+                        f"command flash usage:\n {flash.format_usage()}"
+        
         parser.add_argument('--version', action='store_true',  default='', help="Show version")
         
         return parser
@@ -246,7 +253,7 @@ class DcsDeploy:
         """
         if self.args.command is None:
             print("No command specified!")
-            self.parser.print_usage()
+            self.parser.print_help()
             quit()
 
     def load_db(self):
@@ -319,7 +326,13 @@ class DcsDeploy:
                 print("download dir to delete: " + del_dir)
                 cmd_exec("rm -rf " + del_dir)
 
-    def init_filesystem(self):
+    def init_common_paths(self):
+        self.home = os.path.expanduser('~')
+        self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
+        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
+        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
+
+    def init_flash_paths(self):
         config_relative_path = (
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
@@ -327,17 +340,14 @@ class DcsDeploy:
             self.config['l4t_version'] + '_' +
             self.config['rootfs_type']
         )
-
-        self.home = os.path.expanduser('~')
-        self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
-        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
+      
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
         self.rootfs_extract_dir = os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs')
         self.l4t_root_dir = os.path.join(self.flash_path, 'Linux_for_Tegra')
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
-        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
+        
 
         # generate download resource paths
         resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
@@ -541,13 +551,13 @@ class DcsDeploy:
 
     def list_local_overlays(self):
         print("overlay dir:", self.local_overlay_dir)
-        if "local_overlays" in self.config:
+        if hasattr(self,"config") and "local_overlays" in self.config:
             print("Selecting ovelays list from configuration['local_overlays']")
             all_overlays_list = self.config["local_overlays"]
         else:
             print("Selecting ovelays list from local/overlays directory")
             all_overlays_list = os.listdir(self.local_overlay_dir)
-        print("all_overlays_list:" + str(all_overlays_list))
+        print("all_overlays_list: " + str(all_overlays_list))
 
         overlays = {
             "dirs": [x for x in all_overlays_list if os.path.isdir(os.path.join(self.local_overlay_dir, x))],
@@ -747,6 +757,9 @@ class DcsDeploy:
 
     def run(self):
         if self.args.command == 'list':
+            if self.args.local_overlays == True:
+                self.list_local_overlays()
+                quit()
             self.list_all_versions()
             quit()
 
