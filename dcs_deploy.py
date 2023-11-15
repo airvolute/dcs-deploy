@@ -186,13 +186,13 @@ class DcsDeploy:
 
 
     def add_common_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
+        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx, orin_nx]'
         subparser.add_argument('target_device', help=target_device_help)
 
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51].'
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51, 512].'
         subparser.add_argument('jetpack', help=jetpack_help)
 
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2].'
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0].'
         subparser.add_argument('hwrev', help=hwrev_help)
         
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
