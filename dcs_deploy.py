@@ -658,6 +658,16 @@ class DcsDeploy:
             # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
             # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
             self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+        elif self.config['device'] == 'orin_nano_8gb':
+            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0003"
+            # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
+            # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
+            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+        elif self.config['device'] == 'orin_nano_4gb':
+            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0004"
+            # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
+            # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
+            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
         else:
             print("Unknown device! [%s] exitting" % self.config['device'])
             exit(8)
@@ -678,7 +688,7 @@ class DcsDeploy:
             print("Unknown storage [%s]! exitting" % self.config['storage'])
             exit(9)
         # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
-        if self.config['device'] == 'orin_nx' or self.config['device'] == 'orin_nx_8gb':
+        if self.config['device'] == 'orin_nx' or self.config['device'] == 'orin_nx_8gb' or self.config['device'] == 'orin_nano_8gb' or self.config['device'] == 'orin_nano_4gb':
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
 
     def generate_images(self):
@@ -713,7 +723,7 @@ class DcsDeploy:
                 opt_app_size_arg = f"-S {opt_app_size}GiB"
                 external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
-            if self.config['device'] == 'orin_nx' or self.config['device'] == 'orin_nx_8gb':
+            if self.config['device'] == 'orin_nx' or self.config['device'] == 'orin_nx_8gb' or self.config['device'] == 'orin_nano_8gb' or self.config['device'] == 'orin_nano_4gb':
                 external_only = "" # don't flash only external device
                 
             cmd_exec("pwd")
