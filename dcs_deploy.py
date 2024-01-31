@@ -209,6 +209,12 @@ class DcsDeploy:
         ab_partition_help = 'Prepare ab partion for system update. Only available for nvme devices'
         subparser.add_argument('--ab_partition', action='store_true', help=ab_partition_help)
 
+        opt_app_size_help = 'Set APP partition size in GB. Use when you get "No space left on device" error while flashing custom rootfs'
+        subparser.add_argument('--app_size', help=opt_app_size_help)
+
+        rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
+        subparser.add_argument('--rootfs', help=rootfs_help)
+
     def create_parser(self):
         """
         Create an ArgumentParser and all its options
@@ -222,7 +228,6 @@ class DcsDeploy:
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
         
-
         self.add_common_parser(flash)
 
         parser.add_argument('--version', action='store_true',  default='', help="Show version")
@@ -234,6 +239,12 @@ class DcsDeploy:
             print("AB partition is allowed only for nvme devices! (%s)" % self.config['storage'])
             print("Exitting!")
             exit(6)
+
+        if self.args.rootfs is not None and self.args.app_size is None:
+            print('''
+                  WARNING! You did not specify --app_size parameter. 
+                  You may get 'No space left on device' error while flashing custom rootfs.
+                  ''')
 
     def process_optional_args(self):
         if self.args.version == True:
@@ -344,6 +355,10 @@ class DcsDeploy:
 
         for res_name in resource_keys:
             #print(" %s key: %s" % (res_name, self.config[res_name]))
+            if res_name == "rootfs" and self.args.rootfs is not None:
+                print(self.args.rootfs)
+                self.resource_paths[res_name] = self.args.rootfs
+                continue
             self.resource_paths[res_name] = self.get_download_file_path(self.get_resource_url(res_name))
 
         if not os.path.isdir(self.download_path):
@@ -419,6 +434,9 @@ class DcsDeploy:
 
     def download_resources(self):
         for missing_resource in self.get_missing_resources(force_all_missing = self.args.force):
+            if missing_resource == "rootfs" and self.args.rootfs is not None:
+                print("rootfs will not be downloaded, because you want to use custom rootfs.")
+                continue
             print("missing resource '%s'. Going to download it!" % missing_resource)
             ret = self.download_resource(missing_resource, self.resource_paths[missing_resource])
             if ret < 0:
@@ -708,6 +726,10 @@ class DcsDeploy:
                 opt_app_size_arg = f"-S {opt_app_size}GiB"
                 external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
+
+            if self.args.app_size is not None:
+                opt_app_size_arg = self.args.app_size
+
             if self.config['device'] == 'orin_nx':
                 external_only = "" # don't flash only external device
                 
