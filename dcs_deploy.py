@@ -215,6 +215,10 @@ class DcsDeploy:
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
 
+        doodle_radio_setup_help = 'Enable OEM setup for doodle radios.' 
+        subparser.add_argument(
+            '--setup_doodle_radio', nargs=2, help=doodle_radio_setup_help, metavar=('UAV_SYS_ID', 'DOODLE_RADIO_IP'))
+
     def create_parser(self):
         """
         Create an ArgumentParser and all its options
@@ -501,7 +505,6 @@ class DcsDeploy:
         stop_event.set()
         l4t_animation_thread.join()
         return ret
-        
 
     def prepare_sources_production(self):
         if self.prepare_status.get_status() == True:
@@ -572,7 +575,17 @@ class DcsDeploy:
         bin_destination = os.path.join(self.rootfs_extract_dir, 'usr', 'local', 'bin')
 
         # uhubctl destination
-        uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+        dcs_user_home_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+
+        etc_profile_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'profile')
+
+        # Add SYS_ID (UAV IP) and RADIO_IP to /etc/profile
+        if self.args.setup_doodle_radio is not None:
+            uav_static_ip = "10.223.0." + self.args.setup_doodle_radio[0]
+            ret += cmd_exec("echo 'export UAV_DOODLE_IP=%s' | sudo tee -a %s > /dev/null" % (uav_static_ip, etc_profile_destination))
+            ret += cmd_exec("echo 'export MAV_SYS_ID=%s' | sudo tee -a %s > /dev/null" % (self.args.setup_doodle_radio[0], etc_profile_destination))
+            ret += cmd_exec("echo 'export DOODLE_RADIO_IP='%s'' | sudo tee -a %s > /dev/null" % (self.args.setup_doodle_radio[1], etc_profile_destination))
+            ret += cmd_exec("sudo cp -r resources/airvolute-doodle-setup " + dcs_user_home_destination)
         
         # USB3_CONTROL service
         ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
@@ -599,8 +612,7 @@ class DcsDeploy:
                  os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
 
         # uhubctl
-        ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
-        # TODO: add doodle setup folder copy
+        ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + dcs_user_home_destination)
         
         return ret
 
