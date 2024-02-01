@@ -600,6 +600,8 @@ class DcsDeploy:
 
         # uhubctl
         ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
+        # TODO: add doodle setup folder copy
+        
         return ret
 
     def match_selected_config(self):
