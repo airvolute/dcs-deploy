@@ -732,7 +732,7 @@ class DcsDeploy:
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
 
             if self.args.app_size is not None:
-                opt_app_size_arg = self.args.app_size
+                opt_app_size_arg = f"-S {self.args.app_size}GiB"
 
             if self.config['device'] == 'orin_nx':
                 external_only = "" # don't flash only external device
