@@ -93,7 +93,6 @@ class ProcessingStatus:
             "states": {}
         }
 
-
     def save(self):
         with open(self.status_file_name, "w") as status_file:
             json.dump(self.status, status_file,  indent = 4)
@@ -116,7 +115,6 @@ class ProcessingStatus:
         #print("output from removing identifier:", cleaned_identifier)
         return cleaned_identifier
 
-
     def is_identifier_same_as_prev(self, no_match_list=[]):
         identifier = self._remove_identifier(self.status["identifier"], no_match_list)
         prev_identifier = self._remove_identifier(self.prev_identifier, no_match_list)
@@ -132,7 +130,6 @@ class ProcessingStatus:
         if not group in self.status:
             self._init_group_status()
 
-    
     def set_processing_step(self, processing_step_name:str):
         self.last_processing_step = processing_step_name
         self.status[self.group]["last_processing_step"] = processing_step_name
@@ -168,7 +165,57 @@ class ProcessingStatus:
         if group == None:
             group = self.group
         return self.status[group]["status"]
-   
+
+class BatchCounter:
+    def __init__(self, counter_file_path:str, counter_value:int = 0):
+        try:
+            counter_value = int(counter_value)
+        except ValueError:
+                raise ValueError(f"Invalid counter_value: {counter_value}. Must be an integer.")
+        
+        if (counter_value < 1 or counter_value > 254) and (counter_value != 0):
+            print('Invalid counter value! Counter value must be between 1 and 254.')
+            exit()
+        self.counter_file_path = counter_file_path
+
+        # Check if the file exists
+        if not os.path.isfile(self.counter_file_path):
+            # If counter_value is within the desired range, use it; otherwise, default to 1
+            self.counter = counter_value if 1 <= counter_value <= 254 else 1
+            with open(self.counter_file_path, 'w') as file:
+                # Write the initial counter value to the file
+                file.write(str(self.counter))
+                print("Batch counter file created.")
+        else:
+            with open(self.counter_file_path, 'r') as file:
+                stored_value = file.read()
+                try:
+                    stored_value = int(stored_value)
+                    # If counter_value is within the desired range, use it;
+                    # otherwise, use the value read from the file
+                    self.counter = counter_value if 1 <= counter_value <= 254 else stored_value
+                except ValueError:
+                    self.counter = 1
+                    print("Warning: Batch counter file was corrupt or empty, resetting to 1.")
+
+        # This ensures that even if the file exists and counter_value is within the desired range,
+        # the counter is set accordingly and saved to the file.
+        if 1 <= counter_value <= 254:
+            self.save()
+        print(f"Jetson is going to be flashed with ID: {self.counter}.")
+        
+    def increment(self):
+        if self.counter < 254:
+            self.counter += 1
+        else:
+            print("Batch counter has reached its maximum value. Resetting to 1.")
+            self.counter = 1
+        self.save()
+
+    def save(self):
+        with open(self.counter_file_path, 'w') as file:
+            file.write(str(self.counter))
+
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
@@ -182,7 +229,13 @@ class DcsDeploy:
             self.load_selected_config()
             self.init_filesystem()
             self.check_optional_arguments()
-
+        if self.args.batch_counter is not None:
+            self.batch_counter = BatchCounter(
+                os.path.join(self.flash_path, "batch_counter"), 
+                counter_value=self.args.batch_counter
+            )
+        else:
+            self.batch_counter = BatchCounter(os.path.join(self.flash_path, "batch_counter"))
 
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
@@ -215,9 +268,16 @@ class DcsDeploy:
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
 
-        doodle_radio_setup_help = 'Enable OEM setup for doodle radios.' 
+        doodle_radio_setup_help = 'Enable OEM setup for doodle radios. Format: <doodle_radio_ip>' 
         subparser.add_argument(
-            '--setup_doodle_radio', nargs=2, help=doodle_radio_setup_help, metavar=('UAV_SYS_ID', 'DOODLE_RADIO_IP'))
+            '--setup_doodle_radio', help=doodle_radio_setup_help)
+        
+        batch_counter_help = '''
+            Counter for batch flashing. It is used to keep track of the number of devices flashed in a single batch.
+            It can be set to any value between 1 and 254. If not set, the counter defaults to 1. Counter is incremented
+            after each successfuly flashed device. If the counter reaches 254, it is reset to 1.
+            '''
+        subparser.add_argument('--batch_counter', help=batch_counter_help)
 
     def create_parser(self):
         """
@@ -579,12 +639,13 @@ class DcsDeploy:
 
         etc_profile_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'profile')
 
+        ret += cmd_exec("echo 'export MAV_SYS_ID=%s' | sudo tee -a %s > /dev/null" % (self.batch_counter.counter, etc_profile_destination))
+
         # Add SYS_ID (UAV IP) and RADIO_IP to /etc/profile
         if self.args.setup_doodle_radio is not None:
-            uav_static_ip = "10.223.0." + self.args.setup_doodle_radio[0]
+            uav_static_ip = "10.223.0." + str(self.batch_counter.counter)
             ret += cmd_exec("echo 'export UAV_DOODLE_IP=%s' | sudo tee -a %s > /dev/null" % (uav_static_ip, etc_profile_destination))
-            ret += cmd_exec("echo 'export MAV_SYS_ID=%s' | sudo tee -a %s > /dev/null" % (self.args.setup_doodle_radio[0], etc_profile_destination))
-            ret += cmd_exec("echo 'export DOODLE_RADIO_IP='%s'' | sudo tee -a %s > /dev/null" % (self.args.setup_doodle_radio[1], etc_profile_destination))
+            ret += cmd_exec("echo 'export DOODLE_RADIO_IP='%s'' | sudo tee -a %s > /dev/null" % (self.args.setup_doodle_radio, etc_profile_destination))
             ret += cmd_exec("sudo cp -r resources/airvolute-doodle-setup " + dcs_user_home_destination)
         
         # USB3_CONTROL service
@@ -779,10 +840,10 @@ class DcsDeploy:
             print('Unsupported configuration!')
             return
         print("matched configuration: " + self.selected_config_name)
-
         self.download_resources()
         self.prepare_sources_production()
         self.flash()
+        self.batch_counter.increment()
         quit() 
 
     def run(self):

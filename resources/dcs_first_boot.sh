@@ -6,7 +6,7 @@ source /etc/profile
 if [[ -n $MAV_SYS_ID && -n $DOODLE_RADIO_IP ]]; then
   echo "Setting up Doodle Radio"
   chmod +x /home/dcs_user/airvolute-doodle-setup/initial_setup.sh
-  sudo ./home/dcs_user/airvolute-doodle-setup/initial_setup.sh n $UAV_DOODLE_IP $DOODLE_RADIO_IP
+  sudo /home/dcs_user/airvolute-doodle-setup/initial_setup.sh n $UAV_DOODLE_IP $DOODLE_RADIO_IP
 fi
 
 # Re-generate SSH keys
