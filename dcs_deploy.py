@@ -59,7 +59,6 @@ class ProcessingStatus:
         self.current_identifier = default_identifier
         self.load()
 
-        
     def load(self):
         if os.path.isfile(self.status_file_name):
             with open(self.status_file_name, "r") as status_file:
@@ -568,6 +567,7 @@ class DcsDeploy:
 
     def prepare_sources_production(self):
         if self.prepare_status.get_status() == True:
+            self.networking_setup()
             print("Binaries already prepared!. Skipping!")
             return 0
         else:
@@ -619,6 +619,22 @@ class DcsDeploy:
     def prepare_nvidia_overlay(self):
         return self.extract_resource('nvidia_overlay')
 
+    def networking_setup(self, ret=0):
+        dcs_user_home_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+        etc_profile_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'profile')
+        
+        print("Setting up networking, this part needs sudo privilegies:")
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+
+        if self.args.setup_doodle_radio is not None:
+            uav_static_ip = "10.223.0." + str(self.batch_counter.counter)
+            command = f"sudo python scripts/update_etc_profile.py '{etc_profile_destination}' '{self.batch_counter.counter}' '{uav_static_ip}' '{self.args.setup_doodle_radio}'"
+            ret += cmd_exec("sudo cp -r resources/airvolute-doodle-setup " + dcs_user_home_destination)
+        else:
+            command = f"sudo python scripts/update_etc_profile.py '{etc_profile_destination}' '{self.batch_counter.counter}'"
+
+        ret += cmd_exec(command)
+
     def install_first_boot_setup(self):
         """
         Installs script that would be run on a device after the
@@ -637,16 +653,7 @@ class DcsDeploy:
         # uhubctl destination
         dcs_user_home_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
 
-        etc_profile_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'profile')
-
-        ret += cmd_exec("echo 'export MAV_SYS_ID=%s' | sudo tee -a %s > /dev/null" % (self.batch_counter.counter, etc_profile_destination))
-
-        # Add SYS_ID (UAV IP) and RADIO_IP to /etc/profile
-        if self.args.setup_doodle_radio is not None:
-            uav_static_ip = "10.223.0." + str(self.batch_counter.counter)
-            ret += cmd_exec("echo 'export UAV_DOODLE_IP=%s' | sudo tee -a %s > /dev/null" % (uav_static_ip, etc_profile_destination))
-            ret += cmd_exec("echo 'export DOODLE_RADIO_IP='%s'' | sudo tee -a %s > /dev/null" % (self.args.setup_doodle_radio, etc_profile_destination))
-            ret += cmd_exec("sudo cp -r resources/airvolute-doodle-setup " + dcs_user_home_destination)
+        self.networking_setup(ret)
         
         # USB3_CONTROL service
         ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
@@ -772,17 +779,25 @@ class DcsDeploy:
     def generate_images(self):
         self.prepare_status.change_group("images")
         # check commandline parameter if they are same as previous and images are already generated skip generation
-        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
-            print("Images already generated! Skipping generating images!")
-            return 0
+        
+        # TODO: right now, generate images all the time, because there is an predisposition of
+        # root filesystem being altered each flash (SYS_ID etc)
+        
+        # if self.prepare_status.is
+        # _identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
+        #     print("Images already generated! Skipping generating images!")
+        #     return 0
+
 
         self.prepare_status.set_processing_step("generate_images")
         print("-"*80)
+
         print("Generating images! ...")
         ret = -2
 
         # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
         # flash internal emmc"
+
         if self.config['storage'] == 'emmc':
             ret = cmd_exec(f"sudo ./{self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
         # flash external nvme drive
@@ -821,6 +836,7 @@ class DcsDeploy:
         # generate images
         ret = self.generate_images()
         if ret != 0:
+
             print("Generating images was not sucessfull! ret = %d" % (ret))
             print("Exitting!")
             exit(7)
@@ -832,6 +848,7 @@ class DcsDeploy:
         # Run sudo identification if not enterred
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.orin_options} {self.board_name} {self.rootdev}", print_command=True)
+        self.batch_counter.increment()
         self.prepare_status.set_status(ret, last_step= True)
 
 
@@ -843,7 +860,6 @@ class DcsDeploy:
         self.download_resources()
         self.prepare_sources_production()
         self.flash()
-        self.batch_counter.increment()
         quit() 
 
     def run(self):
