@@ -33,6 +33,9 @@ sudo systemctl start usb_hub_control.service
 # Disable nvgetty to be able to use UART
 sudo systemctl disable nvgetty.service
 echo "nvgetty disabled"
+# TODO: set power mode - nvpmodel does not work, use /etc/nvpmodel.conf instead
+# TODO: set fan to max level and clocks to max level - jetsonclocks --fan
+
 
 # rm first boot check file, so this setup runs only once
 sudo rm /etc/first_boot
