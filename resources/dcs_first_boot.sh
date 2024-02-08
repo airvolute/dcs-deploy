@@ -38,6 +38,20 @@ echo "nvgetty disabled"
 # TODO: set power mode - nvpmodel does not work, use /etc/nvpmodel.conf instead
 # TODO: set fan to max level and clocks to max level - jetsonclocks --fan
 
+# Set correct permissions and udev rules
+if [ ! -f /etc/udev/rules.d/61-jetson-common.rules ] ; then
+    sudo touch /etc/udev/rules.d/61-jetson-common.rules
+    echo 'KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
+    echo 'KERNEL=="i2c*", SUBSYSTEM=="i2c", MODE="0660", GROUP="i2c"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
+    echo 'KERNEL=="/dev/ttyTHS0*", SUBSYSTEM=="dialout", MODE="0660", GROUP="dialout"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
+fi
+
+sudo usermod -a -G i2c dcs_user
+sudo usermod -a -G gpio dcs_user
+sudo usermod -a -G dialout dcs_user
+sudo udevadm control --reload-rules && udevadm trigger
+
+
 
 # rm first boot check file, so this setup runs only once
 sudo rm /etc/first_boot
