@@ -9,6 +9,8 @@ if [[ -n $MAV_SYS_ID && -n $DOODLE_RADIO_IP ]]; then
   sudo /home/dcs_user/airvolute-doodle-setup/initial_setup.sh n $UAV_DOODLE_IP $DOODLE_RADIO_IP
 fi
 
+# TODO: set SYS ID with C++ mavlink app
+
 # Re-generate SSH keys
 sudo ssh-keygen -A
 echo "SSH keys re-generated"
