@@ -51,7 +51,5 @@ sudo usermod -a -G gpio dcs_user
 sudo usermod -a -G dialout dcs_user
 sudo udevadm control --reload-rules && udevadm trigger
 
-
-
 # rm first boot check file, so this setup runs only once
 sudo rm /etc/first_boot
