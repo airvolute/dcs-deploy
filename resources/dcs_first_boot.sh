@@ -9,11 +9,14 @@ if [[ -n $MAV_SYS_ID && -n $DOODLE_RADIO_IP ]]; then
   sudo /home/dcs_user/airvolute-doodle-setup/initial_setup.sh n $UAV_DOODLE_IP $DOODLE_RADIO_IP
 fi
 
-# TODO: set SYS ID with C++ mavlink app
-
 # Re-generate SSH keys
 sudo ssh-keygen -A
 echo "SSH keys re-generated"
+
+# Enable and start fan max speed
+sudo systemctl enable fan_control.service
+sudo systemctl start fan_control.service
+echo "Fan control service enabled and started"
 
 # Enable start usb3_control service after start-up
 sudo systemctl enable usb3_control.service
@@ -39,6 +42,9 @@ sudo systemctl stop nvgetty.service
 echo "nvgetty disabled and stopped"
 
 # TODO: set power mode - nvpmodel does not work, use /etc/nvpmodel.conf instead
+# Just change < PM_CONFIG DEFAULT=5 > at the end of /etc/nvpmodel.conf to '8'
+# inside the customized rootfs
+
 # TODO: set fan to max level and clocks to max level - jetsonclocks --fan
 
 # Set correct permissions and udev rules
