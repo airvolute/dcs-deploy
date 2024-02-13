@@ -558,27 +558,25 @@ class DcsDeploy:
         
         # USB3_CONTROL service
         ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
-
         ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
-
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
 
         # USB_HUB_CONTROL service
         ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
-
         ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
-
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
 
         # FIRST_BOOT service
         ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
-
         ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
-
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
-
         ret += cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
                  os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
+        
+        # FAN_CONTROL service
+        ret += cmd_exec("sudo cp resources/fan_control/fan_control.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/fan_control/fan_control.sh " + bin_destination)
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'fan_control.sh'))
 
         # uhubctl
         ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)

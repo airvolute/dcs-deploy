@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Enable and start fan max speed
+sudo systemctl enable fan_control.service
+sudo systemctl start fan_control.service
+echo "Fan control service enabled and started"
+
 # Enable start usb3_control service after start-up
 sudo systemctl enable usb3_control.service
 echo "Service enabled"
