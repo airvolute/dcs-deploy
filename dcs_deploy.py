@@ -681,6 +681,9 @@ class DcsDeploy:
 
         # uhubctl
         ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + dcs_user_home_destination)
+
+        #mavlink_sys_id_set
+        ret += cmd_exec("sudo cp resources/mavlink_sys_id_set-1.0.0-Linux.deb " + dcs_user_home_destination)
         
         return ret
 

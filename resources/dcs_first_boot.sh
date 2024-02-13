@@ -27,6 +27,7 @@ echo "USB hub scontrol service enabled"
 cd /home/dcs_user
 sudo apt install ./uhubctl_2.1.0-1_arm64.deb
 echo "Uhubctl installed"
+cd ~
 
 # Start services
 sudo systemctl start usb3_control.service
@@ -34,7 +35,9 @@ sudo systemctl start usb_hub_control.service
 
 # Disable nvgetty to be able to use UART
 sudo systemctl disable nvgetty.service
-echo "nvgetty disabled"
+sudo systemctl stop nvgetty.service
+echo "nvgetty disabled and stopped"
+
 # TODO: set power mode - nvpmodel does not work, use /etc/nvpmodel.conf instead
 # TODO: set fan to max level and clocks to max level - jetsonclocks --fan
 
@@ -50,6 +53,11 @@ sudo usermod -a -G i2c dcs_user
 sudo usermod -a -G gpio dcs_user
 sudo usermod -a -G dialout dcs_user
 sudo udevadm control --reload-rules && udevadm trigger
+
+# Install and use mavlink_sys_id_set
+cd /home/dcs_user
+sudo apt install ./mavlink_sys_id_set-1.0.0-Linux.deb
+mavlink_sys_id_set /dev/ttyTHS0 921600 $MAV_SYS_ID 1 0
 
 # rm first boot check file, so this setup runs only once
 sudo rm /etc/first_boot
