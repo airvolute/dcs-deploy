@@ -45,8 +45,6 @@ echo "nvgetty disabled and stopped"
 # Just change < PM_CONFIG DEFAULT=5 > at the end of /etc/nvpmodel.conf to '8'
 # inside the customized rootfs
 
-# TODO: set fan to max level and clocks to max level - jetsonclocks --fan
-
 # Set correct permissions and udev rules
 if [ ! -f /etc/udev/rules.d/61-jetson-common.rules ] ; then
     sudo touch /etc/udev/rules.d/61-jetson-common.rules
