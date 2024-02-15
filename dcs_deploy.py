@@ -24,6 +24,36 @@ def cmd_exec(command_line:str, print_command = False) -> int:
         print("Exitting!")
         exit(5)
 
+def check_and_create_symlink(link_path, target_path):
+    """
+    Check if a symbolic link exists at link_path and points to target_path.
+    If it does not exist or points to a different target, create or update the symlink using sudo.
+    """
+    # Check if the link already exists
+    if os.path.islink(link_path):
+        # Check if the existing link points to the correct target
+        current_target = os.readlink(link_path)
+        if current_target == target_path:
+            print(f"Symlink already exists and points to the correct target: {target_path}")
+            return 0  # Assuming 0 is your success return code
+        else:
+            # The link exists but points to a different target, remove it
+            print(f"Symlink exists but points to a different target. Removing it.")
+            remove_cmd = f"sudo rm {link_path}"
+            remove_ret = cmd_exec(remove_cmd)
+            if remove_ret != 0:
+                print(f"Failed to remove existing symlink: {link_path}")
+                return remove_ret
+
+    # Proceed to create the symlink
+    create_cmd = f"sudo ln -s {target_path} {link_path}"
+    create_ret = cmd_exec(create_cmd)
+    if create_ret == 0:
+        print(f"Symlink created/updated successfully: {link_path} -> {target_path}")
+    else:
+        print(f"Failed to create symlink: {link_path} -> {target_path}")
+    return create_ret
+
 def extract(source_file_path:str, destination_path:str) -> int:
     if "tbz2" in source_file_path or "tar.bz2" in source_file_path:
         return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path + " -I lbzip2")
@@ -228,13 +258,14 @@ class DcsDeploy:
             self.load_selected_config()
             self.init_filesystem()
             self.check_optional_arguments()
-        if self.args.batch_counter is not None:
-            self.batch_counter = BatchCounter(
-                os.path.join(self.flash_path, "batch_counter"), 
-                counter_value=self.args.batch_counter
-            )
-        else:
-            self.batch_counter = BatchCounter(os.path.join(self.flash_path, "batch_counter"))
+
+            if self.args.batch_counter is not None:
+                self.batch_counter = BatchCounter(
+                    os.path.join(self.flash_path, "batch_counter"), 
+                    counter_value=self.args.batch_counter
+                )
+            else:
+                self.batch_counter = BatchCounter(os.path.join(self.flash_path, "batch_counter"))
 
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
@@ -455,10 +486,13 @@ class DcsDeploy:
         self.prepare_status = ProcessingStatus(os.path.join(self.flash_path, "prepare_status.json"), initial_group="prepare")
     
     def cleanup_flash_dir(self):
+            prepare_status_path = os.path.join(self.flash_path, "prepare_status.json")
             print("cleanup_flash_dir...")
-            cmd_exec(f"sudo rm -rf {self.flash_path} && sync")
-            print("creating: " + self.flash_path)
-            os.makedirs(self.flash_path)
+            cmd_exec(f"sudo rm -rf {self.l4t_root_dir} && sync")
+            cmd_exec(f"rm {prepare_status_path} && sync")
+            
+            # print("creating: " + self.flash_path)
+            # os.makedirs(self.flash_path)
 
     def check_dependencies(self):
         l4t_tool = ["abootimg", "binfmt-support", "binutils", "cpp", "device-tree-compiler", "dosfstools", "lbzip2",
@@ -632,7 +666,7 @@ class DcsDeploy:
             ret += cmd_exec("sudo cp -r resources/airvolute-doodle-setup " + dcs_user_home_destination)
         else:
             command = f"sudo python scripts/update_etc_profile.py '{etc_profile_destination}' '{self.batch_counter.counter}'"
-
+            
         ret += cmd_exec(command)
 
     def install_first_boot_setup(self):
@@ -669,8 +703,18 @@ class DcsDeploy:
         ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
         ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
-        ret += cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
-                 os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
+
+        # Create symlink to FIRST_BOOT service
+        symlink_cmd = check_and_create_symlink(
+            os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'),
+            os.path.join(service_destination, 'dcs_first_boot.service'))
+        print(symlink_cmd)
+        if symlink_cmd != 0:
+            ret += cmd_exec(symlink_cmd)
+            
+        # Info: old version of creating symlink
+        # ret += cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
+        #          os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
         
         # FAN_CONTROL service
         ret += cmd_exec("sudo cp resources/fan_control/fan_control.service " + service_destination)
@@ -682,7 +726,6 @@ class DcsDeploy:
 
         #mavlink_sys_id_set
         ret += cmd_exec("sudo cp resources/mavlink_sys_id_set-1.0.0-Linux.deb " + dcs_user_home_destination)
-        
         return ret
 
     def match_selected_config(self):
@@ -789,7 +832,6 @@ class DcsDeploy:
         #     print("Images already generated! Skipping generating images!")
         #     return 0
 
-
         self.prepare_status.set_processing_step("generate_images")
         print("-"*80)
 
@@ -849,7 +891,8 @@ class DcsDeploy:
         # Run sudo identification if not enterred
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.orin_options} {self.board_name} {self.rootdev}", print_command=True)
-        self.batch_counter.increment()
+        if ret == 0:
+            self.batch_counter.increment()
         self.prepare_status.set_status(ret, last_step= True)
 
 
