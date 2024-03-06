@@ -9,9 +9,10 @@ if [[ -n $MAV_SYS_ID && -n $DOODLE_RADIO_IP ]]; then
   sudo /home/dcs_user/airvolute-doodle-setup/initial_setup.sh n $UAV_DOODLE_IP $DOODLE_RADIO_IP
 fi
 
-# Re-generate SSH keys
+# Re-generate SSH keys and access
 sudo ssh-keygen -A
-echo "SSH keys re-generated"
+sudo systemctl restart sshd
+echo "SSH configuration completed"
 
 # Enable and start fan max speed
 sudo systemctl enable fan_control.service

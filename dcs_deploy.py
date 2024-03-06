@@ -598,10 +598,29 @@ class DcsDeploy:
         stop_event.set()
         l4t_animation_thread.join()
         return ret
+    
+    def prepare_sources_mandatory(self, ret=0):
+        # Regenerate ssh access in rootfs
+        print("Purging ssh keys, this part needs sudo privilegies:")
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+        ret += cmd_exec("sudo resources/purge_ssh_keys.sh " + 
+                 os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user','.ssh'))
+        self.networking_setup()
+        
+        # Set default power mode to max
+        print("Setting up power mode, this part needs sudo privilegies:")
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+        if self.args.target_device == 'xavier_nx':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_t194_p3668.conf') +
+                            " 8")
+        if self.args.target_device == 'orin_nx':
+            # TODO: find nvpmodel.conf file for Orin
+            print('Default power mode for Orin NX is not implemented yet.')
 
     def prepare_sources_production(self):
         if self.prepare_status.get_status() == True:
-            self.networking_setup()
+            self.prepare_sources_mandatory()
             print("Binaries already prepared!. Skipping!")
             return 0
         else:
@@ -642,6 +661,8 @@ class DcsDeploy:
         if self.get_resource_url('nv_ota_tools') != None:
             print('Applying Nvidia OTA tools ...')
             ret = self.extract_resource('nv_ota_tools')
+
+        self.prepare_sources_mandatory()
 
         self.prepare_status.set_processing_step("install_first_boot_setup")
         ret = self.install_first_boot_setup()
