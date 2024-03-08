@@ -19,6 +19,26 @@ sudo systemctl enable fan_control.service
 sudo systemctl start fan_control.service
 echo "Fan control service enabled and started"
 
+# TODO: add CUBE flashing process somewhere here
+# Recommendations:
+# - Do this BEFORE running usb_hub_control service
+# - STOP mavlink-router.service before flashing
+# - START mavlink-router.service after flashing
+# - Continue with the rest of the setup
+# - Maybe do this as a separate script, which is run after first boot, but before dcs_first_boot.sh
+# DEV VERSION - this expects all necessary files to be in /home/dcs_user
+# It is not decided yet if we want this to be in specific public repo or anything for now
+# FIXME: there is an error could not open port /dev/ttyTHS0: [Errno 13] Permission denied: '/dev/ttyTHS0'
+# needs to be fixed maybe moving lines 66-76 from this script before this script
+if [ -f /home/dcs_user/uploader.py ] && [ -f /home/dcs_user/arducopter_COP_4_4_3.apj ]; then
+echo "Flashing CUBE"
+  sudo systemctl stop mavlink-router.service
+  sudo -u dcs_user python /home/dcs_user/uploader.py --port /dev/ttyTHS0 --baud-bootloader-flash "921600" --baud-flightstack "921600" /home/dcs_user/arducopter_COP_4_4_3.apj
+  sudo systemctl start mavlink-router.service
+else
+  echo "CUBE flash files missing, not flashing CUBE!"
+fi
+
 # Enable start usb3_control service after start-up
 sudo systemctl enable usb3_control.service
 echo "USB3 control service enabled"
@@ -41,10 +61,6 @@ sudo systemctl start usb_hub_control.service
 sudo systemctl disable nvgetty.service
 sudo systemctl stop nvgetty.service
 echo "nvgetty disabled and stopped"
-
-# TODO: set power mode - nvpmodel does not work, use /etc/nvpmodel.conf instead
-# Just change < PM_CONFIG DEFAULT=5 > at the end of /etc/nvpmodel.conf to '8'
-# inside the customized rootfs
 
 # Set correct permissions and udev rules
 if [ ! -f /etc/udev/rules.d/61-jetson-common.rules ] ; then

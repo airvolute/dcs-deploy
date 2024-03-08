@@ -845,7 +845,7 @@ class DcsDeploy:
         self.prepare_status.change_group("images")
         # check commandline parameter if they are same as previous and images are already generated skip generation
         
-        # TODO: right now, generate images all the time, because there is an predisposition of
+        # FYI: right now, generate images all the time, because there is an predisposition of
         # root filesystem being altered each flash (SYS_ID etc)
         
         # if self.prepare_status.is
