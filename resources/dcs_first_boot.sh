@@ -19,6 +19,24 @@ sudo systemctl enable fan_control.service
 sudo systemctl start fan_control.service
 echo "Fan control service enabled and started"
 
+# Disable nvgetty to be able to use UART
+sudo systemctl disable nvgetty.service
+sudo systemctl stop nvgetty.service
+echo "nvgetty disabled and stopped"
+
+# Set correct permissions and udev rules
+if [ ! -f /etc/udev/rules.d/61-jetson-common.rules ] ; then
+    sudo touch /etc/udev/rules.d/61-jetson-common.rules
+    echo 'KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
+    echo 'KERNEL=="i2c*", SUBSYSTEM=="i2c", MODE="0660", GROUP="i2c"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
+    echo 'KERNEL=="/dev/ttyTHS0*", SUBSYSTEM=="dialout", MODE="0660", GROUP="dialout"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
+fi
+
+sudo usermod -a -G i2c dcs_user
+sudo usermod -a -G gpio dcs_user
+sudo usermod -a -G dialout dcs_user
+sudo udevadm control --reload-rules && udevadm trigger
+
 # TODO: add CUBE flashing process somewhere here
 # Recommendations:
 # - Do this BEFORE running usb_hub_control service
@@ -29,7 +47,7 @@ echo "Fan control service enabled and started"
 # DEV VERSION - this expects all necessary files to be in /home/dcs_user
 # It is not decided yet if we want this to be in specific public repo or anything for now
 # FIXME: there is an error could not open port /dev/ttyTHS0: [Errno 13] Permission denied: '/dev/ttyTHS0'
-# needs to be fixed maybe moving lines 66-76 from this script before this script
+# needs to be fixed maybe moving lines 66-76 from this script before this part
 if [ -f /home/dcs_user/uploader.py ] && [ -f /home/dcs_user/arducopter_COP_4_4_3.apj ]; then
 echo "Flashing CUBE"
   sudo systemctl stop mavlink-router.service
@@ -56,24 +74,6 @@ cd ~
 # Start services
 sudo systemctl start usb3_control.service
 sudo systemctl start usb_hub_control.service
-
-# Disable nvgetty to be able to use UART
-sudo systemctl disable nvgetty.service
-sudo systemctl stop nvgetty.service
-echo "nvgetty disabled and stopped"
-
-# Set correct permissions and udev rules
-if [ ! -f /etc/udev/rules.d/61-jetson-common.rules ] ; then
-    sudo touch /etc/udev/rules.d/61-jetson-common.rules
-    echo 'KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
-    echo 'KERNEL=="i2c*", SUBSYSTEM=="i2c", MODE="0660", GROUP="i2c"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
-    echo 'KERNEL=="/dev/ttyTHS0*", SUBSYSTEM=="dialout", MODE="0660", GROUP="dialout"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
-fi
-
-sudo usermod -a -G i2c dcs_user
-sudo usermod -a -G gpio dcs_user
-sudo usermod -a -G dialout dcs_user
-sudo udevadm control --reload-rules && udevadm trigger
 
 # Install and use mavlink_sys_id_set
 cd /home/dcs_user
