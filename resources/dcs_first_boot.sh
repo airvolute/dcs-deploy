@@ -37,18 +37,9 @@ sudo usermod -a -G gpio dcs_user
 sudo usermod -a -G dialout dcs_user
 sudo udevadm control --reload-rules && udevadm trigger
 
-# TODO: add CUBE flashing process somewhere here
-# Recommendations:
-# - Do this BEFORE running usb_hub_control service
-# - STOP mavlink-router.service before flashing
-# - START mavlink-router.service after flashing
-# - Continue with the rest of the setup
-# - Maybe do this as a separate script, which is run after first boot, but before dcs_first_boot.sh
-# DEV VERSION - this expects all necessary files to be in /home/dcs_user
-# It is not decided yet if we want this to be in specific public repo or anything for now
-# FIXME: there is an error could not open port /dev/ttyTHS0: [Errno 13] Permission denied: '/dev/ttyTHS0'
-# needs to be fixed maybe moving lines 66-76 from this script before this part
-if [ -f /home/dcs_user/uploader.py ] && [ -f /home/dcs_user/arducopter_COP_4_4_3.apj ]; then
+# FYI: name firmware you want to flash the CUBE with to arducopter_fw.apj 
+# and move it to home/dcs_user
+if [ -f /home/dcs_user/uploader.py ] && [ -f /home/dcs_user/arducopter_fw.apj ]; then
 echo "Flashing CUBE"
   sudo systemctl stop mavlink-router.service
   sudo -u dcs_user python /home/dcs_user/uploader.py --port /dev/ttyTHS0 --baud-bootloader-flash "921600" --baud-flightstack "921600" /home/dcs_user/arducopter_COP_4_4_3.apj

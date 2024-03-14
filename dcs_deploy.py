@@ -615,7 +615,7 @@ class DcsDeploy:
                             os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_t194_p3668.conf') +
                             " 8")
         if self.args.target_device == 'orin_nx':
-            # TODO: find nvpmodel.conf file for Orin
+            # TODO: find nvpmodel.conf file for Orin and it's specific high power mode
             print('Default power mode for Orin NX is not implemented yet.')
 
     def prepare_sources_production(self):
