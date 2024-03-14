@@ -661,7 +661,7 @@ class DcsDeploy:
             self.rootdev = "mmcblk0p1"
             self.external_device = ""
         elif self.config['storage'] == 'nvme':
-            self.rootdev = "nvme0n1p1"
+            self.rootdev = "external"
             self.external_device = "--external-device nvme0n1p1 "
             if self.args.ab_partition == True:
                 # setup multiple app partitions
