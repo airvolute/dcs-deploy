@@ -54,8 +54,13 @@ class App(tk.Tk):
         self.device_options = sorted(list(self.devices))
         self.storage_options = sorted(list(self.storages))
         self.board_options = sorted(list(self.boards), key=lambda x: float(x) if x.replace('.', '', 1).isdigit() else x)
-        self.version_options = sorted(list(self.versions), key=lambda x: float(x) if x.replace('.', '', 1).isdigit() else x)
+
+        numeric_versions = {v for v in self.versions if v.replace('.', '', 1).isdigit()}
+        non_numeric_versions = self.versions - numeric_versions
+
+        self.version_options = sorted(numeric_versions, key=float) + sorted(non_numeric_versions)
         self.rootfs_type_options = sorted(list(self.rootfs_types))
+
 
     def create_widgets(self):
         tk.Label(self, text="Device:").grid(row=0, column=0, sticky='w')
@@ -132,9 +137,17 @@ class App(tk.Tk):
                 options.update(config[attribute])
             else:
                 options.add(config[attribute])
+
+        # Separate numeric and non-numeric options for sorting
+        numeric_options = {opt for opt in options if str(opt).replace('.', '', 1).isdigit()}
+        non_numeric_options = options - numeric_options
+
+        sorted_options = sorted(numeric_options, key=lambda x: float(x)) + sorted(non_numeric_options)
+
         dropdown = getattr(self, f"{attribute}_dropdown")
-        dropdown['values'] = sorted(list(options), key=lambda x: float(x) if x.replace('.', '', 1).isdigit() else x)
+        dropdown['values'] = sorted_options
         dropdown.set('')
+
 
     def browse_file(self):
         file_path = filedialog.askopenfilename()

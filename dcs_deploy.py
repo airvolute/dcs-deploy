@@ -725,6 +725,11 @@ class DcsDeploy:
         ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
 
+        # MOUNT_NVME_STORAGE service
+        ret += cmd_exec("sudo cp resources/mount_nvme_storage/mount_nvme_storage.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/mount_nvme_storage/mount_nvme_storage.sh " +   bin_destination)
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'mount_nvme_storage.sh'))
+
         # Create symlink to FIRST_BOOT service
         symlink_cmd = check_and_create_symlink(
             os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'),

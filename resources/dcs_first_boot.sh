@@ -56,6 +56,12 @@ echo "USB3 control service enabled"
 sudo systemctl enable usb_hub_control.service
 echo "USB hub scontrol service enabled"
 
+# Enable and start the NVMe storage service
+sudo systemctl enable mount_nvme_storage.service
+sudo systemctl start mount_nvme_storage.service
+echo "NVMe storage service enabled and started"
+
+
 # Install uhubctl
 cd /home/dcs_user
 sudo apt install ./uhubctl_2.1.0-1_arm64.deb
