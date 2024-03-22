@@ -39,10 +39,10 @@ sudo udevadm control --reload-rules && udevadm trigger
 
 # FYI: name firmware you want to flash the CUBE with to arducopter_fw.apj 
 # and move it to home/dcs_user
-if [ -f /home/dcs_user/uploader.py ] && [ -f /home/dcs_user/arducopter_fw.apj ]; then
+if [ -f /home/dcs_user/uploader.py ] && [ -f /home/dcs_user/arducopter_stribog_fw.apj ]; then
 echo "Flashing CUBE"
   sudo systemctl stop mavlink-router.service
-  sudo -u dcs_user python /home/dcs_user/uploader.py --port /dev/ttyTHS0 --baud-bootloader-flash "921600" --baud-flightstack "921600" /home/dcs_user/arducopter_COP_4_4_3.apj
+  sudo -u dcs_user python /home/dcs_user/uploader.py --port /dev/ttyTHS0 --baud-bootloader-flash "921600" --baud-flightstack "921600" /home/dcs_user/arducopter_stribog_fw.apj
   sudo systemctl start mavlink-router.service
 else
   echo "CUBE flash files missing, not flashing CUBE!"
