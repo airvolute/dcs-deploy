@@ -182,7 +182,8 @@ class App(tk.Tk):
             command += f" --batch_counter {batch_counter}"
         if setup_doodle_radio:
             command += f" --setup_doodle_radio {setup_doodle_radio}"
-        
+
+        command += f"; echo 'Press enter to exit'; read"
         print(f"Executing: {command}")
 
         # Execute the command
