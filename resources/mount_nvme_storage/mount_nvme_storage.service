@@ -1,0 +1,10 @@
+[Unit]
+Description=Mount Secondary NVMe Drive as storage space
+After=remote-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mount_nvme_storage.sh
+
+[Install]
+WantedBy=multi-user.target

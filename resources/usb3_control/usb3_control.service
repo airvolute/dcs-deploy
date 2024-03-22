@@ -1,5 +1,5 @@
 [Unit]
-Description=USB hub control
+Description=USB 3 control
 After=remote-fs.target
 After=syslog.target
 

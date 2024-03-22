@@ -1,0 +1,3 @@
+[submodule "resources/airvolute-doodle-setup"]
+	path = resources/airvolute-doodle-setup
+	url = git@github.com:airvolute/airvolute-doodle-setup.git

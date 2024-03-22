@@ -1,6 +1,7 @@
 [Unit]
 Description=DCS_first_boot_setup
 ConditionPathExists=/etc/first_boot
+After=NetworkManager.service
 
 [Service]
 Type=oneshot

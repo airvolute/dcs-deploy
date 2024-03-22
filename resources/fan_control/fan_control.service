@@ -1,0 +1,11 @@
+[Unit]
+Description=Fan control
+After=remote-fs.target
+After=syslog.target
+After=nvpmodel.service
+
+[Service]
+ExecStart=/usr/local/bin/fan_control.sh
+
+[Install]
+WantedBy=multi-user.target
