@@ -32,6 +32,15 @@ if [ ! -f /etc/udev/rules.d/61-jetson-common.rules ] ; then
     echo 'KERNEL=="/dev/ttyTHS0*", SUBSYSTEM=="dialout", MODE="0660", GROUP="dialout"' | sudo tee -a /etc/udev/rules.d/61-jetson-common.rules
 fi
 
+if [ ! -f /etc/udev/rules.d/11-csi.rules ] ; then
+    sudo touch /etc/udev/rules.d/11-csi.rules
+    echo 'SUBSYSTEM=="video4linux", ATTRS{name}=="vi-output, ov9281_devel 30-0060", SYMLINK+="av-ov9218-camera-csia"' | sudo tee -a /etc/udev/rules.d/11-csi.rules
+    echo 'SUBSYSTEM=="video4linux", ATTRS{name}=="vi-output, tc358743 32-000f", SYMLINK+="av-tc358743-camera-csib"' | sudo tee -a /etc/udev/rules.d/11-csi.rules
+    echo 'SUBSYSTEM=="video4linux", ATTRS{name}=="vi-output, ov9281_devel 31-0060", SYMLINK+="av-ov9218-camera-csic"' | sudo tee -a /etc/udev/rules.d/11-csi.rules
+    echo 'SUBSYSTEM=="video4linux", ATTRS{name}=="vi-output, imx477 33-001a", SYMLINK+="av-imx477-camera-csid"' | sudo tee -a /etc/udev/rules.d/11-csi.rules
+    echo 'SUBSYSTEM=="video4linux", ATTRS{name}=="vi-output, ov9281_devel 34-0060", SYMLINK+="av-ov9218-camera-csif"' | sudo tee -a /etc/udev/rules.d/11-csi.rules
+    echo 'SUBSYSTEM=="video4linux", ATTRS{name}=="vi-output, ov9281_devel 35-0060", SYMLINK+="av-ov9218-camera-csie"' | sudo tee -a /etc/udev/rules.d/11-csi.rules
+fi
 sudo usermod -a -G i2c dcs_user
 sudo usermod -a -G gpio dcs_user
 sudo usermod -a -G dialout dcs_user
