@@ -531,6 +531,9 @@ class DcsDeploy:
     def download_resources(self):
         for missing_resource in self.get_missing_resources(force_all_missing = self.args.force):
             if missing_resource == "rootfs" and self.args.rootfs is not None:
+                if not os.path.isfile(self.args.rootfs):
+                    print("The file specified in --rootfs does not exist: %s" % self.args.rootfs)
+                    exit(6)
                 print("rootfs will not be downloaded, because you want to use custom rootfs.")
                 continue
             print("missing resource '%s'. Going to download it!" % missing_resource)
