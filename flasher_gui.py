@@ -22,7 +22,6 @@ class App(tk.Tk):
         self.configurations = self.load_configurations('local/config_db.json')
         # Extract options for dropdowns
         self.extract_options()
-
         # Define the labels and input fields
         self.create_widgets()
 
