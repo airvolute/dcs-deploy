@@ -16,7 +16,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('DCS Deploy Configurator')
-        self.geometry('380x265')  # Adjusted geometry to fit new options
+        self.geometry('415x265')  # Adjusted geometry to fit new options
         self.process = None
         # Load configurations from JSON file
         self.configurations = self.load_configurations('local/config_db.json')
