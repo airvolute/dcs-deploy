@@ -338,6 +338,10 @@ class DcsDeploy:
                   WARNING! You did not specify --app_size parameter. 
                   You may get 'No space left on device' error while flashing custom rootfs.
                   ''')
+            user_input = input("Do you want to continue? [Y/n]: ")
+            if user_input.lower() == 'n':
+                print("Exiting!")
+                exit(6)
 
     def process_optional_args(self):
         if self.args.version == True:
