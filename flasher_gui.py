@@ -16,7 +16,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('DCS Deploy Configurator')
-        self.geometry('415x265')  # Adjusted geometry to fit new options
+        self.geometry('415x235')  # Adjusted geometry to fit new options
         self.process = None
         # Load configurations from JSON file
         self.configurations = self.load_configurations('local/config_db.json')
@@ -107,11 +107,6 @@ class App(tk.Tk):
         self.deploy_button = tk.Button(self, text="Deploy", command=self.deploy)
         self.deploy_button.grid(row=9, column=1)
 
-        # Status Box (Read-Only Text Box)
-        self.status_var = tk.StringVar()  # Variable to hold the status message text
-        self.status_box = tk.Entry(self, textvariable=self.status_var, state='readonly', width=50)
-        self.status_box.grid(row=10, column=0, columnspan=3, sticky='ew', padx=5, pady=5)
-
     def create_dynamic_dropdown(self, label, row):
         tk.Label(self, text=f"{label}:").grid(row=row, column=0, sticky='w')
         var = tk.StringVar()
@@ -160,12 +155,7 @@ class App(tk.Tk):
         self.rootfs_entry.delete(0, tk.END)
         self.rootfs_entry.insert(0, file_path)
 
-    def update_status(self, message):
-        """Utility function to update the status box."""
-        self.status_var.set(message)  # Update the text variable associated with the status box
-
     def deploy(self):
-        self.update_status("Started deploying...")
         device = self.device_var.get()
         storage = self.storage_var.get()
         board = self.board_var.get()
@@ -197,7 +187,6 @@ class App(tk.Tk):
         self.deployment_thread.start()
 
         config_identifier = f"{device}_{storage}_{board}_{l4t_version}_{rootfs_type}"
-        threading.Thread(target=self.check_flash_status, args=(config_identifier,), daemon=True).start()
 
     def execute_command(self, command, callback=None):
         """Execute a command allowing interaction with the terminal and call callback if provided."""
@@ -206,17 +195,6 @@ class App(tk.Tk):
             process.wait()
         except Exception as e:
             print(f"Error executing command: {e}")
-
-    def check_flash_status(self, config_identifier):
-        """Check the status of the flash process."""
-        home_dir = os.path.expanduser('~')
-        with open(os.path.join(home_dir, '.dcs_deploy/flash', config_identifier, 'prepare_status.json'), 'r') as file:
-            data = json.load(file)
-            while True:
-                if data['flash']['status']:
-                    self.update_status("Deployment successful!")
-                    break
-                time.sleep(1)
 
 
 if __name__ == "__main__":
