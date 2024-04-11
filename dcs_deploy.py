@@ -372,6 +372,11 @@ class DcsDeploy:
         self.config_db = json.load(db_file)
         # Unify specific parameters into list
         update_to_list_fields = ['device', 'board', 'storage']
+        required_variables = ['storage', 'board', 'l4t_version', 'nvidia_overlay', 'airvolute_overlay', 'l4t', 'nv_ota_tools', 'rootfs', 'rootfs_type']
+        for key in self.config_db:
+                if not all(variable in self.config_db[key] for variable in required_variables):
+                    print(f"The key {key} does not contain all the required variables. Database corrupted. Exiting.")
+                    exit(1)
         for config in self.config_db:
             for update_field in update_to_list_fields:
                 if (type(self.config_db[config][update_field]) is not list):

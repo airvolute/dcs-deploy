@@ -33,8 +33,14 @@ class App(tk.Tk):
         sys.exit(0)
 
     def load_configurations(self, filepath):
+        required_variables = ['storage', 'board', 'l4t_version', 'nvidia_overlay', 'airvolute_overlay', 'l4t', 'nv_ota_tools', 'rootfs', 'rootfs_type']
+
         with open(filepath, 'r') as file:
             configurations = json.load(file)
+            for key in configurations:
+                if not all(variable in configurations[key] for variable in required_variables):
+                    print(f"The key {key} does not contain all the required variables. Database corrupted. Exiting.")
+                    exit(1)
         return configurations
 
     def extract_options(self):
