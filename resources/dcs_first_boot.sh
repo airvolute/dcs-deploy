@@ -86,5 +86,9 @@ cd /home/dcs_user
 sudo apt install ./mavlink_sys_id_set-1.0.0-Linux.deb
 mavlink_sys_id_set /dev/ttyTHS0 921600 $MAV_SYS_ID 1 0
 
+# rm leftover resources
+sudo rm /home/dcs_user/mavlink_sys_id_set-1.0.0-Linux.deb
+sudo rm /home/dcs_user/uhubctl_2.1.0-1_arm64.deb
+
 # rm first boot check file, so this setup runs only once
 sudo rm /etc/first_boot
