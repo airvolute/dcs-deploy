@@ -24,6 +24,13 @@ class App(tk.Tk):
         self.extract_options()
         # Define the labels and input fields
         self.create_widgets()
+        # Catch SIGINT signal and stop the mainloop
+        signal.signal(signal.SIGINT, self.signal_handler)
+
+    def signal_handler(self, signal, frame):
+        print('You pressed Ctrl+C!')
+        self.destroy()
+        sys.exit(0)
 
     def load_configurations(self, filepath):
         with open(filepath, 'r') as file:
