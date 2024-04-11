@@ -12,6 +12,11 @@ sudo apt install qemu-user-static sshpass abootimg lbzip2
 pip install wget  
 ```
 
+### Repository preparation - submodule
+```
+git submodule update --init --recursive
+```
+
 # Basic CLI usage
 - **Put Xavier NX into force recovery mode**
 
