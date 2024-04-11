@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # The location where you want to mount the secondary NVMe drive
-mount_location="/home/nvme_data_storage"
+mount_location="/home/dcs_user/nvme_data_storage"
 
 # The NVMe device that the system is booted from (root device)
 booted_nvme=$(findmnt -n -o SOURCE --target /)
