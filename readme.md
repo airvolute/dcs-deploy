@@ -12,7 +12,12 @@ sudo apt install qemu-user-static sshpass abootimg lbzip2
 pip install wget  
 ```
 
-# Basic usage
+### Repository preparation - submodule
+```
+git submodule update --init --recursive
+```
+
+# Basic CLI usage
 - **Put Xavier NX into force recovery mode**
 
 - **cd into dcs-deploy repo**
@@ -27,6 +32,15 @@ or
 ```
 python3 dcs_deploy.py flash xavier_nx 51 1.2 emmc full
 ```
+
+# Basic GUI usage
+We added a simple GUI configurator to run a flash (deployment). You can run it with:
+```
+$ cd /path/to/dcs-deploy
+$ python flasher_gui.py
+```
+
+Then, you get a simple GUI editor app and running, where you are free to select all parameters regarding device flashing. After you click on **Deploy** button, new terminal is opened, where you might be prompted for authentication, continuing/terminating the process. You can also monitor all the info and outputs from commands going on in the background in the terminal too.
 
 # Flashing the device again with existing config
 If you run the script with `flash` flag, it will re-initialize the Linux for Tegra folder each time. If you just want to re-use the folder and flash the same config to multiple devices, use nvidia flashing script:

@@ -24,6 +24,36 @@ def cmd_exec(command_line:str, print_command = False) -> int:
         print("Exitting!")
         exit(5)
 
+def check_and_create_symlink(link_path, target_path):
+    """
+    Check if a symbolic link exists at link_path and points to target_path.
+    If it does not exist or points to a different target, create or update the symlink using sudo.
+    """
+    # Check if the link already exists
+    if os.path.islink(link_path):
+        # Check if the existing link points to the correct target
+        current_target = os.readlink(link_path)
+        if current_target == target_path:
+            print(f"Symlink already exists and points to the correct target: {target_path}")
+            return 0  # Assuming 0 is your success return code
+        else:
+            # The link exists but points to a different target, remove it
+            print(f"Symlink exists but points to a different target. Removing it.")
+            remove_cmd = f"sudo rm {link_path}"
+            remove_ret = cmd_exec(remove_cmd)
+            if remove_ret != 0:
+                print(f"Failed to remove existing symlink: {link_path}")
+                return remove_ret
+
+    # Proceed to create the symlink
+    create_cmd = f"sudo ln -s {target_path} {link_path}"
+    create_ret = cmd_exec(create_cmd)
+    if create_ret == 0:
+        print(f"Symlink created/updated successfully: {link_path} -> {target_path}")
+    else:
+        print(f"Failed to create symlink: {link_path} -> {target_path}")
+    return create_ret
+
 def extract(source_file_path:str, destination_path:str) -> int:
     if "tbz2" in source_file_path or "tar.bz2" in source_file_path:
         return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path + " -I lbzip2")
@@ -59,7 +89,6 @@ class ProcessingStatus:
         self.current_identifier = default_identifier
         self.load()
 
-        
     def load(self):
         if os.path.isfile(self.status_file_name):
             with open(self.status_file_name, "r") as status_file:
@@ -93,7 +122,6 @@ class ProcessingStatus:
             "states": {}
         }
 
-
     def save(self):
         with open(self.status_file_name, "w") as status_file:
             json.dump(self.status, status_file,  indent = 4)
@@ -105,17 +133,15 @@ class ProcessingStatus:
         return self.status["identifier"]
     
     def _remove_identifier(self, identifier, remove_list):
-        #print("input from removing identifier:", identifier)
         if remove_list == []:
             return identifier
-        # remove not matching identifiers
-        cleaned_identifier = identifier[:] # copy identifiers into new list
+        # Remove not matching identifiers
+        cleaned_identifier = identifier[:] # Copy identifiers into new list
         for remove in remove_list:
             if remove in cleaned_identifier:
                 cleaned_identifier.remove(remove)
-        #print("output from removing identifier:", cleaned_identifier)
-        return cleaned_identifier
 
+        return cleaned_identifier
 
     def is_identifier_same_as_prev(self, no_match_list=[]):
         identifier = self._remove_identifier(self.status["identifier"], no_match_list)
@@ -132,7 +158,6 @@ class ProcessingStatus:
         if not group in self.status:
             self._init_group_status()
 
-    
     def set_processing_step(self, processing_step_name:str):
         self.last_processing_step = processing_step_name
         self.status[self.group]["last_processing_step"] = processing_step_name
@@ -146,7 +171,7 @@ class ProcessingStatus:
         states = self.status[self.group]["states"]
         states[processing_step_name] = status
         if last_step == True:
-            # check all status codes
+            # Check all status codes
             self.check_status()
         self.save()
     
@@ -161,14 +186,64 @@ class ProcessingStatus:
                 break
     
     def get_status(self, group = None):
-        #check if configuration was deleled. If yes, reload default configuration
+        # Check if configuration was deleled. If yes, reload default configuration
         if not os.path.isfile(self.status_file_name):
             self.load()
 
         if group == None:
             group = self.group
         return self.status[group]["status"]
-   
+
+class BatchCounter:
+    def __init__(self, counter_file_path:str, counter_value:int = 0):
+        try:
+            counter_value = int(counter_value)
+        except ValueError:
+                raise ValueError(f"Invalid counter_value: {counter_value}. Must be an integer.")
+        
+        if (counter_value < 1 or counter_value > 254) and (counter_value != 0):
+            print('Invalid counter value! Counter value must be between 1 and 254.')
+            exit()
+        self.counter_file_path = counter_file_path
+
+        # Check if the file exists
+        if not os.path.isfile(self.counter_file_path):
+            # If counter_value is within the desired range, use it; otherwise, default to 1
+            self.counter = counter_value if 1 <= counter_value <= 254 else 1
+            with open(self.counter_file_path, 'w') as file:
+                # Write the initial counter value to the file
+                file.write(str(self.counter))
+                print("Batch counter file created.")
+        else:
+            with open(self.counter_file_path, 'r') as file:
+                stored_value = file.read()
+                try:
+                    stored_value = int(stored_value)
+                    # If counter_value is within the desired range, use it;
+                    # otherwise, use the value read from the file
+                    self.counter = counter_value if 1 <= counter_value <= 254 else stored_value
+                except ValueError:
+                    self.counter = 1
+                    print("Warning: Batch counter file was corrupt or empty, resetting to 1.")
+
+        # This ensures that even if the file exists and counter_value is within the desired range,
+        # the counter is set accordingly and saved to the file.
+        if 1 <= counter_value <= 254:
+            self.save()
+        print(f"Jetson is going to be flashed with ID: {self.counter}.")
+        
+    def increment(self):
+        if self.counter < 254:
+            self.counter += 1
+        else:
+            print("Batch counter has reached its maximum value. Resetting to 1.")
+            self.counter = 1
+        self.save()
+
+    def save(self):
+        with open(self.counter_file_path, 'w') as file:
+            file.write(str(self.counter))
+
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
@@ -183,6 +258,13 @@ class DcsDeploy:
             self.init_filesystem()
             self.check_optional_arguments()
 
+            if self.args.batch_counter is not None:
+                self.batch_counter = BatchCounter(
+                    os.path.join(self.flash_path, "batch_counter"), 
+                    counter_value=self.args.batch_counter
+                )
+            else:
+                self.batch_counter = BatchCounter(os.path.join(self.flash_path, "batch_counter"))
 
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
@@ -209,6 +291,23 @@ class DcsDeploy:
         ab_partition_help = 'Prepare ab partion for system update. Only available for nvme devices'
         subparser.add_argument('--ab_partition', action='store_true', help=ab_partition_help)
 
+        opt_app_size_help = 'Set APP partition size in GB. Use when you get "No space left on device" error while flashing custom rootfs'
+        subparser.add_argument('--app_size', help=opt_app_size_help)
+
+        rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
+        subparser.add_argument('--rootfs', help=rootfs_help)
+
+        doodle_radio_setup_help = 'Enable OEM setup for doodle radios. Format: <doodle_radio_ip>' 
+        subparser.add_argument(
+            '--setup_doodle_radio', help=doodle_radio_setup_help)
+        
+        batch_counter_help = '''
+            Counter for batch flashing. It is used to keep track of the number of devices flashed in a single batch.
+            It can be set to any value between 1 and 254. If not set, the counter defaults to 1. Counter is incremented
+            after each successfuly flashed device. If the counter reaches 254, it is reset to 1.
+            '''
+        subparser.add_argument('--batch_counter', help=batch_counter_help)
+
     def create_parser(self):
         """
         Create an ArgumentParser and all its options
@@ -222,7 +321,6 @@ class DcsDeploy:
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
         
-
         self.add_common_parser(flash)
 
         parser.add_argument('--version', action='store_true',  default='', help="Show version")
@@ -234,6 +332,16 @@ class DcsDeploy:
             print("AB partition is allowed only for nvme devices! (%s)" % self.config['storage'])
             print("Exitting!")
             exit(6)
+
+        if self.args.rootfs is not None and self.args.app_size is None:
+            print('''
+                  WARNING! You did not specify --app_size parameter. 
+                  You may get 'No space left on device' error while flashing custom rootfs.
+                  ''')
+            user_input = input("Do you want to continue? [Y/n]: ")
+            if user_input.lower() == 'n':
+                print("Exiting!")
+                exit(6)
 
     def process_optional_args(self):
         if self.args.version == True:
@@ -262,8 +370,13 @@ class DcsDeploy:
             exit(2)
 
         self.config_db = json.load(db_file)
-        # unify specific parameters into list
+        # Unify specific parameters into list
         update_to_list_fields = ['device', 'board', 'storage']
+        required_variables = ['storage', 'board', 'l4t_version', 'nvidia_overlay', 'airvolute_overlay', 'l4t', 'nv_ota_tools', 'rootfs', 'rootfs_type']
+        for key in self.config_db:
+                if not all(variable in self.config_db[key] for variable in required_variables):
+                    print(f"The key {key} does not contain all the required variables. Database corrupted. Exiting.")
+                    exit(1)
         for config in self.config_db:
             for update_field in update_to_list_fields:
                 if (type(self.config_db[config][update_field]) is not list):
@@ -308,7 +421,6 @@ class DcsDeploy:
             replace_str = "/downloads"
         path += u.path.replace(replace_str, '')
         return path
-        #return os.path.dirname(path)
 
     def cleanup_old_download_dir(self):
         old_download_dir = self.config['device'] + '_' + self.config['storage'] + '_' + self.config['board'] + '_'
@@ -338,18 +450,22 @@ class DcsDeploy:
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
-        # generate download resource paths
+        # Generate download resource paths
         resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
         self.resource_paths = {}
 
         for res_name in resource_keys:
             #print(" %s key: %s" % (res_name, self.config[res_name]))
+            if res_name == "rootfs" and self.args.rootfs is not None:
+                print(self.args.rootfs)
+                self.resource_paths[res_name] = self.args.rootfs
+                continue
             self.resource_paths[res_name] = self.get_download_file_path(self.get_resource_url(res_name))
 
         if not os.path.isdir(self.download_path):
             os.makedirs(self.download_path)
 
-        # remove old download directories
+        # Remove old download directories
         self.cleanup_old_download_dir()
 
         if self.config['device'] == 'xavier_nx': 
@@ -359,7 +475,7 @@ class DcsDeploy:
         if not os.path.isdir(self.dsc_deploy_root):
             os.mkdir(self.dsc_deploy_root)
 
-        # create dcs-deploy download dir
+        # Create dcs-deploy download dir
         for key in self.resource_paths:
             if self.resource_paths[key] == "":
                 continue
@@ -377,10 +493,10 @@ class DcsDeploy:
         self.prepare_status = ProcessingStatus(os.path.join(self.flash_path, "prepare_status.json"), initial_group="prepare")
     
     def cleanup_flash_dir(self):
+            prepare_status_path = os.path.join(self.flash_path, "prepare_status.json")
             print("cleanup_flash_dir...")
-            cmd_exec(f"sudo rm -rf {self.flash_path} && sync")
-            print("creating: " + self.flash_path)
-            os.makedirs(self.flash_path)
+            cmd_exec(f"sudo rm -rf {self.l4t_root_dir} && sync")
+            cmd_exec(f"rm {prepare_status_path} && sync")
 
     def check_dependencies(self):
         l4t_tool = ["abootimg", "binfmt-support", "binutils", "cpp", "device-tree-compiler", "dosfstools", "lbzip2",
@@ -390,7 +506,7 @@ class DcsDeploy:
         dcs_deploy_dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2"]
         
         dependencies = l4t_tool
-        # append dcs_deploy_dependencies which are unique
+        # Append dcs_deploy_dependencies which are unique
         for dependency in dcs_deploy_dependencies + l4t_other_dependencies:
             if dependency not in dependencies:
                 dependencies.append(dependency)
@@ -412,20 +528,26 @@ class DcsDeploy:
         for resouce in self.resource_paths:
             if os.path.isfile(self.resource_paths[resouce]) and force_all_missing == False:
                 continue
-            # return only resource which is possible to download
+            # Return only resource which is possible to download
             if(self.get_resource_url(resouce) != None):
                 res += [resouce]
         return res
 
     def download_resources(self):
         for missing_resource in self.get_missing_resources(force_all_missing = self.args.force):
+            if missing_resource == "rootfs" and self.args.rootfs is not None:
+                if not os.path.isfile(self.args.rootfs):
+                    print("The file specified in --rootfs does not exist: %s" % self.args.rootfs)
+                    exit(6)
+                print("rootfs will not be downloaded, because you want to use custom rootfs.")
+                continue
             print("missing resource '%s'. Going to download it!" % missing_resource)
             ret = self.download_resource(missing_resource, self.resource_paths[missing_resource])
             if ret < 0:
                 print("can't download resource '" + missing_resource + "'!.")
                 print("exitting!")
                 exit(4)
-            # regenerate
+            # Regenerate
             self.cleanup_flash_dir()
         print('Resources for your config are already downloaded!')
         return True
@@ -443,10 +565,10 @@ class DcsDeploy:
             print("Skipping downloading resource" + resource_name)
             return 2
         print("Downloading %s:" % resource_name)
-        # remove any existing temporary files
+        # Remove any existing temporary files
         cmd_exec("rm -f " + dst_path + "*.tmp")
 
-        #check if file already exist
+        # Check if file already exist
         if os.path.isfile(dst_path) and self.args.force == False:
             yes = yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
             if yes == False:
@@ -483,10 +605,46 @@ class DcsDeploy:
         stop_event.set()
         l4t_animation_thread.join()
         return ret
+    
+    def prepare_sources_mandatory(self, ret=0):
+        # Regenerate ssh access in rootfs
+        print("Purging ssh keys, this part needs sudo privilegies:")
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+        ret += cmd_exec("sudo resources/purge_ssh_keys.sh " + 
+                 os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user','.ssh'))
+        self.networking_setup()
         
+        # Set default power mode to max
+        print("Setting up power mode, this part needs sudo privilegies:")
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+        if self.args.target_device == 'xavier_nx':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_t194_p3668.conf') +
+                            " 8")
+            
+        if self.args.target_device == 'orin_nx':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0000.conf') +
+                            " 0")
+            
+        if self.args.target_device == 'orin_nx_8gb':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0001.conf') +
+                            " 0")
+
+        if self.args.target_device == 'orin_nano_4gb':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0004.conf') +
+                            " 0")
+
+        if self.args.target_device == 'orin_nano_8gb':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0003.conf') +
+                            " 0")
 
     def prepare_sources_production(self):
         if self.prepare_status.get_status() == True:
+            self.prepare_sources_mandatory()
             print("Binaries already prepared!. Skipping!")
             return 0
         else:
@@ -528,6 +686,8 @@ class DcsDeploy:
             print('Applying Nvidia OTA tools ...')
             ret = self.extract_resource('nv_ota_tools')
 
+        self.prepare_sources_mandatory()
+
         self.prepare_status.set_processing_step("install_first_boot_setup")
         ret = self.install_first_boot_setup()
         self.prepare_status.set_status(ret, last_step = True)
@@ -537,6 +697,22 @@ class DcsDeploy:
 
     def prepare_nvidia_overlay(self):
         return self.extract_resource('nvidia_overlay')
+
+    def networking_setup(self, ret=0):
+        dcs_user_home_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+        etc_profile_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'profile')
+        
+        print("Setting up networking, this part needs sudo privilegies:")
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+
+        if self.args.setup_doodle_radio is not None:
+            uav_static_ip = "10.223.0." + str(self.batch_counter.counter)
+            command = f"sudo python scripts/update_etc_profile.py '{etc_profile_destination}' '{self.batch_counter.counter}' '{uav_static_ip}' '{self.args.setup_doodle_radio}'"
+            ret += cmd_exec("sudo cp -r resources/airvolute-doodle-setup " + dcs_user_home_destination)
+        else:
+            command = f"sudo python scripts/update_etc_profile.py '{etc_profile_destination}' '{self.batch_counter.counter}'"
+            
+        ret += cmd_exec(command)
 
     def install_first_boot_setup(self):
         """
@@ -553,42 +729,56 @@ class DcsDeploy:
         # Bin destination
         bin_destination = os.path.join(self.rootfs_extract_dir, 'usr', 'local', 'bin')
 
-        # uhubctl destination
-        uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+        # Uhubctl destination
+        dcs_user_home_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+
+        self.networking_setup(ret)
         
         # USB3_CONTROL service
         ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
-
         ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
-
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
 
         # USB_HUB_CONTROL service
         ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
-
         ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
-
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
 
         # FIRST_BOOT service
         ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
-
         ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
-
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
 
-        ret += cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
-                 os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
+        # MOUNT_NVME_STORAGE service
+        ret += cmd_exec("sudo cp resources/mount_nvme_storage/mount_nvme_storage.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/mount_nvme_storage/mount_nvme_storage.sh " +   bin_destination)
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'mount_nvme_storage.sh'))
 
-        # uhubctl
-        ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
+        # Create symlink to FIRST_BOOT service
+        symlink_cmd = check_and_create_symlink(
+            os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'),
+            os.path.join(service_destination, 'dcs_first_boot.service'))
+        print(symlink_cmd)
+        if symlink_cmd != 0:
+            ret += cmd_exec(symlink_cmd)
+        
+        # FAN_CONTROL service
+        ret += cmd_exec("sudo cp resources/fan_control/fan_control.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/fan_control/fan_control.sh " + bin_destination)
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'fan_control.sh'))
+
+        # Uhubctl
+        ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + dcs_user_home_destination)
+
+        # Mavlink_sys_id_set
+        ret += cmd_exec("sudo cp resources/mavlink_sys_id_set-1.0.0-Linux.deb " + dcs_user_home_destination)
         return ret
 
     def match_selected_config(self):
         """
         Get selected config based on loaded database from console arguments enterred by user
         """
-        # do not search again
+        # Do not search again
         if self.selected_config_name != None:
             return self.selected_config_name
         
@@ -608,7 +798,6 @@ class DcsDeploy:
 
     def print_user_config(self):
         items = ["target_device", "jetpack", "hwrev", "storage", "rootfs_type" ]
-        #print("==== user configuration ====")
         self.print_config(self.args.__dict__, items)
 
     def list_all_versions(self):
@@ -632,7 +821,7 @@ class DcsDeploy:
        
         self.config_db = self.config_db[config]
         
-        # update selected config according user enterred parameters
+        # Update selected config according user enterred parameters
         self.config = self.config_db
         self.config['device'] = self.args.target_device
         self.config['board'] = self.args.hwrev
@@ -642,7 +831,7 @@ class DcsDeploy:
 
     def setup_initrd_flashing(self):
         os.chdir(self.l4t_root_dir)
-        #set variables for initrd flash
+        # Set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         
         if self.config['device'] == 'xavier_nx':
@@ -650,7 +839,7 @@ class DcsDeploy:
             self.orin_options = ""
         elif self.config['device'] == 'orin_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
-            # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
+            # Based on docs from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
             # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
             self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
         else:
@@ -661,43 +850,45 @@ class DcsDeploy:
             self.rootdev = "mmcblk0p1"
             self.external_device = ""
         elif self.config['storage'] == 'nvme':
-            self.rootdev = "nvme0n1p1"
+            self.rootdev = "external"
             self.external_device = "--external-device nvme0n1p1 "
             if self.args.ab_partition == True:
-                # setup multiple app partitions
+                # Setup multiple app partitions
                 self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
             else:
-                # setup no multiple app partitions
+                # Setup no multiple app partitions
                 self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external_custom.xml')
         else:
             print("Unknown storage [%s]! exitting" % self.config['storage'])
             exit(9)
-        # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
+        # Fix default rootdev to external  (or internal) for orin. There is NFS used to flash
         if self.config['device'] == 'orin_nx':
-            self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
+            # "internal" - boot from  on-board device (eMMC/SDCARD)
+            # "external" - boot from external device. For more see flash.sh examples
+            self.rootdev = "external"
 
     def generate_images(self):
         self.prepare_status.change_group("images")
-        # check commandline parameter if they are same as previous and images are already generated skip generation
-        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
-            print("Images already generated! Skipping generating images!")
-            return 0
+        # FYI: right now, generate images all the time, because there is an predisposition of
+        # root filesystem being altered each flash (SYS_ID etc)
 
         self.prepare_status.set_processing_step("generate_images")
         print("-"*80)
+
         print("Generating images! ...")
         ret = -2
 
         # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
         # flash internal emmc"
+
         if self.config['storage'] == 'emmc':
             ret = cmd_exec(f"sudo ./{self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
-        # flash external nvme drive
+        # Flash external nvme drive
         elif self.config['storage'] == 'nvme':
-            #file to check: initrdflashparam.txt - contains last enterred parameters
+            # File to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = ""
             opt_app_size_arg = ""
-            external_only = "--external-only" # flash only external device
+            external_only = "--external-only"
             
             if self.args.ab_partition == True:
                 env_vars = "ROOTFS_AB=1"
@@ -706,10 +897,13 @@ class DcsDeploy:
                 else:
                     opt_app_size = 8
                 opt_app_size_arg = f"-S {opt_app_size}GiB"
-                external_only = "" # flash internal and external device
-                #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
+                external_only = "" # Flash internal and external device
+
+            if self.args.app_size is not None:
+                opt_app_size_arg = f"-S {self.args.app_size}GiB"
+
             if self.config['device'] == 'orin_nx':
-                external_only = "" # don't flash only external device
+                external_only = "" # Don't flash only external device
                 
             cmd_exec("pwd")
             ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} " +
@@ -718,23 +912,26 @@ class DcsDeploy:
         return ret
 
     def flash(self):
-        # setup flashing
+        # Setup flashing
         self.setup_initrd_flashing()
         
-        # generate images
+        # Generate images
         ret = self.generate_images()
         if ret != 0:
+
             print("Generating images was not sucessfull! ret = %d" % (ret))
             print("Exitting!")
             exit(7)
-        # flash device
+        # Flash device
         print("-"*80)
         print("Flash images! ...")
         self.prepare_status.change_group("flash")
         self.prepare_status.set_processing_step("flash_only")
-        # Run sudo identification if not enterred
+        # Run sudo identification
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.orin_options} {self.board_name} {self.rootdev}", print_command=True)
+        if ret == 0:
+            self.batch_counter.increment()
         self.prepare_status.set_status(ret, last_step= True)
 
 
@@ -743,7 +940,6 @@ class DcsDeploy:
             print('Unsupported configuration!')
             return
         print("matched configuration: " + self.selected_config_name)
-
         self.download_resources()
         self.prepare_sources_production()
         self.flash()
