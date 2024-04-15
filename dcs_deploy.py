@@ -621,9 +621,26 @@ class DcsDeploy:
             ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
                             os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_t194_p3668.conf') +
                             " 8")
+            
         if self.args.target_device == 'orin_nx':
-            # TODO: find nvpmodel.conf file for Orin and it's specific high power mode
-            print('Default power mode for Orin NX is not implemented yet.')
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0000.conf') +
+                            " 0")
+            
+        if self.args.target_device == 'orin_nx_8gb':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0001.conf') +
+                            " 0")
+
+        if self.args.target_device == 'orin_nano_4gb':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0004.conf') +
+                            " 0")
+
+        if self.args.target_device == 'orin_nano_8gb':
+            ret += cmd_exec("sudo python scripts/set_default_powermode.py " +
+                            os.path.join(self.rootfs_extract_dir, 'etc', 'nvpmodel', 'nvpmodel_p3767_0003.conf') +
+                            " 0")
 
     def prepare_sources_production(self):
         if self.prepare_status.get_status() == True:
