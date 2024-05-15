@@ -1,5 +1,13 @@
 #!/bin/bash
 
+source /etc/profile
+
+
+# Re-generate SSH keys and access
+sudo ssh-keygen -A
+sudo systemctl restart sshd
+echo "SSH configuration completed"
+
 # Enable and start fan max speed
 sudo systemctl enable fan_control.service
 sudo systemctl start fan_control.service

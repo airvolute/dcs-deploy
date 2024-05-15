@@ -528,6 +528,12 @@ class DcsDeploy:
             print('Applying Nvidia OTA tools ...')
             ret = self.extract_resource('nv_ota_tools')
 
+        # Regenerate ssh access in rootfs
+        print("Purging ssh keys, this part needs sudo privilegies:")
+        cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
+        ret += cmd_exec("sudo resources/purge_ssh_keys.sh " + 
+                 os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user','.ssh'))
+
         self.prepare_status.set_processing_step("install_first_boot_setup")
         ret = self.install_first_boot_setup()
         self.prepare_status.set_status(ret, last_step = True)
