@@ -24,6 +24,36 @@ def cmd_exec(command_line:str, print_command = False) -> int:
         print("Exitting!")
         exit(5)
 
+def check_and_create_symlink(link_path, target_path):
+    """
+    Check if a symbolic link exists at link_path and points to target_path.
+    If it does not exist or points to a different target, create or update the symlink using sudo.
+    """
+    # Check if the link already exists
+    if os.path.islink(link_path):
+        # Check if the existing link points to the correct target
+        current_target = os.readlink(link_path)
+        if current_target == target_path:
+            print(f"Symlink already exists and points to the correct target: {target_path}")
+            return 0  # Assuming 0 is your success return code
+        else:
+            # The link exists but points to a different target, remove it
+            print(f"Symlink exists but points to a different target. Removing it.")
+            remove_cmd = f"sudo rm {link_path}"
+            remove_ret = cmd_exec(remove_cmd)
+            if remove_ret != 0:
+                print(f"Failed to remove existing symlink: {link_path}")
+                return remove_ret
+
+    # Proceed to create the symlink
+    create_cmd = f"sudo ln -s {target_path} {link_path}"
+    create_ret = cmd_exec(create_cmd)
+    if create_ret == 0:
+        print(f"Symlink created/updated successfully: {link_path} -> {target_path}")
+    else:
+        print(f"Failed to create symlink: {link_path} -> {target_path}")
+    return create_ret
+
 def extract(source_file_path:str, destination_path:str) -> int:
     if "tbz2" in source_file_path or "tar.bz2" in source_file_path:
         return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path + " -I lbzip2")
@@ -594,8 +624,11 @@ class DcsDeploy:
         ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
         ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
-        ret += cmd_exec("sudo ln -s /etc/systemd/system/dcs_first_boot.service " + 
-                 os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'))
+        
+        # Create symlink to FIRST_BOOT service
+        ret += check_and_create_symlink(
+            os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'),
+            os.path.join(service_destination, 'dcs_first_boot.service'))
         
         # FAN_CONTROL service
         ret += cmd_exec("sudo cp resources/fan_control/fan_control.service " + service_destination)
@@ -604,6 +637,7 @@ class DcsDeploy:
 
         # uhubctl
         ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
+        
         return ret
 
     def match_selected_config(self):
