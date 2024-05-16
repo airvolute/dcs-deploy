@@ -386,7 +386,11 @@ class DcsDeploy:
         for res_name in resource_keys:
             #print(" %s key: %s" % (res_name, self.config[res_name]))
             if res_name == "rootfs" and self.args.rootfs is not None:
-                print(self.args.rootfs)
+                if os.path.exists(self.args.rootfs):
+                    self.resource_paths[res_name] = self.args.rootfs
+                else:
+                    print(f"Error: The specified rootfs path does not exist: {self.args.rootfs}")
+                    exit(1)
                 self.resource_paths[res_name] = self.args.rootfs
                 continue
             self.resource_paths[res_name] = self.get_download_file_path(self.get_resource_url(res_name))
