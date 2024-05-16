@@ -755,12 +755,9 @@ class DcsDeploy:
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'mount_nvme_storage.sh'))
 
         # Create symlink to FIRST_BOOT service
-        symlink_cmd = check_and_create_symlink(
+        ret += check_and_create_symlink(
             os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'),
             os.path.join(service_destination, 'dcs_first_boot.service'))
-        print(symlink_cmd)
-        if symlink_cmd != 0:
-            ret += cmd_exec(symlink_cmd)
         
         # FAN_CONTROL service
         ret += cmd_exec("sudo cp resources/fan_control/fan_control.service " + service_destination)
