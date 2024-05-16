@@ -534,7 +534,7 @@ class DcsDeploy:
         
 
     def prepare_sources_production(self):
-        if self.prepare_status.get_status() == True:
+        if self.prepare_status.get_status() == True and self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]):
             print("Binaries already prepared!. Skipping!")
             return 0
         else:
@@ -637,7 +637,7 @@ class DcsDeploy:
 
         # uhubctl
         ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
-        
+
         return ret
 
     def match_selected_config(self):
