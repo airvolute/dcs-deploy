@@ -11,7 +11,7 @@
     "rootfs": "https://airvolute.com/download/dcs_deployment_testing/jp_51_clean_rootfs.tbz2",
     "rootfs_type": "minimal"
   },
-  "config_3": {
+  "config_2": {
     "device": "xavier_nx",
     "storage": ["emmc", "nvme"],
     "board": "1.2",
@@ -23,10 +23,10 @@
     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
     "rootfs_type": "full"
   },
-  "config_4_orin": {
+  "config_3": {
     "device": "orin_nx",
     "storage": "nvme",
-    "board": ["1.2", "2.0"],
+    "board":  "2.0",
     "l4t_version": "51",
     "nvidia_overlay": "none",
     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_dcs20.tbz2",
@@ -35,7 +35,7 @@
     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
     "rootfs_type": "full"
   },
-  "config_5": {
+  "config_4": {
     "device": "xavier_nx",
     "storage": ["nvme", "emmc"],
     "board": "1.2",
@@ -47,13 +47,37 @@
     "rootfs": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Tegra_Linux_Sample-Root-Filesystem_R35.4.1_aarch64.tbz2",
     "rootfs_type": "full"
   },
-  "config_7": {
+  "config_5": {
     "device": "orin_nx",
     "storage": "nvme",
     "board": "1.2",
     "l4t_version": "512",
     "nvidia_overlay": "none",
     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_jp512_ao_01.tbz2",
+    "l4t": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Jetson_Linux_R35.4.1_aarch64.tbz2",
+    "nv_ota_tools" : "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v4.1/release/ota_tools_r35.4.1_aarch64.tbz2",
+    "rootfs": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Tegra_Linux_Sample-Root-Filesystem_R35.4.1_aarch64.tbz2",
+    "rootfs_type": "full"
+  },
+  "config_6": {
+    "device": ["orin_nx","orin_nx_8gb, orin_nano_8gb", "orin_nano_4gb"],
+    "storage": "nvme",
+    "board": "2.0",
+    "l4t_version": "512",
+    "nvidia_overlay": "none",
+    "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_jp512_ao_03_dcs20.tbz2",
+    "l4t": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Jetson_Linux_R35.4.1_aarch64.tbz2",
+    "nv_ota_tools" : "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v4.1/release/ota_tools_r35.4.1_aarch64.tbz2",
+    "rootfs": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Tegra_Linux_Sample-Root-Filesystem_R35.4.1_aarch64.tbz2",
+    "rootfs_type": "full"
+  },
+  "config_7": {
+    "device": "orin_nx",
+    "storage": "nvme",
+    "board": "2.0",
+    "l4t_version": "512_avt",
+    "nvidia_overlay": "none",
+    "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_jp512_ao_02_dcs20_avt.tbz2",
     "l4t": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Jetson_Linux_R35.4.1_aarch64.tbz2",
     "nv_ota_tools" : "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v4.1/release/ota_tools_r35.4.1_aarch64.tbz2",
     "rootfs": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Tegra_Linux_Sample-Root-Filesystem_R35.4.1_aarch64.tbz2",
