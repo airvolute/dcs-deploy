@@ -613,6 +613,12 @@ class DcsDeploy:
 
         # uhubctl destination
         uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
+
+        # Resources destination
+        utilities_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'utilities')
+
+        # Create resources directory
+        ret += cmd_exec("sudo mkdir -p " + utilities_destination)
         
         # USB3_CONTROL service
         ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
@@ -642,6 +648,8 @@ class DcsDeploy:
         # uhubctl
         ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
 
+        # utilities
+        ret += cmd_exec("sudo cp -r resources/utilities/* " + utilities_destination)
         return ret
 
     def match_selected_config(self):
