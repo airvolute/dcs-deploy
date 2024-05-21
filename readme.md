@@ -136,6 +136,34 @@ As a root of this filesystem, `.dcs_deploy` folder is created inside **host pc H
 - `download` contains downloaded archives needed for flashing
 - `flash` contains extracted folders that are needed for flashing. Those are folders from `download` dir + some nvidia and airvolute scripts applied, so the flashing environment is fully ready.
 
+### Hardware Supporting System Services (systemctl)
+- `ethernet_switch_control`, `usb_hub_control`, and `usb3_control` are additional services that activate or reinitialize some hardware modules to ensure stable functionality during power cycles. By default, users do not need to modify these services in any way.
+- `fan_control` is another extra service that boosts clocks and activates the fan to 100%. If this behavior is undesired, it can be disabled with the command `sudo systemctl disable fan_control`.
+- On DCS 1.0 and 1.2, `ethernet_switch_control` will reset the USB hub. This is not an issue, but if undesired, it can be disabled similarly to fan_control.
+
+### Cube (Autopilot) Connection
+- Currently, the connection to the Cube is not set up by default.
+- We recommend using the tool `mavlink-router` - https://github.com/mavlink-router/mavlink-router.
+  - When using `mavlink-router`, you can specify a connection to the Cube and then define endpoints to which the router should route Mavlink messages (your GCS IP and port).
+  - This configuration is defined in the `main.conf` file (default location at `/etc/mavlink-router/main.conf`).
+  - Example content of the `main.conf` file to enable GCS forwarding:
+
+```
+[General]
+DebugLogLevel = info
+TcpServerPort = 0
+# Leave to TCP if using SITL
+# Main connection to AutoPilot
+[UartEndpoint cube]
+Device = /dev/ttyTHS0
+Baud = 921600
+
+[UdpEndpoint GCS]
+Mode = Normal
+Address = 10.223.255.255
+Port = 14550
+``` 
+
 ### Known limitations
 - When the script is re-ran, flash config folder is deleted and the files are extracted again.
 - The database of configs is held inside this repository, which is not ideal.

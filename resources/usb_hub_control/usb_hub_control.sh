@@ -1,14 +1,7 @@
 #!/bin/bash
-device=$(cat /sys/devices/soc0/soc_id)
+# launch the usb hub in the case that it was not properly initialized
+i2cset -y 0 0x2d 0xAA 0x55 0x00 i
 
-if [[ "$device" == "35" ]]; then
-    echo 331 > /sys/class/gpio/export
-    echo out > /sys/class/gpio/PCC.03/direction
-    echo 1 > /sys/class/gpio/PCC.03/value
-    sleep 1
-    i2cset -y 0 0x2d 0xAA 0x55 0x00 i
-    sleep 1
-fi
-
+sleep 1
+# disable USB port 6 so Cube can be connected via serial
 sudo uhubctl -a off -p 6
-

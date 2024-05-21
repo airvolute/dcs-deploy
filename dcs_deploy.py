@@ -630,6 +630,11 @@ class DcsDeploy:
         ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
 
+        # ETHERNET_SWITCH_CONTROL service
+        ret += cmd_exec("sudo cp resources/ethernet_switch_control/ethernet_switch_control.service " + service_destination)
+        ret += cmd_exec("sudo cp resources/ethernet_switch_control/ethernet_switch_control.sh " + bin_destination)
+        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'ethernet_switch_control.sh'))
+
         # FIRST_BOOT service
         ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
         ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
