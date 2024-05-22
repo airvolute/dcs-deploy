@@ -1,7 +1,7 @@
 `dcs-deploy` packages serves as a tool for flashing Nvidia Jetson family devices supporting airvolute hardware. It is developed for Python 3 only.
 
 # Dependencies
-**! DISLAIMER - ALL COMMANDS ARE RUN ON HOST PC !**
+**! DISLAIMER - INSTALL THOSE INSIDE HOST PC !**
 ### APT
 
 ```  
@@ -13,39 +13,97 @@ pip install wget
 ```
 
 # Basic usage
-- **Put Xavier NX into force recovery mode**
+1. **Put Jetson into force recovery mode**
+    - Short FC pin with ground on DCS boards (See [Control](https://docs.airvolute.com/autopilots/dcs2/.pilot-boards/dcs2.pilot-v-1.0/connectors-and-pinouts#control) section for your specific board. This example is for DCS 2.0 pilot board.)
+    - You can check if the device is really in force recovery mode with `lsusb` command. There should be Nvidia entry in the query.
+    - Next, connect the device to the host pc using [dev micro usb connector](https://docs.airvolute.com/autopilots/dcs2/.pilot-boards/dcs2.pilot-v-1.0/connectors-and-pinouts#top-side-onboard-connectors) - again example for DCS 2.0 board.
 
-- **cd into dcs-deploy repo**
-```
-cd /path/to/dcs-deploy
-```
-- **run dcs_deploy.py**:
-```
-python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme full
-```
-or
-```
-python3 dcs_deploy.py flash xavier_nx 51 1.2 emmc full
-```
+2. **cd into dcs-deploy repo**
+    ```
+    cd /path/to/dcs-deploy
+    ```
+
+3. **Run dcs_deploy.py**
+For example:
+    ```
+    python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme full
+    ```
+
+    You can list supported configs with:
+    ```
+    python3 dcs_deploy.py list
+    ```
+
+4. **After a successful flash, the Jetson will boot and can be logged in using SSH with default credentials:**
+    - login: `dcs_user`
+    - password: `dronecore`
+
+If you shut the Jetson down after flash and then boot it again, make sure you remove cable/jumper that enables Force recovery mode.
 
 # Flashing the device again with existing config
 If you run the script with `flash` flag, it will re-initialize the Linux for Tegra folder each time. If you just want to re-use the folder and flash the same config to multiple devices, use nvidia flashing script:
  
-1. Change directory to to `kernel_flash` dir
+1. **Change directory to to `kernel_flash` dir**
 
+    ```
+    cd ~/.dcs_deploy/flash/<config_name>/Linux_for_tegra/tools/kernel_flash
+    ```
+
+2. **Launch `l4t_initrd_flash.sh` script with appropriate parameters**
+    ```
+    # nvme
+    sudo ./l4t_initrd_flash.sh --flash-only --external-only --external-device nvme0n1p1 -c flash_l4t_external_custom.xml --showlogs airvolute-dcs1.2+p3668-0001-qspi-emmc nvme0n1p1
+    # emmc
+    sudo ./l4t_initrd_flash.sh --flash-only airvolute-dcs1.2+p3668-0001-qspi-emmc mmcblk0p1
+    ```
+
+# Features
+## Custom root filesystem
+You can use your own root filesystem (rootfs) by providing path to it using `--rootfs` flag. The script will use it as is, without any modifications. Using custom rootfs is useful if you want to create backup of your system or you just don't want to install all the software you typically use on the device each time after flashing.
+
+### Preparing your own rootfs image
+Please run following commands **on the Jetson device**:
 ```
-cd ~/.dcs_deploy/flash/<config_name>/Linux_for_tegra/tools/kernel_flash
+$ mkdir ~/rootfs_merged
+$ cd rootfs_merged
+$ sudo tar jxpf ../linux-sample-root-filesystem-r3521aarch64tbz2_original
+$ cd ~
+$ sudo rsync -axHAWX --numeric-ids --info=progress2 --exclude={"/dev/","/proc/","/sys/","/tmp/","/run/","/mnt/","/media/*","/lost+found","/home/dcs_user/rootfs_merged","/home/dcs_user/.ssh"} / rootfs_merged
+$ sudo tar -cf rootfs_merged.tar -C rootfs_merged .
+$ pbzip2 -k rootfs_merged.tar # output rootfs_merged.tar.bz2
 ```
 
-2. Launch `l4t_initrd_flash.sh` script with appropriate parameters
+- `linux-sample-root-filesystem-r3521aarch64tbz2_original` is the root filesystem provided by Nvidia. You can find this on Nvidia website or it is downloaded with dcs-deploy tool. Find it in `download` dir (see [Filesystem](#filesystem) section). So, you need to download this file and place it in the home directory of the Jetson.
+- `rootfs_merged` is the directory, where the root filesystem will be merged.
+- `pbzip2` is the compression tool, which is used to compress the tarball. You might need to install it using:
 ```
-# nvme
-sudo ./l4t_initrd_flash.sh --flash-only --external-only --external-device nvme0n1p1 -c flash_l4t_external_custom.xml --showlogs airvolute-dcs1.2+p3668-0001-qspi-emmc nvme0n1p1
-# emmc
-sudo ./l4t_initrd_flash.sh --flash-only airvolute-dcs1.2+p3668-0001-qspi-emmc mmcblk0p1
+sudo apt install pbzip2
 ```
 
-# Principle
+Then you can copy `rootfs_merged.tar.bz2` to your host pc and use point to it with `--rootfs` flag.
+
+- Warning - we advise using `--app_size` parameter when using custom rootfs. If you do not set it adequately, `APP` partition may be too small for your custom rootfs. `app_size` should be bigger than your custom rootfs.
+
+## Flashing to specific UUID, multiple nvme drives
+If you want to use multiple nvme drives, this is not an issue. Just make sure **you plug out secondary NVME during flashing process.** After the flashing is successful, you can plug in the secondary NVME. The device will then always boot from the primary NVME (the one that was plugged in during the flashing process).
+
+## Effectiveness
+Keep in mind, that we tried to make this tool as much effective as possible. So, following rules apply:
+- When flashing process is ran with the same parameters, the script will not re-generate the images and will not extract downloaded resources again. This is generally ok, but keep in mind that if you alter any files in flash config folder, these changes won't transfer into the next flashing process. If you want to alter anything in the rootfs, you need to alter these files in the rootfs archive and then save it under different name in your PC.
+- When any of the steps fail, the script exits and saves the progress. On next run, the script tries to re-run the failed step and continue the whole process from there.
+- When you use different rootfs paths each time, the whole flash config folder is re-initialized. That means extracting downloaded resources and generating flash images from scratch. This adds up some time to the process, but it does not break anything.
+
+## Purging SSH keys
+If you accidentally (or intentionally) left public keys in the rootfs, those are automatically purged. Otherwise each device you flash would be accessible from your host PC which we find harmful. If you feel you want to do this, please find it inside `dcs-deploy.py` file and comment it out.
+
+## Basic first boot settings
+There were some issues specific to our platform and to the Jetsons in general, so we decided to fix them after the flashing or to be more specific - after the first boot. The `resources/dcs_first_boot.service` file is a service that is run at only at the first boot. It runs never again. The service runs `resources/dcs_first_boot.sh` script on the Jetson device and does following:
+- Regenerates SSH keys.
+- Sets up fan speed to maximum at all times.
+- Sets up basic permissions and UDEV rules so it is in line with Linux standards.
+- Sets up USB hubs.
+
+# Principles
 ### Basics
 The `dcs-deploy.py` script can be used instead of Nvidia SDK manager regarding Airvolute hardware. The main advantages are that this package is lightweight and can be used across different Linux distros or Ubuntu versions (SDK manager is strictly tied between Ubuntu and JetPack version). The script does 3 steps in general:
 1. Download Nvidia and custom Airvolute files.
@@ -63,8 +121,7 @@ As a root of this filesystem, `.dcs_deploy` folder is created inside **host pc H
 ```
 .dcs_deploy/
 ├─ download/
-│  ├─ config_1/
-│  ├─ config_2/
+│  ├─ <source webpage hostname>/<path to resource without "download/downloads">
 │  ├─ .../
 ├─ flash/
 │  ├─ config_1/
@@ -79,15 +136,41 @@ As a root of this filesystem, `.dcs_deploy` folder is created inside **host pc H
 - `download` contains downloaded archives needed for flashing
 - `flash` contains extracted folders that are needed for flashing. Those are folders from `download` dir + some nvidia and airvolute scripts applied, so the flashing environment is fully ready.
 
+### Hardware Supporting System Services (systemctl)
+- `ethernet_switch_control`, `usb_hub_control`, and `usb3_control` are additional services that activate or reinitialize some hardware modules to ensure stable functionality during power cycles. By default, users do not need to modify these services in any way.
+- `fan_control` is another extra service that boosts clocks and activates the fan to 100%. If this behavior is undesired, it can be disabled with the command `sudo systemctl disable fan_control`.
+- On DCS 1.0 and 1.2, `ethernet_switch_control` will reset the USB hub. This is not an issue, but if undesired, it can be disabled similarly to fan_control.
+
+### Cube (Autopilot) Connection
+- Currently, the connection to the Cube is not set up by default.
+- We recommend using the tool `mavlink-router` - https://github.com/mavlink-router/mavlink-router.
+  - When using `mavlink-router`, you can specify a connection to the Cube and then define endpoints to which the router should route Mavlink messages (your GCS IP and port).
+  - This configuration is defined in the `main.conf` file (default location at `/etc/mavlink-router/main.conf`).
+  - Example content of the `main.conf` file to enable GCS forwarding:
+
+```
+[General]
+DebugLogLevel = info
+TcpServerPort = 0
+# Leave to TCP if using SITL
+# Main connection to AutoPilot
+[UartEndpoint cube]
+Device = /dev/ttyTHS0
+Baud = 921600
+
+# Note that this is for communication through dev micro USB. 
+# if you want to use any other interface, change address accordingly. 
+[UdpEndpoint GCS]
+Mode = Normal
+Address = 192.168.55.100
+Port = 14550
+``` 
+
 ### Known limitations
 - When the script is re-ran, flash config folder is deleted and the files are extracted again.
-  - If user customize files in flash config folder, this changes are not saved for next flashing using `dcs-deploy` script.
-  - This adds ~3 min time to the whole process.
 - The database of configs is held inside this repository, which is not ideal.
-- Limited config suppport (only Xavier NX + JP51, emmc or nvme flashing at the moment)
 - Download folder is not checked, only `downloaded_versions.json` file is, so if the download folder has been altered script will throw an error.
-- Errors that might occur during deployment process are not handled very well at the moment.
-- Missing features like kernel building, or `flash-only` that would re-use already prepared flashing config folder. 
+- Errors that might occur during deployment process are not handled very well at the moment. 
 
 ### Troubleshooting
 #### 1. Verifying 1st boot configuration
@@ -97,8 +180,10 @@ During 1st boot (right after the flashing is completed):
 ```
 $ journalctl -u dcs_first_boot
 ```
-Expected outcome:
-`dcs systemd[1]: dcs_first_boot.service: Succeeded.`
+Expected outcome (at the end, you can also check each command's output):
+```
+dcs systemd[1]: dcs_first_boot.service: Succeeded.
+```
 
 After 1st boot.
 ```
