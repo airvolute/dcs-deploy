@@ -158,6 +158,8 @@ TcpServerPort = 0
 Device = /dev/ttyTHS0
 Baud = 921600
 
+# Note that this is for communication through dev micro USB. 
+# if you want to use any other interface, change address accordingly. 
 [UdpEndpoint GCS]
 Mode = Normal
 Address = 192.168.55.100
