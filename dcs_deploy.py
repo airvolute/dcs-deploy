@@ -793,7 +793,7 @@ class DcsDeploy:
             if self.args.app_size is not None:
                 opt_app_size_arg = f"-S {self.args.app_size}GiB"
 
-            if self.config['device'] == 'orin_nx' or self.config['device'] == 'orin_nx_8gb' or self.config['device'] == 'orin_nano_8gb' or self.config['device'] == 'orin_nano_4gb':
+            if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
                 external_only = "" # don't flash only external device
                 
             cmd_exec("pwd")
