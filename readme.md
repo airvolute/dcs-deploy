@@ -169,7 +169,6 @@ Port = 14550
 ### Known limitations
 - When the script is re-ran, flash config folder is deleted and the files are extracted again.
 - The database of configs is held inside this repository, which is not ideal.
-- Limited config suppport (only Xavier NX + JP51, emmc or nvme flashing at the moment)
 - Download folder is not checked, only `downloaded_versions.json` file is, so if the download folder has been altered script will throw an error.
 - Errors that might occur during deployment process are not handled very well at the moment. 
 
