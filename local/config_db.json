@@ -60,7 +60,7 @@
     "rootfs_type": "full"
   },
   "config_6": {
-    "device": ["orin_nx","orin_nx_8gb, orin_nano_8gb", "orin_nano_4gb"],
+    "device": ["orin_nx","orin_nx_8gb", "orin_nano_8gb", "orin_nano_4gb"],
     "storage": "nvme",
     "board": "2.0",
     "l4t_version": "512",
