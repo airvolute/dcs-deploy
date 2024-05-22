@@ -160,7 +160,7 @@ Baud = 921600
 
 [UdpEndpoint GCS]
 Mode = Normal
-Address = 10.223.255.255
+Address = 192.168.55.100
 Port = 14550
 ``` 
 
