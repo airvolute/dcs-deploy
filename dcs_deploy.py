@@ -754,7 +754,7 @@ class DcsDeploy:
             print("Unknown storage [%s]! exitting" % self.config['storage'])
             exit(9)
         # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
-        if self.config['device'] == 'orin_nx' or self.config['device'] == 'orin_nx_8gb' or self.config['device'] == 'orin_nano_8gb' or self.config['device'] == 'orin_nano_4gb':
+        if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
 
     def generate_images(self):
