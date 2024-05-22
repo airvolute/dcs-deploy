@@ -10,7 +10,7 @@ import time
 from urllib.parse import urlparse
 import sys as _sys
 
-dcs_deploy_version = "0.1.0"
+dcs_deploy_version = "2.1.0"
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
