@@ -728,6 +728,7 @@ class DcsDeploy:
             self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
         elif self.config['device'] == 'orin_nx_8gb':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0001"
+            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
         elif self.config['device'] == 'orin_nano_8gb':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0003"
             self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
