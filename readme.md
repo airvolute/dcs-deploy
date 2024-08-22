@@ -125,3 +125,26 @@ Expected outcome:
 #### 2. Device is not booting
 - Check if the correct hardware revision of DCS was selected.
 - If the device is not booting from NVME, please try to reflash the device using EMMC internal memory and flash again NVME configuration. (only Xavier NX)
+
+
+#### 3. Flashing issues
+On new host kernels, USB flashing problems can happen eg.: `ERROR: might be timeout in USB write.` see listing 1). New kernels have enabled USB autosuspend functionality which causes flashing errors. Use following commands to stop usb autosuspend:
+```
+$ sudo su
+# echo -1 > /sys/module/usbcore/parameters/autosuspend
+```
+
+- Listing 1)
+```
+1)
+
+ Entering RCM boot
+
+[   0.0378 ] mb1_t234_prod_aligned_sigheader.bin.encrypt filename is from --mb1_bin
+[   0.0378 ] psc_bl1_t234_prod_aligned_sigheader.bin.encrypt filename is from --psc_bl1_bin
+[   0.0378 ] rcm boot with presigned binaries
+[   0.0384 ] tegrarcm_v2 --instance 6-2.4 --new_session --chip 0x23 0 --uid --download bct_br br_bct_BR.bct --download mb1 mb1_t234_prod_aligned_sigheader.bin.encrypt --download psc_bl1 psc_bl1_t234_prod_aligned_sigheader.bin.encrypt --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt
+[   0.0389 ] BR_CID: 0x80012344705DD190400000000F0201C0
+[   0.1299 ] Sending bct_br
+[   0.1454 ] ERROR: might be timeout in USB write.
+```
