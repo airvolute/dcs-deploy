@@ -208,20 +208,21 @@ class DcsDeploy:
         self.sanitize_args()
         self.selected_config_name = None
         self.load_db()
-        if self.args.command != 'list':
+        self.init_common_paths()
+        if self.args.command == 'flash':
             self.load_selected_config()
-            self.init_filesystem()
+            self.init_flash_paths()
             self.check_optional_arguments()
 
 
     def add_common_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
+        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx, orin_nx]'
         subparser.add_argument('target_device', help=target_device_help)
 
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51].'
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51, 512].'
         subparser.add_argument('jetpack', help=jetpack_help)
 
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2].'
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0].'
         subparser.add_argument('hwrev', help=hwrev_help)
         
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
@@ -249,17 +250,23 @@ class DcsDeploy:
         """
         Create an ArgumentParser and all its options
         """
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
         subparsers = parser.add_subparsers(dest='command', help='Command')
 
         list = subparsers.add_parser(
             'list', help='list available versions')
+        
+        list_local_overlays_help = 'List existing local overlays'
+        list.add_argument('--local_overlays', action='store_true', help=list_local_overlays_help)
 
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
         
         self.add_common_parser(flash)
 
+        parser.epilog = f"command list usage:\n {list.format_usage()}\n" + \
+                        f"command flash usage:\n {flash.format_usage()}"
+        
         parser.add_argument('--version', action='store_true',  default='', help="Show version")
         
         return parser
@@ -287,7 +294,7 @@ class DcsDeploy:
         """
         if self.args.command is None:
             print("No command specified!")
-            self.parser.print_usage()
+            self.parser.print_help()
             quit()
 
     def load_db(self):
@@ -360,7 +367,13 @@ class DcsDeploy:
                 print("download dir to delete: " + del_dir)
                 cmd_exec("rm -rf " + del_dir)
 
-    def init_filesystem(self):
+    def init_common_paths(self):
+        self.home = os.path.expanduser('~')
+        self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
+        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
+        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
+
+    def init_flash_paths(self):
         config_relative_path = (
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
@@ -368,16 +381,14 @@ class DcsDeploy:
             self.config['l4t_version'] + '_' +
             self.config['rootfs_type']
         )
-
-        self.home = os.path.expanduser('~')
-        self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
-        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
+      
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
         self.rootfs_extract_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs'))
         self.l4t_root_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra'))
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
+        
 
         # generate download resource paths
         resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
@@ -589,72 +600,56 @@ class DcsDeploy:
         self.prepare_status.set_processing_step("install_first_boot_setup")
         ret = self.install_first_boot_setup()
         self.prepare_status.set_status(ret, last_step = True)
+        
+        print('Installing overlays ...')
+        ret = self.install_overlays(is_last_install_step = True)
 
     def prepare_airvolute_overlay(self):
         return self.extract_resource('airvolute_overlay')
 
     def prepare_nvidia_overlay(self):
         return self.extract_resource('nvidia_overlay')
+    
 
-    def install_first_boot_setup(self):
-        """
-        Installs script that would be run on a device after the
-        very first boot.
-        """
-        # Create firstboot check file.
-        ret = 0
-        ret += cmd_exec("sudo touch " + self.first_boot_file_path)
+    def list_local_overlays(self):
+        print("overlay dir:", self.local_overlay_dir)
+        if hasattr(self,"config") and "local_overlays" in self.config:
+            print("Selecting ovelays list from configuration['local_overlays']")
+            all_overlays_list = self.config["local_overlays"]
+        else:
+            print("Selecting ovelays list from local/overlays directory")
+            all_overlays_list = os.listdir(self.local_overlay_dir)
+        print("all_overlays_list: " + str(all_overlays_list))
 
-        # Setup systemd first boot
-        service_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'systemd', 'system')
+        overlays = {
+            "dirs": [x for x in all_overlays_list if os.path.isdir(os.path.join(self.local_overlay_dir, x))],
+            "files": [x for x in all_overlays_list if os.path.isfile(os.path.join(self.local_overlay_dir, x))],
+        }
+        print("overlays:" + str(overlays))
+        return overlays
+    
+    def install_overlays(self, is_last_install_step = False ):
+        overlays = self.list_local_overlays()
+        i = 0
+        cnt = len(overlays["dirs"])
+        for overlay in overlays["dirs"]:
+            i = i + 1
+            print(f"[{i}/{cnt}] installing overlay {overlay}")
+            self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
+            ret = self.install_overlay_dir(overlay)
+            self.prepare_status.set_status(ret, last_step = ((i == cnt) and is_last_install_step))
+            with_error="."
+            if ret:
+                with_error = " with error!"    
+            print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+            if ret:
+                exit(10)
+            
+        # TODO extract files and run apply install script if exist
 
-        # Bin destination
-        bin_destination = os.path.join(self.rootfs_extract_dir, 'usr', 'local', 'bin')
-
-        # uhubctl destination
-        uhubctl_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user')
-
-        # Resources destination
-        utilities_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'utilities')
-
-        # Create resources directory
-        ret += cmd_exec("sudo mkdir -p " + utilities_destination)
-        
-        # USB3_CONTROL service
-        ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.service " + service_destination)
-        ret += cmd_exec("sudo cp resources/usb3_control/usb3_control.sh " + bin_destination)
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb3_control.sh'))
-
-        # USB_HUB_CONTROL service
-        ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.service " + service_destination)
-        ret += cmd_exec("sudo cp resources/usb_hub_control/usb_hub_control.sh " + bin_destination)
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'usb_hub_control.sh'))
-
-        # ETHERNET_SWITCH_CONTROL service
-        ret += cmd_exec("sudo cp resources/ethernet_switch_control/ethernet_switch_control.service " + service_destination)
-        ret += cmd_exec("sudo cp resources/ethernet_switch_control/ethernet_switch_control.sh " + bin_destination)
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'ethernet_switch_control.sh'))
-
-        # FIRST_BOOT service
-        ret += cmd_exec("sudo cp resources/dcs_first_boot.service " + service_destination)
-        ret += cmd_exec("sudo cp resources/dcs_first_boot.sh " +   bin_destination)
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'dcs_first_boot.sh'))
-        
-        # Create symlink to FIRST_BOOT service
-        ret += check_and_create_symlink(
-            os.path.join(service_destination, 'multi-user.target.wants/dcs_first_boot.service'),
-            os.path.join(service_destination, 'dcs_first_boot.service'))
-        
-        # FAN_CONTROL service
-        ret += cmd_exec("sudo cp resources/fan_control/fan_control.service " + service_destination)
-        ret += cmd_exec("sudo cp resources/fan_control/fan_control.sh " + bin_destination)
-        ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'fan_control.sh'))
-
-        # uhubctl
-        ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
-
-        # utilities
-        ret += cmd_exec("sudo cp -r resources/utilities/* " + utilities_destination)
+    def install_overlay_dir(self, overlay_name):
+        overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name, "apply_" + overlay_name + ".sh")
+        ret = cmd_exec(f"sudo {overlay_script_name} {self.rootfs_extract_dir}", print_command=True)
         return ret
 
     def match_selected_config(self):
@@ -837,6 +832,9 @@ class DcsDeploy:
 
     def run(self):
         if self.args.command == 'list':
+            if self.args.local_overlays == True:
+                self.list_local_overlays()
+                quit()
             self.list_all_versions()
             quit()
 
