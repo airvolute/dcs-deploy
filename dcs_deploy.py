@@ -596,10 +596,6 @@ class DcsDeploy:
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         ret += cmd_exec("sudo resources/purge_ssh_keys.sh " + 
                  os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user','.ssh'))
-
-        self.prepare_status.set_processing_step("install_first_boot_setup")
-        ret = self.install_first_boot_setup()
-        self.prepare_status.set_status(ret, last_step = True)
         
         print('Installing overlays ...')
         ret = self.install_overlays(is_last_install_step = True)
@@ -608,8 +604,7 @@ class DcsDeploy:
         return self.extract_resource('airvolute_overlay')
 
     def prepare_nvidia_overlay(self):
-        return self.extract_resource('nvidia_overlay')
-    
+        return self.extract_resource('nvidia_overlay')    
 
     def list_local_overlays(self):
         print("overlay dir:", self.local_overlay_dir)
