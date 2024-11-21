@@ -1,0 +1,11 @@
+[Unit]
+Description=Hardware
+After=remote-fs.target
+After=syslog.target
+
+[Service]
+ExecStartPre=/bin/sleep 2
+ExecStart=/usr/local/bin/handle_hardware_services.sh
+
+[Install]
+WantedBy=multi-user.target

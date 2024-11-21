@@ -208,21 +208,20 @@ class DcsDeploy:
         self.sanitize_args()
         self.selected_config_name = None
         self.load_db()
-        self.init_common_paths()
-        if self.args.command == 'flash':
+        if self.args.command != 'list':
             self.load_selected_config()
-            self.init_flash_paths()
+            self.init_filesystem()
             self.check_optional_arguments()
 
 
     def add_common_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx, orin_nx]'
+        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
         subparser.add_argument('target_device', help=target_device_help)
 
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51, 512].'
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51].'
         subparser.add_argument('jetpack', help=jetpack_help)
 
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0].'
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2].'
         subparser.add_argument('hwrev', help=hwrev_help)
         
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
@@ -250,13 +249,14 @@ class DcsDeploy:
         """
         Create an ArgumentParser and all its options
         """
-        parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser = argparse.ArgumentParser()
         subparsers = parser.add_subparsers(dest='command', help='Command')
 
         list = subparsers.add_parser(
             'list', help='list available versions')
-        
+
         list_local_overlays_help = 'List existing local overlays'
+
         list.add_argument('--local_overlays', action='store_true', help=list_local_overlays_help)
 
         flash = subparsers.add_parser(
@@ -264,9 +264,6 @@ class DcsDeploy:
         
         self.add_common_parser(flash)
 
-        parser.epilog = f"command list usage:\n {list.format_usage()}\n" + \
-                        f"command flash usage:\n {flash.format_usage()}"
-        
         parser.add_argument('--version', action='store_true',  default='', help="Show version")
         
         return parser
@@ -294,7 +291,7 @@ class DcsDeploy:
         """
         if self.args.command is None:
             print("No command specified!")
-            self.parser.print_help()
+            self.parser.print_usage()
             quit()
 
     def load_db(self):
@@ -367,13 +364,7 @@ class DcsDeploy:
                 print("download dir to delete: " + del_dir)
                 cmd_exec("rm -rf " + del_dir)
 
-    def init_common_paths(self):
-        self.home = os.path.expanduser('~')
-        self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
-        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
-        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
-
-    def init_flash_paths(self):
+    def init_filesystem(self):
         config_relative_path = (
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
@@ -381,15 +372,18 @@ class DcsDeploy:
             self.config['l4t_version'] + '_' +
             self.config['rootfs_type']
         )
-      
+
+        self.home = os.path.expanduser('~')
+        self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
+        self.download_path = os.path.join(self.dsc_deploy_root, 'download')
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
         self.rootfs_extract_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs'))
         self.l4t_root_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra'))
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
-        
 
+        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
         # generate download resource paths
         resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
         self.resource_paths = {}
@@ -596,7 +590,8 @@ class DcsDeploy:
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         ret += cmd_exec("sudo resources/purge_ssh_keys.sh " + 
                  os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user','.ssh'))
-        
+
+
         print('Installing overlays ...')
         ret = self.install_overlays(is_last_install_step = True)
 
@@ -604,7 +599,25 @@ class DcsDeploy:
         return self.extract_resource('airvolute_overlay')
 
     def prepare_nvidia_overlay(self):
-        return self.extract_resource('nvidia_overlay')    
+        return self.extract_resource('nvidia_overlay')
+
+    def match_selected_config(self):
+        """
+        Get selected config based on loaded database from console arguments enterred by user
+        """
+        # do not search again
+        if self.selected_config_name != None:
+            return self.selected_config_name
+        
+        for config in self.config_db:
+            if (self.args.target_device in self.config_db[config]['device'] and
+                self.args.jetpack == self.config_db[config]['l4t_version'] and
+                self.args.hwrev in self.config_db[config]['board'] and
+                self.args.storage in self.config_db[config]['storage'] and
+                self.args.rootfs_type == self.config_db[config]['rootfs_type']):
+                return config
+                
+        return None
 
     def list_local_overlays(self):
         print("overlay dir:", self.local_overlay_dir)
@@ -639,32 +652,18 @@ class DcsDeploy:
             print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
             if ret:
                 exit(10)
-            
-        # TODO extract files and run apply install script if exist
 
     def install_overlay_dir(self, overlay_name):
         overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name, "apply_" + overlay_name + ".sh")
-        ret = cmd_exec(f"sudo {overlay_script_name} {self.rootfs_extract_dir}", print_command=True)
+            # Construct the command with arguments
+        cmd = (
+            f"sudo {overlay_script_name} {self.rootfs_extract_dir} "
+            f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} "
+            f"{self.args.storage} {self.args.rootfs_type}"
+        )
+        ret = cmd_exec(cmd, print_command=True)
         return ret
 
-    def match_selected_config(self):
-        """
-        Get selected config based on loaded database from console arguments enterred by user
-        """
-        # do not search again
-        if self.selected_config_name != None:
-            return self.selected_config_name
-        
-        for config in self.config_db:
-            if (self.args.target_device in self.config_db[config]['device'] and
-                self.args.jetpack == self.config_db[config]['l4t_version'] and
-                self.args.hwrev in self.config_db[config]['board'] and
-                self.args.storage in self.config_db[config]['storage'] and
-                self.args.rootfs_type == self.config_db[config]['rootfs_type']):
-                return config
-                
-        return None
-    
     def print_config(self, config, items):
         for item in items:
             print("%s: %s" % (item, config[item]))

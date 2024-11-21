@@ -17,9 +17,12 @@ L4T_rootfs_path=$1
 script_path=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo "script_path: $script_path"
 
-resources_path=${2:-$script_path/resources}
+resources_path="$script_path/resources"
 echo "resouce path: $resources_path"
-
+if [ ! -d "$resources_path" ]; then
+    echo "Error: resources path '$resources_path' does not exist."
+    exit 1
+fi
 # create first boot file
 first_boot_file_path=${L4T_rootfs_path}/etc/first_boot
 sudo touch first_boot_file_path
@@ -40,6 +43,16 @@ sudo chmod +x ${bin_destination}/usb3_control.sh
 sudo cp ${resources_path}/usb_hub_control/usb_hub_control.service ${service_destination}/
 sudo cp ${resources_path}/usb_hub_control/usb_hub_control.sh ${bin_destination}/
 sudo chmod +x ${bin_destination}/usb_hub_control.sh
+
+# ETHERNET service
+sudo cp ${resources_path}/ethernet_switch_control/ethernet_switch_control.service ${service_destination}/
+sudo cp ${resources_path}/ethernet_switch_control/ethernet_switch_control.sh ${bin_destination}/
+sudo chmod +x ${bin_destination}/ethernet_switch_control.sh
+
+# FAN CONTROL service
+sudo cp ${resources_path}/fan_control/fan_control.service ${service_destination}/
+sudo cp ${resources_path}/fan_control/fan_control.sh ${bin_destination}/
+sudo chmod +x ${bin_destination}/fan_control.sh
 
 # uhubctl
 sudo cp ${resources_path}/uhubctl_2.1.0-1_arm64.deb ${uhubctl_destination}/
