@@ -29,12 +29,12 @@ echo "Rootfs Type: $rootfs_type"
 script_path=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo "script_path: $script_path"
 
-resources_path=${2:-$script_path/resources}
+resources_path=$script_path/resources
 echo "resouce path: $resources_path"
 
 # Setup systemd first boot
 service_destination=${L4T_rootfs_path}/etc/systemd/system
-hardware_service_destination=${L4T_rootfs_path}/etc/systemd/system/hardware
+hardware_service_destination=${L4T_rootfs_path}/etc/systemd/system
 
 sudo mkdir -p $hardware_service_destination
 # Bin destination
