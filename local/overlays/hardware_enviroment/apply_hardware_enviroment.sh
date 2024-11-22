@@ -34,9 +34,7 @@ echo "resouce path: $resources_path"
 
 # Setup systemd first boot
 service_destination=${L4T_rootfs_path}/etc/systemd/system
-# hardware_service_destination=${L4T_rootfs_path}/etc/systemd/system
 
-# sudo mkdir -p $hardware_service_destination
 # Bin destination
 bin_destination=${L4T_rootfs_path}/usr/local/bin
 # uhubctl destination
