@@ -93,6 +93,7 @@ sudo chmod +x ${bin_destination}/handle_hardware_services.sh
 add_binary_to_json "/usr/local/bin/handle_hardware_services.sh"
 
 # Dummy example service, add services like this********************************
+# Enable and start the services in "handle_hardware_services.sh"
 sudo cp ${resources_path}/dummy_hw/dummy_hw.service ${service_destination}/
 add_service_to_json "/etc/systemd/system/dummy_hw.service"
 
