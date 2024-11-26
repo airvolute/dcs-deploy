@@ -617,6 +617,9 @@ class DcsDeploy:
         # Resources destination
         utilities_destination = os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user', 'utilities')
 
+        # Setup kernel modules to load at boot via systemd's modules.d
+        modules_d_destination = os.path.join(self.rootfs_extract_dir, 'etc', 'modules-load.d')
+
         # Create resources directory
         ret += cmd_exec("sudo mkdir -p " + utilities_destination)
         
@@ -649,6 +652,9 @@ class DcsDeploy:
         ret += cmd_exec("sudo cp resources/fan_control/fan_control.service " + service_destination)
         ret += cmd_exec("sudo cp resources/fan_control/fan_control.sh " + bin_destination)
         ret += cmd_exec("sudo chmod +x " + os.path.join(bin_destination, 'fan_control.sh'))
+
+        # CAN kernel modules
+        ret += cmd_exec("sudo cp resources/can_control/can.conf " + modules_d_destination)
 
         # uhubctl
         ret += cmd_exec("sudo cp resources/uhubctl_2.1.0-1_arm64.deb " + uhubctl_destination)
