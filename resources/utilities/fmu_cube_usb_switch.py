@@ -29,9 +29,23 @@ def write_gpio(gpio_kernel_number, value):
     else:
         print("Wrong gpio value to set!")
 
+def detect_usb_path():
+    """
+    Detects the correct path for USB drivers (either /drivers or /hub/drivers).
+    """
+    if os.path.exists('/sys/bus/usb/drivers/unbind'):
+        return '/sys/bus/usb/drivers'
+    elif os.path.exists('/sys/bus/usb/drivers/hub/unbind'):
+        return '/sys/bus/usb/drivers/hub'
+    else:
+        print("Error: Unable to detect USB driver path.")
+        sys.exit(1)
+
+
 def reset_usb():
-    run_command('echo -n "1-0:1.0" | sudo tee /sys/bus/usb/drivers/unbind')
-    run_command('echo -n "1-0:1.0" | sudo tee /sys/bus/usb/drivers/bind')
+    usb_path = detect_usb_path()
+    run_command(f'echo -n "1-0:1.0" | sudo tee {usb_path}/unbind')
+    run_command(f'echo -n "1-0:1.0" | sudo tee {usb_path}/bind')
 
 def enable_device(device):
     export_gpio(usb_mux_gpio)
@@ -52,4 +66,3 @@ if __name__ == "__main__":
 
     enable_device(sys.argv[1])
     time.sleep(3)
-
