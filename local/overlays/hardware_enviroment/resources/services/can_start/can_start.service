@@ -1,0 +1,12 @@
+[Unit]
+Description=Can start
+After=remote-fs.target
+After=syslog.target
+After=multi-user.target
+Requires=multi-user.target
+
+[Service]
+ExecStart=/usr/local/bin/can_start.sh
+
+[Install]
+WantedBy=multi-user.target

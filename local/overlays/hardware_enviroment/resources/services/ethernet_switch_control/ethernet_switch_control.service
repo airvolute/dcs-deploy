@@ -1,7 +1,9 @@
 [Unit]
-Description=Ethernet switch
+Description=Ethernet switch control
 After=remote-fs.target
 After=syslog.target
+After=multi-user.target
+Requires=multi-user.target
 
 [Service]
 ExecStartPre=/bin/sleep 2
