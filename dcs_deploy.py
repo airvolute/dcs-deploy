@@ -10,7 +10,7 @@ import time
 from urllib.parse import urlparse
 import sys as _sys
 
-dcs_deploy_version = "2.1.0"
+dcs_deploy_version = "3.0.0"
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
@@ -208,6 +208,7 @@ class DcsDeploy:
         self.sanitize_args()
         self.selected_config_name = None
         self.load_db()
+        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
@@ -215,19 +216,22 @@ class DcsDeploy:
 
 
     def add_common_parser(self, subparser):
-        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [xavier_nx]'
+        target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [orin_nx, xavier_nx]'
         subparser.add_argument('target_device', help=target_device_help)
 
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [51].'
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [512, 51].'
         subparser.add_argument('jetpack', help=jetpack_help)
 
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2].'
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0].'
         subparser.add_argument('hwrev', help=hwrev_help)
-        
+
+        board_expander_help = 'REQUIRED. Which board expander are we going to use. Options: [none, default].'
+        subparser.add_argument('board_expansion', help=board_expander_help)
+
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
         subparser.add_argument('storage', help=storage_help)
 
-        rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full].'
+        rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full, airvolute].'
         subparser.add_argument('rootfs_type', help=rootfs_type_help)
         
         force_help = 'Files will be deleted, downloaded and extracted again.'
@@ -257,7 +261,7 @@ class DcsDeploy:
 
         list_local_overlays_help = 'List existing local overlays'
 
-        list.add_argument('--local_overlays', action='store_true', help=list_local_overlays_help)
+        list.add_argument('--local-overlays', action='store_true', help=list_local_overlays_help)
 
         flash = subparsers.add_parser(
             'flash', help='Run the entire flash process')
@@ -369,6 +373,7 @@ class DcsDeploy:
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
             self.config['board'] + '_' +
+            self.config['board_expander'] + '_' +
             self.config['l4t_version'] + '_' +
             self.config['rootfs_type']
         )
@@ -383,9 +388,8 @@ class DcsDeploy:
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
-        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
         # generate download resource paths
-        resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
+        resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
         self.resource_paths = {}
 
         for res_name in resource_keys:
@@ -658,7 +662,7 @@ class DcsDeploy:
             # Construct the command with arguments
         cmd = (
             f"sudo {overlay_script_name} {self.rootfs_extract_dir} "
-            f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} "
+            f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} {self.args.board_expansion} "
             f"{self.args.storage} {self.args.rootfs_type}"
         )
         ret = cmd_exec(cmd, print_command=True)

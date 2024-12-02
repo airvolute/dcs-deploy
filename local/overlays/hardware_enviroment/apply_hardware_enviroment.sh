@@ -3,7 +3,6 @@
 set -e 
 
 # Global variables
-initialization_done_file="/home/dcs_user/.dcs_initialization_done"
 tmp_script_path=/tmp/handle_hardware_services.sh
 
 help() {
@@ -44,12 +43,10 @@ service_destination=${L4T_rootfs_path}/etc/systemd/system
 bin_destination=${L4T_rootfs_path}/usr/local/bin
 # udev destination
 udev_destination=${L4T_rootfs_path}/etc/udev/rules.d
-
-# uhubctl destination
-uhubctl_destination=${L4T_rootfs_path}/home/dcs_user
-
+# Utilities destination
+util_destination=${L4T_rootfs_path}/home/dcs_user/av_utilities
 # JSON file setup
-json_file="${L4T_rootfs_path}/home/dcs_user/.dcs_deploy_data.json"
+json_file="${L4T_rootfs_path}/home/dcs_user/.dcs_logs/deploy_data.json"
 
 # Ensure the directory structure exists
 sudo mkdir -p "$(dirname "$json_file")"
@@ -235,16 +232,10 @@ touch $tmp_script_path && chmod +x $tmp_script_path
 # Add content to tmp hardware service
 echo "!#/bin/bash" >> $tmp_script_path
 
-# Add check if the initialization is done
-echo "if [ -f $initialization_done_file ]; then" >> $tmp_script_path
-echo "    echo 'Initialization already done'" >> $tmp_script_path
-echo "    exit 0" >> $tmp_script_path
-
 ##### Add hardware support layer #####
 
 # Iterate over patches in the resources folder
 patches_dirs=$(find "$resources_path" -mindepth 1 -maxdepth 2 -type d)
-# Iterate over patches in the resources folder
 for patch_dir in $patches_dirs; do
     echo "Checking patch: $patch_dir"
 
@@ -261,7 +252,11 @@ for patch_dir in $patches_dirs; do
                 binary_name=$(basename "$patch_dir")".sh"
                 binary_path="$patch_dir/$binary_name"
 
-                add_service "$service_name" "$service_path" "$binary_name" "$patch_dir"
+                if [[ -f $service_path ]] && [[ -f $binary_path ]]; then
+                    add_service "$service_name" "$service_path" "$binary_name" "$patch_dir"
+                else
+                    echo "Skipping patch: $patch_dir"
+                fi
             elif [[ $patch_dir == *"udevs"* ]]; then
                 echo "Adding udev patch: $patch_dir"
                 # Get the udev name .rules
@@ -283,8 +278,38 @@ for patch_dir in $patches_dirs; do
                 else
                     echo "Skipping patch: $patch_dir"
                 fi
-            fi
+            elif [[ $patch_dir == *"utilities"* ]]; then
+                echo "Adding utility patch: $patch_dir"
+                script_name=$(find "$patch_dir" -maxdepth 1 -type f ! -name "compatible" -exec basename {} \;)
+                script_path="$patch_dir/$script_name"
+                
+                if [[ -f $script_path ]]; then
+                    if [[ ! -d $util_destination ]]; then
+                        sudo mkdir -p $util_destination
+                    fi
 
+                    sudo cp $script_path $util_destination/
+                    sudo chmod +x $util_destination/$script_name
+                    add_binary_to_json "/home/dcs_user/av_utilities/$script_name"
+                else
+                    echo "Skipping patch: $patch_dir"
+                fi
+            elif [[ $patch_dir == *"apply"* ]]; then
+                echo "Applying patch: $patch_dir"
+                
+                # Get script
+                script_name=$(find "$patch_dir" -maxdepth 1 -type f ! -name "compatible" -exec basename {} \;)
+                script_path="$patch_dir/$script_name"
+                if [[ -f $script_path ]]; then
+                    echo "Applying patch: $script_path"
+                    # Check result of the script
+
+
+                    sudo bash $script_path $L4T_rootfs_path $target_device $jetpack_version $hwrev $board_expansion $storage $rootfs_type
+                else
+                    echo "Skipping patch: $patch_dir"
+                fi 
+            fi
         else
             echo "Skipping patch: $patch_dir"
         fi
@@ -292,9 +317,6 @@ for patch_dir in $patches_dirs; do
 done
 
 ##### End of Add hardware support layer #####
-
-# Add file creation to tmp hardware service
-echo "sudo touch $initialization_done_file" >> $tmp_script_path
 
 # Add the tmp hardware service to JSON and copy to rootfs
 service_bin_name="handle_hardware_services.sh"

@@ -1,6 +1,6 @@
 [
     {
-      "device": ["orin_nx"],
+      "device": ["orin_nx", "orin_nx_8gb", "orin_nano_8gb", "orin_nano_4gb"],
       "storage": ["nvme"],
       "board": ["2.0"],
       "board_expansion" : [""],
