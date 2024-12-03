@@ -72,7 +72,6 @@ initialize_json_file() {
     fi
 }
 
-# Add a service to JSON
 add_service_to_json() {
     local service_path=$1
     sudo jq --arg path "$service_path" \
@@ -190,7 +189,6 @@ add_service() {
 
     # Add to tmp hardware service
     echo "sudo systemctl enable $service_name" >> $tmp_script_path
-    echo "sudo systemctl start $service_name" >> $tmp_script_path
 }
 
 add_udev() {
@@ -230,7 +228,7 @@ fi
 touch $tmp_script_path && chmod +x $tmp_script_path
 
 # Add content to tmp hardware service
-echo "!#/bin/bash" >> $tmp_script_path
+echo "#!/bin/bash" >> $tmp_script_path
 
 ##### Add hardware support layer #####
 

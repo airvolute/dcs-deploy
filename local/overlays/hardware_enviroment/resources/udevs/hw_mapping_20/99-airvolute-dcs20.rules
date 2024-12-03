@@ -1,6 +1,3 @@
-# RTC1 (External Battery)
-SUBSYSTEM=="rtc", DEVPATH=="/devices/platform/c2a0000.rtc/rtc/rtc1", SYMLINK+="airvolute/rtc1-ext-bat"
-
 # SPI-JET SPI0.0 
 ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev0.0", SYMLINK+="airvolute/spi0.0-spi-jet"
 

@@ -225,7 +225,7 @@ class DcsDeploy:
         hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0].'
         subparser.add_argument('hwrev', help=hwrev_help)
 
-        board_expander_help = 'REQUIRED. Which board expander are we going to use. Options: [none, default].'
+        board_expander_help = 'REQUIRED. Which board expander are we going to use. Options: ["", default].'
         subparser.add_argument('board_expansion', help=board_expander_help)
 
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
@@ -312,7 +312,7 @@ class DcsDeploy:
 
         self.config_db = json.load(db_file)
         # unify specific parameters into list
-        update_to_list_fields = ['device', 'board', 'storage']
+        update_to_list_fields = ['device', 'board', 'board_expansion', 'storage']
         for config in self.config_db:
             for update_field in update_to_list_fields:
                 if (type(self.config_db[config][update_field]) is not list):
@@ -360,7 +360,7 @@ class DcsDeploy:
         #return os.path.dirname(path)
 
     def cleanup_old_download_dir(self):
-        old_download_dir = self.config['device'] + '_' + self.config['storage'] + '_' + self.config['board'] + '_'
+        old_download_dir = self.config['device'] + '_' + self.config['storage'] + '_' + self.config['board'] + '_' + self.config['board_expansion'] + '_'
         
         for dir in [f for f in os.listdir(self.download_path) if not os.path.isfile(f)]:
             if old_download_dir in dir:
@@ -373,7 +373,7 @@ class DcsDeploy:
             self.config['device'] + '_' + 
             self.config['storage'] + '_' + 
             self.config['board'] + '_' +
-            self.config['board_expander'] + '_' +
+            self.config['board_expansion'] + '_' +
             self.config['l4t_version'] + '_' +
             self.config['rootfs_type']
         )
@@ -386,7 +386,6 @@ class DcsDeploy:
         self.l4t_root_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra'))
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
-        self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
 
         # generate download resource paths
         resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
@@ -617,6 +616,7 @@ class DcsDeploy:
             if (self.args.target_device in self.config_db[config]['device'] and
                 self.args.jetpack == self.config_db[config]['l4t_version'] and
                 self.args.hwrev in self.config_db[config]['board'] and
+                self.args.board_expansion in self.config_db[config]['board_expansion'] and
                 self.args.storage in self.config_db[config]['storage'] and
                 self.args.rootfs_type == self.config_db[config]['rootfs_type']):
                 return config
@@ -632,6 +632,12 @@ class DcsDeploy:
             print("Selecting ovelays list from local/overlays directory")
             all_overlays_list = os.listdir(self.local_overlay_dir)
         print("all_overlays_list: " + str(all_overlays_list))
+
+        # Check if all path exists  if not quite with error
+        for overlay in all_overlays_list:
+            if not os.path.exists(os.path.join(self.local_overlay_dir, overlay)):
+                print(f"Overlay {overlay} does not exist! Quitting!")
+                quit()
 
         overlays = {
             "dirs": [x for x in all_overlays_list if os.path.isdir(os.path.join(self.local_overlay_dir, x))],
@@ -653,9 +659,39 @@ class DcsDeploy:
             with_error="."
             if ret:
                 with_error = " with error!"    
+                print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+                quit()
             print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
             if ret:
                 exit(10)
+        
+        cnt = len(overlays["files"])
+        i = 0
+        for overlay in overlays["files"]:
+            i = i + 1
+            print(f"[{i}/{cnt}] installing overlay {overlay}")
+            self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
+            ret = self.install_overlay_file(overlay)
+            self.prepare_status.set_status(ret, last_step = ((i == cnt) and is_last_install_step))
+            with_error="."
+            if ret:
+                with_error = " with error!"    
+                print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+                quit()
+            print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+            if ret:
+                exit(11)
+
+    def install_overlay_file(self, overlay_name):
+        overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name)
+        # Construct the command with arguments
+        cmd = (
+            f"sudo {overlay_script_name} {self.rootfs_extract_dir} "
+            f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} {self.args.board_expansion} "
+            f"{self.args.storage} {self.args.rootfs_type}"
+        )
+        ret = cmd_exec(cmd, print_command=True)
+        return ret
 
     def install_overlay_dir(self, overlay_name):
         overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name, "apply_" + overlay_name + ".sh")
@@ -673,13 +709,13 @@ class DcsDeploy:
             print("%s: %s" % (item, config[item]))
 
     def print_user_config(self):
-        items = ["target_device", "jetpack", "hwrev", "storage", "rootfs_type" ]
+        items = ["target_device", "jetpack", "hwrev", "board_expansion", "storage", "rootfs_type" ]
         #print("==== user configuration ====")
         self.print_config(self.args.__dict__, items)
 
     def list_all_versions(self):
         for config in self.config_db:
-            items = ['device', 'l4t_version', 'board', 'storage', 'rootfs_type']
+            items = ['device', 'l4t_version', 'board', 'board_expansion', 'storage', 'rootfs_type']
             print('====', config, '====')
             self.print_config(self.config_db[config], items)  
             
@@ -702,6 +738,7 @@ class DcsDeploy:
         self.config = self.config_db
         self.config['device'] = self.args.target_device
         self.config['board'] = self.args.hwrev
+        self.config['board_expansion'] = self.args.board_expansion
         self.config['storage'] = self.args.storage
 
         self.selected_config_name = config
