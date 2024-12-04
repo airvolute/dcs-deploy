@@ -44,20 +44,18 @@ bin_destination=${L4T_rootfs_path}/usr/local/bin
 # udev destination
 udev_destination=${L4T_rootfs_path}/etc/udev/rules.d
 # Utilities destination
-util_destination=${L4T_rootfs_path}/home/dcs_user/av_utilities
-# JSON file setup
-json_file="${L4T_rootfs_path}/home/dcs_user/.dcs_logs/deploy_data.json"
+util_destination=${L4T_rootfs_path}/home/dcs_user/Airvolute/resources
+# Docs destination
+docs_destination=${L4T_rootfs_path}/home/dcs_user/Airvolute/docs
+# JSON log file setup
+json_file="${L4T_rootfs_path}/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_data.json"
 
 # Ensure the directory structure exists
 sudo mkdir -p "$(dirname "$json_file")"
+sudo mkdir -p "$docs_destination"
 
 # Initialize or validate JSON file
 initialize_json_file() {
-    # Delete existing file if it is initialized
-    if [ -f "$json_file" ]; then
-        sudo rm "$json_file"
-    fi
-
     if [ ! -f "$json_file" ]; then
         echo '{"services":[],"binaries":[]}' | sudo tee "$json_file" > /dev/null
         echo "Initialized JSON file at $json_file"
@@ -218,6 +216,15 @@ add_deb() {
     echo "Successfully installed $deb_name into ${L4T_rootfs_path}/"
 }
 
+add_docs()
+{
+    local docs_name=$1
+    local docs_path=$2
+
+    sudo cp $docs_path ${docs_destination}/
+    add_binary_to_json "/home/dcs_user/Airvolute/docs/${docs_name}"
+}
+
 # Initialize the JSON file
 initialize_json_file
 
@@ -307,6 +314,20 @@ for patch_dir in $patches_dirs; do
                 else
                     echo "Skipping patch: $patch_dir"
                 fi 
+            elif [[ $patch_dir == *"docs"* ]]; then
+                echo "Applying patch: $patch_dir"
+                
+                # Get script
+                script_name=$(find "$patch_dir" -maxdepth 1 -type f ! -name "compatible" -exec basename {} \;)
+                script_path="$patch_dir/$script_name"
+                if [[ -f $script_path ]]; then
+                    echo "Applying patch: $script_path"
+
+                    # Check result of the script
+                    add_docs "$script_name" "$script_path"
+                else
+                    echo "Skipping patch: $patch_dir"
+                fi
             fi
         else
             echo "Skipping patch: $patch_dir"

@@ -9,6 +9,12 @@ board_expansion=$5
 storage=$6
 rootfs_type=$7
 
+# Path for log folder
+log_folder_path="$L4T_rootfs_path/home/dcs_user/Airvolute/logs/dcs-deploy"
+
+# Create log folder
+sudo mkdir -p $log_folder_path
+
 # Get Git details (assuming this script is in a Git repository)
 git_commit=$(git rev-parse HEAD 2>/dev/null || echo "N/A")
 git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "N/A")
@@ -31,11 +37,11 @@ json_output="{
 }"
 
 # Save to a JSON file
-output_file="dcs_deploy.json"
+output_file="dcs_deploy_version.json"
 echo "$json_output" > "/tmp/$output_file"
 
 # Save it to the L4T rootfs path
-sudo cp "/tmp/$output_file" "$L4T_rootfs_path/home/dcs_user/.dcs_logs/$output_file"
+sudo cp "/tmp/$output_file" "$log_folder_path/$output_file"
 
 # Print success message
 echo "Version information saved to $output_file"

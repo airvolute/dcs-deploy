@@ -39,7 +39,7 @@ if [ ! -d "$L4T_rootfs_path" ]; then
 fi
 
 # JSON file setup
-json_file="${L4T_rootfs_path}/home/dcs_user/.dcs_logs/deploy_data.json"
+json_file="${L4T_rootfs_path}/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_data.json"
 
 script_path=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo "script_path: $script_path"

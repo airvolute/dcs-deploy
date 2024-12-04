@@ -22,5 +22,8 @@ else
     echo "Error: handle_hardware_services.sh not found."
 fi
 
+# Add dcs_user to the /home/dcs_user/Airvolute folder recursively
+sudo chown -R dcs_user:dcs_user /home/dcs_user/Airvolute
+
 # rm first boot check file, so this setup runs only once
 sudo rm /etc/first_boot
