@@ -78,4 +78,3 @@ fi
 
 add_service_to_json "/etc/systemd/system/dcs_first_boot.service"
 add_binary_to_json "/usr/local/bin/dcs_first_boot.sh"
-add_binary_to_json "/etc/first_boot"

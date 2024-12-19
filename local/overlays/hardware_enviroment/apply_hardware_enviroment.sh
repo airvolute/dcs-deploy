@@ -44,7 +44,8 @@ bin_destination=${L4T_rootfs_path}/usr/local/bin
 # udev destination
 udev_destination=${L4T_rootfs_path}/etc/udev/rules.d
 # Utilities destination
-util_destination=${L4T_rootfs_path}/home/dcs_user/Airvolute/resources
+util_device_folder=/home/dcs_user/Airvolute/resources
+util_destination=${L4T_rootfs_path}${util_device_folder}
 # Docs destination
 docs_destination=${L4T_rootfs_path}/home/dcs_user/Airvolute/docs
 # JSON log file setup
@@ -295,7 +296,7 @@ for patch_dir in $patches_dirs; do
 
                     sudo cp $script_path $util_destination/
                     sudo chmod +x $util_destination/$script_name
-                    add_binary_to_json "/home/dcs_user/av_utilities/$script_name"
+                    add_binary_to_json "$util_device_folder/$script_name"
                 else
                     echo "Skipping patch: $patch_dir"
                 fi
