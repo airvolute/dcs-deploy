@@ -2,34 +2,17 @@
 # stop when any error occures
 set -e 
 
+# lib path
+SCRIPT_PATH=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+LIB_PATH=$SCRIPT_PATH/../lib
+
+# Include the arg_parser.sh script
+source $LIB_PATH/arg_parser.sh
+
 # Global variables
 tmp_script_path=/tmp/handle_hardware_services.sh
 
-help() {
-    echo "Appply scripts needs one mandatory parameter - L4T_rootfs_path!"
-    echo "optional parameter - resources_path"
-}
-
-if [ -z $1 ]; then
-    help
-    exit 1
-fi
-
-L4T_rootfs_path=$1
-target_device=$2
-jetpack_version=$3
-hwrev=$4
-board_expansion=$5
-storage=$6
-rootfs_type=$7
-
-echo "Rootfs Path: $L4T_rootfs_path"
-echo "Target Device: $target_device"
-echo "Jetpack Version: $jetpack_version"
-echo "HW Revision: $hwrev"
-echo "Board Expansion: $board_expansion"
-echo "Storage: $storage"
-echo "Rootfs Type: $rootfs_type"
+init_variables "$1" "$2" "$3" "$4" "$5" "$6" "$7"
 
 script_path=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo "script_path: $script_path"
