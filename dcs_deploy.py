@@ -225,7 +225,7 @@ class DcsDeploy:
         hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0].'
         subparser.add_argument('hwrev', help=hwrev_help)
 
-        board_expander_help = 'REQUIRED. Which board expander are we going to use. Options: ["", default].'
+        board_expander_help = 'REQUIRED. Which board expander are we going to use. Options: [none, default].'
         subparser.add_argument('board_expansion', help=board_expander_help)
 
         storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
