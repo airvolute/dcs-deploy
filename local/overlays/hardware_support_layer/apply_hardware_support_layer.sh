@@ -1,5 +1,6 @@
 #!/bin/bash
 # stop when any error occures
+set -o pipefail
 set -e 
 
 # lib path

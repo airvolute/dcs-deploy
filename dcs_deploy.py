@@ -444,7 +444,7 @@ class DcsDeploy:
                      "libxml2-utils", "nfs-kernel-server", "python3", "python3-yaml", "qemu-user-static", "sshpass",
                      "udev", "uuid-runtime", "whois", "openssl", "cpio", "lz4"]
         l4t_other_dependencies = ["python-is-python3"]
-        dcs_deploy_dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2"]
+        dcs_deploy_dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2", "jq", "coreutils", "findutils" ]
         
         dependencies = l4t_tool
         # append dcs_deploy_dependencies which are unique

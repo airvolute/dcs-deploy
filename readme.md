@@ -5,7 +5,7 @@
 ### APT
 
 ```  
-sudo apt install qemu-user-static sshpass abootimg lbzip2  
+sudo apt install qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils
 ```    
 ### Python
 ```
@@ -26,7 +26,7 @@ pip install wget
 3. **Run dcs_deploy.py**
 For example:
     ```
-    python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme full
+    python3 dcs_deploy.py flash orin_nx 512 2.0 nvme full
     ```
 
     You can list supported configs with:

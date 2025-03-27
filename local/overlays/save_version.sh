@@ -1,4 +1,6 @@
 #!/bin/bash
+set -o pipefail
+set -e
 
 # This script creates a version file for the given generated flash configuration
 L4T_rootfs_path=$1
