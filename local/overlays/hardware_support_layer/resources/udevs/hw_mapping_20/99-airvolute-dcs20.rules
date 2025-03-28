@@ -1,0 +1,46 @@
+# SPI-JET SPI0.0 
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev0.0", SYMLINK+="airvolute/spi0.0-spi-jet"
+
+# SPI-JET SPI0.1
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev0.1", SYMLINK+="airvolute/spi0.1-spi-jet"
+
+# SPI-JET SPI2.0
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev2.0", SYMLINK+="airvolute/spi2.0-imu-acc"
+
+# SPI-JET SPI2.1
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev2.1", SYMLINK+="airvolute/spi2.1-imu-gyr"
+
+# SPI-JET SPI2.2
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev2.2", SYMLINK+="airvolute/spi2.2-baro"
+
+# GPS-JET
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyTHS1", SYMLINK+="airvolute/ttyTHS1-gps-jet"
+
+# CUBE-AUTOPILOT
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyTHS0", SYMLINK+="airvolute/ttyTHS0-cube-autopilot"
+
+# FMU USB 
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyACM0", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="5741", SYMLINK+="airvolute/ttyACM0-on-board-fmu"
+
+# CUBE USB 
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyACM0", ATTRS{idVendor}=="2dae", ATTRS{idProduct}=="1058", SYMLINK+="airvolute/ttyACM0-cube-autopilot"
+
+# I2C 1
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-cam0"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-gps-jet"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-temp-sens"
+
+# I2C 7 - Power Board 
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-7", SYMLINK+="airvolute/i2c-7-cam23"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-7", SYMLINK+="airvolute/i2c-7-power-board"
+
+# I2C 2
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-2", SYMLINK+="airvolute/i2c-2-cam1"
+
+# I2C 0
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-0", SYMLINK+="airvolute/i2c-0-eth-switch"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-0", SYMLINK+="airvolute/i2c-0-eeprom"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-0", SYMLINK+="airvolute/i2c-0-usbhub"
+
+# CAN 
+ACTION=="add", SUBSYSTEM=="net", INTERFACE=="can0", SYMLINK+="airvolute/can0"

@@ -1,0 +1,5 @@
+# Permission to access the subsystems from the userspace
+KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
+KERNEL=="i2c*", SUBSYSTEM=="i2c", MODE="0660", GROUP="i2c"
+KERNEL=="/dev/ttyTHS0*", SUBSYSTEM=="dialout", MODE="0660
+SUBSYSTEM=="spidev", KERNEL=="spidev*", MODE="0660", GROUP="spi"

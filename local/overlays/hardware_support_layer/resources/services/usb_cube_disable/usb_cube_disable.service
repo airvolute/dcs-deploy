@@ -1,0 +1,13 @@
+[Unit]
+Description=USB cube disable
+After=remote-fs.target
+After=syslog.target
+After=multi-user.target
+Requires=multi-user.target
+
+[Service]
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/local/bin/usb_cube_disable.sh
+
+[Install]
+WantedBy=multi-user.target

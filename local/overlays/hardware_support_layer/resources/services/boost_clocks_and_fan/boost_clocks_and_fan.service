@@ -1,0 +1,11 @@
+[Unit]
+Description=Boost clocks and fan
+After=multi-user.target
+Requires=multi-user.target
+
+[Service]
+ExecStart=/usr/local/bin/boost_clocks_and_fan.sh
+
+
+[Install]
+WantedBy=multi-user.target
