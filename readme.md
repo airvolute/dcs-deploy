@@ -26,7 +26,7 @@ pip install wget
 3. **Run dcs_deploy.py**
 For example:
     ```
-    python3 dcs_deploy.py flash orin_nx 512 2.0 nvme full
+    python3 dcs_deploy.py flash orin_nx 512 2.0 default nvme full
     ```
 
     You can list supported configs with:
