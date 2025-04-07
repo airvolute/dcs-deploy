@@ -5,7 +5,7 @@
 ### APT
 
 ```  
-sudo apt install qemu-user-static sshpass abootimg lbzip2  
+sudo apt install qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils
 ```    
 ### Python
 ```
@@ -26,7 +26,7 @@ pip install wget
 3. **Run dcs_deploy.py**
 For example:
     ```
-    python3 dcs_deploy.py flash xavier_nx 51 1.2 nvme full
+    python3 dcs_deploy.py flash orin_nx 512 2.0 default nvme full
     ```
 
     You can list supported configs with:
@@ -136,9 +136,44 @@ As a root of this filesystem, `.dcs_deploy` folder is created inside **host pc H
 - `download` contains downloaded archives needed for flashing
 - `flash` contains extracted folders that are needed for flashing. Those are folders from `download` dir + some nvidia and airvolute scripts applied, so the flashing environment is fully ready.
 
-### Hardware Supporting System Services (systemctl)
+### Local overlays
+To add features easily to the device without need of the creation of a new rootfs it is possible to utilize local overlays. These overlays are processed during the run of the `dcs_deploy`. 
+
+The local overlays are stored in the `local/overlays` directory. Each overlay is a either a directory or a file containing the following structure:
+```
+# Directory
+overlay_name/
+├─ resources/
+├─ apply_overlay_name.sh 
+
+# File
+overlay_name.sh
+```
+
+The logic of the overlay is stored in the `apply_overlay_name.sh` file or a `overlay_name.sh` for script overlay. This file is executed during the run of the `dcs_deploy` script. Usually, the overlay modify the rootfs that will be flashed in some way, but the logic can be anything that is needed. Each overlay is called with the same arguments as the `dcs_deploy` script. 
+
+Overlay can be added to the flashing configuration by adding the overlay name to the `local_overlays` list in the `config_db.json` file. The order of the overlays in the list is the order in which the overlays are applied.
+
+The `local_overlays` example:
+```
+ "local_overlays": ["dcs_first_boot", "hardware_support_layer", "save_version.sh"]
+```
+
+Third party overlays can be created and can be added to the `local/overlays` directory and added to the `config_db.json`. This is the easiest way to add new features to the device without the need to create a new rootfs. This is especially useful for the development of new features or for the testing of new features.
+
+#### Local overlays by Airvolute
+- `dcs_first_boot` - sets some basic settings on the device, regenerate SSH keys, enable services from `hardware_support_layer`. This service is run only once, at the first boot of the device.
+- `hardware_support_layer` - a set of services, udevs and other tools that are run at the first boot of the device. These services are responsible for setting up the hardware to work properly with the Airvolute DroneCore boards. All the software and configuration files installed by this layer can be reviewed in the logs folder on the device (`/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_data.json`).
+- `save_version.sh` - saves the version of the flashed configuration to the `/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_version.json` file. This file is used to store the information about the flashed configuration. This information can be used to check the version of the flashed configuration on the device.
+
+### Hardware Supporting Layer (systemctls, udev rules and more)
+This layer consist of two local overlays `dcs_first_boot` and `hardware_support_layer`. `hardware_support_layer` is a set of services, udevs and other tools that are run at the first boot of the device. 
+
+
+#### Some important services from `hardware_support_layer`:
+
 - `ethernet_switch_control`, `usb_hub_control`, and `usb3_control` are additional services that activate or reinitialize some hardware modules to ensure stable functionality during power cycles. By default, users do not need to modify these services in any way.
-- `fan_control` is another extra service that boosts clocks and activates the fan to 100%. If this behavior is undesired, it can be disabled with the command `sudo systemctl disable fan_control`.
+- `boost_clocks_and_fan` is another extra service that boosts clocks and activates the fan to 100%. If this behavior is undesired, it can be disabled with the command `sudo systemctl disable fan_control`.
 - On DCS 1.0 and 1.2, `ethernet_switch_control` will reset the USB hub. This is not an issue, but if undesired, it can be disabled similarly to fan_control.
 
 ### Cube (Autopilot) Connection

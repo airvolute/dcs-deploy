@@ -1,0 +1,10 @@
+[
+  {
+    "device": ["orin_nx", "orin_nx_8gb", "orin_nano_8gb", "orin_nano_4gb", "xavier_nx"],
+    "storage": [""],
+    "board": [""],
+    "board_expansion" : [""],
+    "l4t_version": ["512", "512_avt", "51"],
+    "rootfs_type": [""]
+  }
+]
