@@ -25,9 +25,16 @@ pip install wget
 
 3. **Run dcs_deploy.py**
 For example:
+    JetPack 5.1.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
     ```
     python3 dcs_deploy.py flash orin_nx 512 2.0 default nvme full
     ```
+    
+    JetPack 6.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
+    ```
+    python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full
+    ```
+Note: Please refer to the section Known limitation - JetPack 6.2 - beta [here](#known-limitation---jetpack-62---beta) for more information about JetPack 6.2.
 
     You can list supported configs with:
     ```
@@ -255,3 +262,27 @@ $ sudo su
 [   0.1299 ] Sending bct_br
 [   0.1454 ] ERROR: might be timeout in USB write.
 ```
+
+### Known limitation - JetPack 6.2 - beta
+Airvolute BSP for JetPack 6.2 is currently in beta. The flashing process is not fully tested and some features may not work as expected. Please report any issues to Airvolute support or open issues. Regardless of this beta release can be used to asses the new features of JetPack 6.2 and prepare their applications for the new JetPack version.
+
+User can always downgrade to stable JetPack 5.1.2 version by flashing the device with appropriate configuration.
+
+#### Known issues:
+- IMX219 camera is the only camera supported at port A. 
+  - To use this camera configuration you need to apply it as device tree overlay using `sudo python /opt/nvidia/jetson-io/jetson-io.py` navigate in menu to Configure Jetson 24pin CSI Connector -> Configure for compatible hardware -> Camera IMX219, and select this device tree overlay. After selection you need to confirm the selection and reboot the DroneCore.
+  - After the reboot for launching this cam you need to run these commands to enable and start the camera:
+    - 1. `sudo gpioset gpiochip2 0=1`
+      2. `sudo rmmod nv_imx219`
+      3. `sudo modprobe nv_imx219`
+
+Other cameras support and configuration will be added as soon as possible. 
+
+- SPI is currently not fully supported.
+
+This will be addressed in the next release.
+
+- Super modes are currently not supported out of the box. The main limitation for Orin NX and DCS 2.0 or DCS 1.2 lies in the power board adapter not able to consitently provide the power needed which may result in overheating and shutting down the device.
+  - If you want to use super modes, please contact Airvolute support for more information.
+
+The new revision of the power board together with adapter board for DCS 2.0 is scheduled by the end of Q2 2025. 

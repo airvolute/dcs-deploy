@@ -4,7 +4,7 @@
       "storage": ["nvme", "emmc"],
       "board": ["1.2"],
       "board_expansion" : [""],
-      "l4t_version": ["512", "512_avt", "51"],
+      "l4t_version": ["62", "512", "512_avt", "51"],
       "rootfs_type": [""]
     }
   ]
