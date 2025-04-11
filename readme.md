@@ -3,7 +3,7 @@
 # Dependencies
 **! DISLAIMER - INSTALL THOSE INSIDE HOST PC !**
 
-**! THIS IS BETA VERSION FOR JP 6.2 SOME ADDITIONAL CONSIDERATIONS MAY APPLY PLEASE REVIEW SECTION KNOWN LIMITATIONS BEFORE USING JP 6.2[here](#known-limitation---jetpack-62---beta)!**
+**! THIS IS BETA VERSION FOR JP 6.2 SOME ADDITIONAL CONSIDERATIONS MAY APPLY PLEASE REVIEW SECTION KNOWN LIMITATIONS BEFORE USING JP 6.2 [here](#known-limitation---jetpack-62---beta)!**
 
 ### APT
 
@@ -36,16 +36,14 @@ For example:
     JetPack 6.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
     ```
     python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full
-
-    Note: THIS IS BETA VERSION FOR JP 6.2 SOME ADDITIONAL CONSIDERATIONS MAY APPLY PLEASE REVIEW SECTION KNOWN LIMITATIONS BEFORE USING JP 6.2[here](#known-limitation---jetpack-62---beta)!
     ```
-Note: Please refer to the section Known limitation - JetPack 6.2 - beta [here](#known-limitation---jetpack-62---beta) for more information about JetPack 6.2.
+
+    Note: Please refer to the section Known limitations - JetPack 6.2 - beta [here](#known-limitation---jetpack-62---beta)
 
     You can list supported configs with:
     ```
     python3 dcs_deploy.py list
     ```
-
 4. **After a successful flash, the Jetson will boot and can be logged in using SSH with default credentials:**
     - login: `dcs_user`
     - password: `dronecore`
