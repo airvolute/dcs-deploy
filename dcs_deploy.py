@@ -578,11 +578,14 @@ class DcsDeploy:
         self.prepare_status.set_processing_step("apply_binaries_t")
         ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
         self.prepare_status.set_status(ret)
-
-        print('Creating default user ...')
-        self.prepare_status.set_processing_step("creating_default_user")
-        ret = cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
-        self.prepare_status.set_status(ret)
+        if self.args.rootfs is None:
+            print("Creating default user ...")
+            self.prepare_status.set_processing_step("creating_default_user")
+            ret = cmd_exec(
+                f"sudo {self.create_user_script_path} "
+                "-u dcs_user -p dronecore -n dcs --accept-license"
+            )
+            self.prepare_status.set_status(ret)
 
         if self.get_resource_url('nv_ota_tools') != None:
             print('Applying Nvidia OTA tools ...')
