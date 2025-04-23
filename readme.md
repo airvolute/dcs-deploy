@@ -171,6 +171,17 @@ The `local_overlays` example:
 
 Third party overlays can be created and can be added to the `local/overlays` directory and added to the `config_db.json`. This is the easiest way to add new features to the device without the need to create a new rootfs. This is especially useful for the development of new features or for the testing of new features.
 
+##### Arguments
+The overlays are called with the same positional arguments as the `dcs_deploy` script. Additionally, user can pass custom named arguments to the local overlay. To pass the custom arguments you need to adhere to this syntax and update the `config_db.json` file like this:
+
+```     
+"local_overlays": [{"custom_arguments_showcase.sh": {"custom_arg1": "value1", "custom_arg2": "value2"}},  "dcs_first_boot", "hardware_support_layer", "save_version.sh"],
+```
+
+To try this out you can add ` [{"custom_arguments_showcase.sh": {"custom_arg1": "value1", "custom_arg2": "value2"}}` to the `local_overlays` list in the `config_db.json` file to some configuration. The `custom_arguments_showcase.sh` will print out all the arguments passed to it in local overlay install phase.
+
+
+
 #### Local overlays by Airvolute
 - `dcs_first_boot` - sets some basic settings on the device, regenerate SSH keys, enable services from `hardware_support_layer`. This service is run only once, at the first boot of the device.
 - `hardware_support_layer` - a set of services, udevs and other tools that are run at the first boot of the device. These services are responsible for setting up the hardware to work properly with the Airvolute DroneCore boards. All the software and configuration files installed by this layer can be reviewed in the logs folder on the device (`/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_data.json`).
