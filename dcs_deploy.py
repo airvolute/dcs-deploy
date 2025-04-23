@@ -625,81 +625,114 @@ class DcsDeploy:
 
     def list_local_overlays(self):
         print("overlay dir:", self.local_overlay_dir)
-        if hasattr(self,"config") and "local_overlays" in self.config:
-            print("Selecting ovelays list from configuration['local_overlays']")
+
+        if hasattr(self, "config") and "local_overlays" in self.config:
+            print("Selecting overlays list from configuration['local_overlays']")
             all_overlays_list = self.config["local_overlays"]
         else:
-            print("Selecting ovelays list from local/overlays directory")
+            print("Selecting overlays list from local/overlays directory")
             all_overlays_list = os.listdir(self.local_overlay_dir)
+
         print("all_overlays_list: " + str(all_overlays_list))
 
-        # Check if all path exists  if not quite with error
-        for overlay in all_overlays_list:
-            if not os.path.exists(os.path.join(self.local_overlay_dir, overlay)):
-                print(f"Overlay {overlay} does not exist! Quitting!")
+        dirs = []
+        files = []
+
+        for item in all_overlays_list:
+            if isinstance(item, dict):
+                overlay_name = next(iter(item))
+            else:
+                overlay_name = item
+
+            overlay_path = os.path.join(self.local_overlay_dir, overlay_name)
+
+            if not os.path.exists(overlay_path):
+                print(f"Overlay {overlay_name} does not exist! Quitting!")
                 quit()
 
+            if os.path.isdir(overlay_path):
+                dirs.append(item)
+            elif os.path.isfile(overlay_path):
+                files.append(item)
+
         overlays = {
-            "dirs": [x for x in all_overlays_list if os.path.isdir(os.path.join(self.local_overlay_dir, x))],
-            "files": [x for x in all_overlays_list if os.path.isfile(os.path.join(self.local_overlay_dir, x))],
+            "dirs": dirs,
+            "files": files,
         }
+
         print("overlays:" + str(overlays))
         return overlays
-    
-    def install_overlays(self, is_last_install_step = False ):
+
+    def install_overlays(self, is_last_install_step=False):
         overlays = self.list_local_overlays()
-        i = 0
-        cnt = len(overlays["dirs"])
-        for overlay in overlays["dirs"]:
-            i = i + 1
+
+        dirs = overlays["dirs"]
+        cnt = len(dirs)
+        for i, overlay_entry in enumerate(dirs, start=1):
+            if isinstance(overlay_entry, dict):
+                overlay, args = next(iter(overlay_entry.items()))
+            else:
+                overlay = overlay_entry
+                args = {}
+
             print(f"[{i}/{cnt}] installing overlay {overlay}")
             self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
-            ret = self.install_overlay_dir(overlay)
-            self.prepare_status.set_status(ret, last_step = ((i == cnt) and is_last_install_step))
-            with_error="."
-            if ret:
-                with_error = " with error!"    
-                print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
-                quit()
+            ret = self.install_overlay_dir(overlay, args)
+            self.prepare_status.set_status(ret, last_step=((i == cnt) and is_last_install_step))
+
+            with_error = "." if not ret else " with error!"
             print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+
             if ret:
                 exit(10)
-        
-        cnt = len(overlays["files"])
-        i = 0
-        for overlay in overlays["files"]:
-            i = i + 1
+
+        files = overlays["files"]
+        cnt = len(files)
+        for i, overlay_entry in enumerate(files, start=1):
+            if isinstance(overlay_entry, dict):
+                overlay, args = next(iter(overlay_entry.items()))
+            else:
+                overlay = overlay_entry
+                args = {}
+
             print(f"[{i}/{cnt}] installing overlay {overlay}")
             self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
-            ret = self.install_overlay_file(overlay)
-            self.prepare_status.set_status(ret, last_step = ((i == cnt) and is_last_install_step))
-            with_error="."
-            if ret:
-                with_error = " with error!"    
-                print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
-                quit()
+            ret = self.install_overlay_file(overlay, args)
+            self.prepare_status.set_status(ret, last_step=((i == cnt) and is_last_install_step))
+
+            with_error = "." if not ret else " with error!"
             print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
             if ret:
                 exit(11)
 
-    def install_overlay_file(self, overlay_name):
+    def install_overlay_file(self, overlay_name, custom_args=None):
+        if custom_args is None:
+            custom_args = {}
+
         overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name)
-        # Construct the command with arguments
+
+        custom_args_str = " ".join(f"{k}={v}" for k, v in custom_args.items())
+
         cmd = (
             f"sudo {overlay_script_name} {self.rootfs_extract_dir} "
             f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} {self.args.board_expansion} "
-            f"{self.args.storage} {self.args.rootfs_type}"
+            f"{self.args.storage} {self.args.rootfs_type} {custom_args_str}"
         )
         ret = cmd_exec(cmd, print_command=True)
         return ret
+    
+    def install_overlay_dir(self, overlay_name, custom_args=None):
+        if custom_args is None:
+            custom_args = {}
 
-    def install_overlay_dir(self, overlay_name):
         overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name, "apply_" + overlay_name + ".sh")
-            # Construct the command with arguments
+
+        custom_args_str = " ".join(f"{k}={v}" for k, v in custom_args.items())
+
         cmd = (
             f"sudo {overlay_script_name} {self.rootfs_extract_dir} "
             f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} {self.args.board_expansion} "
-            f"{self.args.storage} {self.args.rootfs_type}"
+            f"{self.args.storage} {self.args.rootfs_type} {custom_args_str}"
         )
         ret = cmd_exec(cmd, print_command=True)
         return ret
