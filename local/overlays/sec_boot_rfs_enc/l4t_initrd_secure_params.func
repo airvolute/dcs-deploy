@@ -1,0 +1,51 @@
+SCRIPT_dir=${SCRIPT_dir:-$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )}
+
+RSA_PEM_fname="${RSA_PEM_fname:-${RESOURCES_dir}/rsa.pem}"
+SBK_KEY_fname="${SBK_KEY_fname:-${RESOURCES_dir}/sbk.key}"
+uefi_keys_cfg_file_name="${uefi_keys_cfg_file_name:-uefi_keys.conf}"
+UEFI_KEYS_CFG_FILE=${UEFI_KEYS_DIR}/${uefi_keys_cfg_file_name}
+
+source "$SCRIPT_dir/uefi_tools.func"
+
+check_secured_internal_qspi_vars_set() {
+    [ ! -f ${RSA_PEM_fname} ] && return 1
+    [ ! -f ${SBK_KEY_fname} ] && return 2
+}
+
+gen_secured_internal_qspi_params() {
+    local uefi_keys_cfg=$1
+    local uefi_enc_key=$2
+    
+    check_secured_internal_qspi_vars_set && return $?
+    
+    local uefi_keys_opt=""
+    if [ ! -z $uefi_keys_cfg ]; then
+        uefi_keys_opt="--uefi-keys $uefi_keys_cfg"
+        
+        extract_uefi_cfg_files "${UEFI_KEYS_CFG_FILE}" || {
+            echo "[ERROR] Required uefi_cfg files are missing." >&2
+            return 1
+    }
+    fi
+    local uefi_enc_opt=""
+    if [ ! -z $uefi_enc_key ]; then
+        [ ! -f $uefi_enc_key ] && echo "[ERROR] Required uefi_enc_key ($uefi_enc_key) file is missing." >&2 && return 2
+        uefi_enc_opt="--uefi-enc $uefi_enc_key"
+    fi
+    
+    echo "-u ${RSA_PEM_fname} -v ${SBK_KEY_fname} $uefi_keys_opt $uefi_enc_opt "
+    return 0
+}
+
+gen_secured_external_qspi_params() {
+    local uefi_keys_cfg=$1
+    local uefi_enc_key=$2
+    
+     [ ! -f $EKS_SYM2_T234_KEY_file ] && return 1 
+    
+    secured_internal_qspi_params=$(gen_secured_internal_qspi_params $uefi_keys_cfg $uefi_enc_key)
+    ret=$?
+    [[ $ret != 0 ]] && return $ret
+    echo "$secured_internal_qspi_params -i $EKS_SYM2_T234_KEY_file"
+}
+    

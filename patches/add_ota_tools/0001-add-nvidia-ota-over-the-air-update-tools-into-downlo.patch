@@ -1,0 +1,75 @@
+From 7f02b9637d7762465ad2c1107c86f6337cda5d05 Mon Sep 17 00:00:00 2001
+From: Michal Bachraty <michal.bachraty@gmail.com>
+Date: Mon, 11 Sep 2023 13:18:35 +0200
+Subject: [PATCH] add nvidia ota (over the air) update tools into downloading
+ and extract it
+
+Signed-off-by: Michal Bachraty <michal.bachraty@gmail.com>
+---
+ dcs_deploy.py        | 6 +++++-
+ local/config_db.json | 4 ++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/dcs_deploy.py b/dcs_deploy.py
+index f737a86..26650e9 100755
+--- a/dcs_deploy.py
++++ b/dcs_deploy.py
+@@ -307,7 +307,7 @@ class DcsDeploy:
+         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
+ 
+         # generate download resource paths
+-        resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay"]
++        resource_keys = ["rootfs", "l4t","nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
+         self.resource_paths = {}
+ 
+         for res_name in resource_keys:
+@@ -481,6 +481,10 @@ class DcsDeploy:
+         ret = cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
+         self.prepare_status.set_status(ret)
+ 
++        if self.get_resource_url('nv_ota_tools') != None:
++            print('Applying Nvidia OTA tools ...')
++            ret = self.extract_resource('nv_ota_tools')
++
+         self.prepare_status.set_processing_step("install_first_boot_setup")
+         ret = self.install_first_boot_setup()
+         self.prepare_status.set_status(ret, last_step = True)
+diff --git a/local/config_db.json b/local/config_db.json
+index 6e32a2b..c451212 100644
+--- a/local/config_db.json
++++ b/local/config_db.json
+@@ -7,6 +7,7 @@
+     "nvidia_overlay": "none",
+     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
+     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
++    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
+     "rootfs": "https://airvolute.com/download/dcs_deployment_testing/jp_51_clean_rootfs.tbz2",
+     "rootfs_type": "minimal"
+     
+@@ -19,6 +20,7 @@
+     "nvidia_overlay": "none",
+     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
+     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
++    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
+     "rootfs": "https://airvolute.com/download/dcs_deployment_testing/jp_51_clean_rootfs.tbz2",
+     "rootfs_type": "minimal"
+   },
+@@ -30,6 +32,7 @@
+     "nvidia_overlay": "none",
+     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
+     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
++    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
+     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
+     "rootfs_type": "full"
+   },
+@@ -41,6 +44,7 @@
+     "nvidia_overlay": "none",
+     "airvolute_overlay": "https://airvolute.com/download/dcs_deployment_testing/airvolute_overlay_bt.tbz2",
+     "l4t": "https://developer.nvidia.com/downloads/jetson-linux-r3521-aarch64tbz2",
++    "nv_ota_tools" : "https://developer.nvidia.com/downloads/r35releasev21-release-ota-tools-r3521-aarch64tbz2",
+     "rootfs": "https://developer.nvidia.com/downloads/linux-sample-root-filesystem-r3521aarch64tbz2",
+     "rootfs_type": "full"
+   }
+-- 
+2.34.1
+

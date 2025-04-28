@@ -1,0 +1,285 @@
+****************************************************
+*                                                  *
+*  Step 2: Boot the device with flash initrd image *
+*                                                  *
+****************************************************
+/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/temp_initrdflash/bootloader0 /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra
+./tegraflash.py --bl nvtboot_recovery_cpu_t194_sigheader.bin.encrypt --bct br_bct_BR.bct --securedev  --bldtb tegra194-p3668-0001-p3509-0000.dtb --applet rcm_2_encrypt.rcm --applet_softfuse rcm_1_encrypt.rcm --cmd "rcmboot"  --cfg secureflash.xml --chip 0x19 --mb1_bct mb1_bct_MB1_sigheader.bct.encrypt --mem_bct mem_rcm_sigheader.bct.encrypt --mb1_cold_boot_bct mb1_cold_boot_bct_MB1_sigheader.bct.encrypt --mem_bct_cold_boot mem_coldboot_sigheader.bct.encrypt  --bins "mb2_bootloader nvtboot_recovery_t194_sigheader.bin.encrypt; mts_preboot preboot_c10_prod_cr_sigheader.bin.encrypt; mts_mce mce_c10_prod_cr_sigheader.bin.encrypt; mts_proper mts_c10_prod_cr_sigheader.bin.encrypt; bpmp_fw bpmp-2_t194_sigheader.bin.encrypt; bpmp_fw_dtb tegra194-a02-bpmp-p3668-a00_lz4_sigheader.dtb.encrypt; spe_fw spe_t194_sigheader.bin.encrypt; tos tos-optee_t194_sigheader.img.encrypt; eks eks_t194_sigheader.img.encrypt; kernel boot0.img; kernel_dtb kernel_tegra194-p3668-0001-p3509-0000.dtb; bootloader_dtb tegra194-p3668-0001-p3509-0000_sigheader.dtb.encrypt"    --secondary_gpt_backup  --bct_backup  --boot_chain A  --instance 6-1.2.2
+Welcome to Tegra Flash
+version 1.0.0
+Type ? or help for help and q or quit to exit
+Use ! to execute system commands
+ 
+
+ Entering RCM boot
+
+[   0.0000 ] rcm boot with presigned binaries
+[   0.0000 ] Boot Rom communication
+[   0.0022 ] tegrarcm_v2 --instance 6-1.2.2 --chip 0x19 0 --rcm rcm_1_encrypt.rcm --rcm rcm_2_encrypt.rcm
+[   0.0029 ] BR_CID: 0x88021911644501c1000000000bff0240
+[   0.3748 ] Boot Rom communication completed
+[   2.4112 ] tegrarcm_v2 --instance 6-1.2.2 --isapplet
+[   2.4120 ] Applet version 01.00.0000
+[   2.4418 ] Sending BCTs
+[   2.4439 ] tegrarcm_v2 --instance 6-1.2.2 --download bct_bootrom br_bct_BR.bct --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt --download bct_mem mem_rcm_sigheader.bct.encrypt
+[   2.4449 ] Applet version 01.00.0000
+[   2.4667 ] Sending bct_bootrom
+[   2.4668 ] [................................................] 100%
+[   2.4684 ] Sending bct_mb1
+[   2.4733 ] [................................................] 100%
+[   2.4775 ] Sending bct_mem
+[   2.5320 ] [................................................] 100%
+[   2.5691 ] Generating blob
+[   2.5785 ] tegrahost_v2 --chip 0x19 --generateblob blob.xml blob.bin
+[   2.5795 ] number of images in blob are 13
+[   2.5832 ] blobsize is 53880436
+[   2.5834 ] Added binary blob_nvtboot_recovery_cpu_t194_sigheader.bin.encrypt of size 233040
+[   2.6177 ] Added binary blob_nvtboot_recovery_t194_sigheader.bin.encrypt of size 206016
+[   2.6182 ] Added binary blob_preboot_c10_prod_cr_sigheader.bin.encrypt of size 24016
+[   2.6185 ] Added binary blob_mce_c10_prod_cr_sigheader.bin.encrypt of size 145184
+[   2.6188 ] Added binary blob_mts_c10_prod_cr_sigheader.bin.encrypt of size 3430416
+[   2.6214 ] Added binary blob_bpmp-2_t194_sigheader.bin.encrypt of size 1007392
+[   2.6233 ] Added binary blob_tegra194-a02-bpmp-p3668-a00_lz4_sigheader.dtb.encrypt of size 36176
+[   2.6239 ] Added binary blob_spe_t194_sigheader.bin.encrypt of size 95232
+[   2.6242 ] Added binary blob_tos-optee_t194_sigheader.img.encrypt of size 914992
+[   2.6251 ] Added binary blob_eks_t194_sigheader.img.encrypt of size 5136
+[   2.6258 ] Added binary blob_boot0.img of size 47110144
+[   2.6600 ] Added binary blob_kernel_tegra194-p3668-0001-p3509-0000.dtb of size 330268
+[   2.6727 ] Added binary blob_tegra194-p3668-0001-p3509-0000_sigheader.dtb.encrypt of size 342208
+[   3.4439 ] Sending bootloader and pre-requisite binaries
+[   3.4467 ] tegrarcm_v2 --instance 6-1.2.2 --download blob blob.bin
+[   3.4472 ] Applet version 01.00.0000
+[   3.4700 ] Sending blob
+[   3.4700 ] [................................................] 100%
+[  11.0730 ] tegrarcm_v2 --instance 6-1.2.2 --boot rcm
+[  11.0738 ] Applet version 01.00.0000
+[  11.1027 ] RCM-boot started
+
+/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra
+***************************************
+*                                     *
+*  Step 3: Start the flashing process *
+*                                     *
+***************************************
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for device to expose ssh ......RTNETLINK answers: File exists
+RTNETLINK answers: File exists
+Run command: if [ -f /qspi/l4t_flash_from_kernel.sh ]; then USER=root /qspi/l4t_flash_from_kernel.sh --no-reboot --qspi-only ; fi on root@fe80::1%enx1a733c308be1
+4194304
+[ 0]: l4t_flash_from_kernel: Starting to create gpt for external device
+Active index file is /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/flash.idx
+Number of lines is 17
+max_index=16
+writing item=1, 9:0:primary_gpt, 512, 19968, gpt_primary_9_0.bin, 16896, fixed-<reserved>-0, f87612f6dad71cd7ff31c0dacb46534ffa0f6235
+SSH ready
+Writing primary_gpt partition with gpt_primary_9_0.bin
+Offset is not aligned to K Bytes, no optimization is applied
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/gpt_primary_9_0.bin of=/dev/sdf bs=1 skip=0  seek=512 count=16896
+16896+0 records in
+16896+0 records out
+16896 bytes (17 kB, 16 KiB) copied, 0,0389531 s, 434 kB/s
+Writing primary_gpt partition done
+Writing secondary_gpt partition with gpt_secondary_9_0.bin
+Offset is not aligned to K Bytes, no optimization is applied
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/gpt_secondary_9_0.bin of=/dev/sdf bs=1 skip=0  seek=128035659264 count=16896
+16896+0 records in
+16896+0 records out
+16896 bytes (17 kB, 16 KiB) copied, 0,0483698 s, 349 kB/s
+Writing secondary_gpt partition done
+[ 3]: l4t_flash_from_kernel: Successfully create gpt for external device
+Run command: partprobe on root@fe80::1%enx1a733c308be1
+[ 4]: l4t_flash_from_kernel: Starting to flash to external device
+Active index file is /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/flash.idx
+Number of lines is 17
+max_index=16
+writing item=0, 9:0:master_boot_record, 0, 512, mbr_9_0.bin, 512, fixed-<reserved>-0, 694898d1c345bdb31b377790ed7fc0b0db184bf7
+writing item=1, 9:0:primary_gpt, 512, 19968, gpt_primary_9_0.bin, 16896, fixed-<reserved>-0, f87612f6dad71cd7ff31c0dacb46534ffa0f6235
+writing item=2, 9:0:kernel, 20480, 67108864, boot.img, 41998336, fixed-<reserved>-2, 7570d237c9bb65a620dbccd11f853ba6a7bf9bc4
+Writing kernel partition with boot.img
+Get size of partition through connection.
+41998336 bytes from /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/boot.img to /dev/sdf: 1KB block=41014 remainder=0
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/boot.img of=/dev/sdf bs=1K skip=0  seek=20 count=41014
+41014+0 records in
+41014+0 records out
+41998336 bytes (42 MB, 40 MiB) copied, 4,29414 s, 9,8 MB/s
+Writing kernel partition done
+writing item=3, 9:0:kernel-dtb, 67129344, 458752, kernel_tegra194-p3668-0001-p3509-0000.dtb, 330268, fixed-<reserved>-3, 4e0f396dc371b5c845685b72b9c5a4b76eb39c2a
+Writing kernel-dtb partition with kernel_tegra194-p3668-0001-p3509-0000.dtb
+Get size of partition through connection.
+330268 bytes from /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/kernel_tegra194-p3668-0001-p3509-0000.dtb to /dev/sdf: 1KB block=322 remainder=540
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/kernel_tegra194-p3668-0001-p3509-0000.dtb of=/dev/sdf bs=1K skip=0  seek=65556 count=322
+322+0 records in
+322+0 records out
+329728 bytes (330 kB, 322 KiB) copied, 0,0907291 s, 3,6 MB/s
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/kernel_tegra194-p3668-0001-p3509-0000.dtb of=/dev/sdf bs=1 skip=329728  seek=67459072 count=540
+540+0 records in
+540+0 records out
+540 bytes copied, 0,00286898 s, 188 kB/s
+Writing kernel-dtb partition done
+writing item=4, 9:0:reserved_for_chain_A_user, 67588096, 33554432, , , fixed-<reserved>-4, 
+[ 9]: l4t_flash_from_kernel: Warning: skip writing reserved_for_chain_A_user partition as no image is specified
+writing item=5, 9:0:kernel_b, 101142528, 67108864, boot.img, 41998336, fixed-<reserved>-5, 7570d237c9bb65a620dbccd11f853ba6a7bf9bc4
+Writing kernel_b partition with boot.img
+Get size of partition through connection.
+41998336 bytes from /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/boot.img to /dev/sdf: 1KB block=41014 remainder=0
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/boot.img of=/dev/sdf bs=1K skip=0  seek=98772 count=41014
+41014+0 records in
+41014+0 records out
+41998336 bytes (42 MB, 40 MiB) copied, 4,89783 s, 8,6 MB/s
+Writing kernel_b partition done
+writing item=6, 9:0:kernel-dtb_b, 168251392, 458752, kernel_tegra194-p3668-0001-p3509-0000.dtb, 330268, fixed-<reserved>-6, 4e0f396dc371b5c845685b72b9c5a4b76eb39c2a
+Writing kernel-dtb_b partition with kernel_tegra194-p3668-0001-p3509-0000.dtb
+Get size of partition through connection.
+330268 bytes from /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/kernel_tegra194-p3668-0001-p3509-0000.dtb to /dev/sdf: 1KB block=322 remainder=540
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/kernel_tegra194-p3668-0001-p3509-0000.dtb of=/dev/sdf bs=1K skip=0  seek=164308 count=322
+322+0 records in
+322+0 records out
+329728 bytes (330 kB, 322 KiB) copied, 0,232477 s, 1,4 MB/s
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/kernel_tegra194-p3668-0001-p3509-0000.dtb of=/dev/sdf bs=1 skip=329728  seek=168581120 count=540
+540+0 records in
+540+0 records out
+540 bytes copied, 0,00280909 s, 192 kB/s
+Writing kernel-dtb_b partition done
+writing item=7, 9:0:reserved_for_chain_B_user, 168710144, 33554432, , , fixed-<reserved>-7, 
+[ 14]: l4t_flash_from_kernel: Warning: skip writing reserved_for_chain_B_user partition as no image is specified
+writing item=8, 9:0:recovery, 202264576, 83886080, recovery.img, 46096384, fixed-<reserved>-8, 8202f68e59915db530aabdd38d4fc647c27013fa
+Writing recovery partition with recovery.img
+Get size of partition through connection.
+46096384 bytes from /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/recovery.img to /dev/sdf: 1KB block=45016 remainder=0
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/recovery.img of=/dev/sdf bs=1K skip=0  seek=197524 count=45016
+45016+0 records in
+45016+0 records out
+46096384 bytes (46 MB, 44 MiB) copied, 5,18592 s, 8,9 MB/s
+Writing recovery partition done
+writing item=9, 9:0:recovery-dtb, 286150656, 524288, tegra194-p3668-0001-p3509-0000.dtb.rec, 330268, fixed-<reserved>-9, 4e0f396dc371b5c845685b72b9c5a4b76eb39c2a
+Writing recovery-dtb partition with tegra194-p3668-0001-p3509-0000.dtb.rec
+Get size of partition through connection.
+330268 bytes from /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/tegra194-p3668-0001-p3509-0000.dtb.rec to /dev/sdf: 1KB block=322 remainder=540
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/tegra194-p3668-0001-p3509-0000.dtb.rec of=/dev/sdf bs=1K skip=0  seek=279444 count=322
+322+0 records in
+322+0 records out
+329728 bytes (330 kB, 322 KiB) copied, 0,0940693 s, 3,5 MB/s
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/tegra194-p3668-0001-p3509-0000.dtb.rec of=/dev/sdf bs=1 skip=329728  seek=286480384 count=540
+540+0 records in
+540+0 records out
+540 bytes copied, 0,0186765 s, 28,9 kB/s
+Writing recovery-dtb partition done
+writing item=10, 9:0:RECROOTFS, 286674944, 104857600, , , fixed-<reserved>-10, 
+[ 20]: l4t_flash_from_kernel: Warning: skip writing RECROOTFS partition as no image is specified
+writing item=11, 9:0:esp, 391532544, 67108864, esp.img, 67108864, fixed-<reserved>-11, cf3f35f6c4e8a2e96ffd211c7d219d3c895cc268
+Writing esp partition with esp.img
+Get size of partition through connection.
+67108864 bytes from /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/esp.img to /dev/sdf: 1KB block=65536 remainder=0
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/esp.img of=/dev/sdf bs=1K skip=0  seek=382356 count=65536
+65536+0 records in
+65536+0 records out
+67108864 bytes (67 MB, 64 MiB) copied, 7,53729 s, 8,9 MB/s
+Writing esp partition done
+writing item=12, 9:0:recovery_alt, 458641408, 83886080, , , fixed-<reserved>-12, 
+[ 28]: l4t_flash_from_kernel: Warning: skip writing recovery_alt partition as no image is specified
+writing item=13, 9:0:recovery-dtb_alt, 542527488, 524288, , , fixed-<reserved>-13, 
+[ 28]: l4t_flash_from_kernel: Warning: skip writing recovery-dtb_alt partition as no image is specified
+writing item=14, 9:0:esp_alt, 543051776, 67108864, , , fixed-<reserved>-14, 
+[ 28]: l4t_flash_from_kernel: Warning: skip writing esp_alt partition as no image is specified
+writing item=15, 9:0:APP, 610160640, 15032385536, , , fixed-<reserved>-1, 
+Formatting APP partition /dev/sdf1 ...
+mke2fs 1.46.5 (30-Dec-2021)
+Creating filesystem with 3670016 4k blocks and 917504 inodes
+Filesystem UUID: b95897e6-f904-407a-bb10-9b41858ba256
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done   
+
+Formatting APP parition done
+Formatting APP partition /dev/sdf1 ...
+tar --xattrs -xpf /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_full/Linux_for_Tegra/tools/kernel_flash/images/external/system.img  --checkpoint=10000 --warning=no-timestamp --numeric-owner  -C  /tmp/ci-kBZeNpZ4WR
+tar: Read checkpoint 10000
+tar: Read checkpoint 20000
+tar: Read checkpoint 30000
+tar: Read checkpoint 40000
+tar: Read checkpoint 50000
+tar: Read checkpoint 60000
+tar: Read checkpoint 70000
+tar: Read checkpoint 80000
+tar: Read checkpoint 90000
+tar: Read checkpoint 100000
+tar: Read checkpoint 110000
+tar: Read checkpoint 120000
+tar: Read checkpoint 130000
+tar: Read checkpoint 140000
+tar: Read checkpoint 150000
+tar: Read checkpoint 160000
+tar: Read checkpoint 170000
+tar: Read checkpoint 180000
+tar: Read checkpoint 190000
+tar: Read checkpoint 200000
+tar: Read checkpoint 210000
+tar: Read checkpoint 220000
+tar: Read checkpoint 230000
+tar: Read checkpoint 240000
+tar: Read checkpoint 250000
+tar: Read checkpoint 260000
+tar: Read checkpoint 270000
+tar: Read checkpoint 280000
+tar: Read checkpoint 290000
+tar: Read checkpoint 300000
+tar: Read checkpoint 310000
+tar: Read checkpoint 320000
+tar: Read checkpoint 330000
+tar: Read checkpoint 340000
+tar: Read checkpoint 350000
+tar: Read checkpoint 360000
+tar: Read checkpoint 370000
+tar: Read checkpoint 380000
+tar: Read checkpoint 390000
+tar: Read checkpoint 400000
+tar: Read checkpoint 410000
+tar: Read checkpoint 420000
+tar: Read checkpoint 430000
+tar: Read checkpoint 440000
+tar: Read checkpoint 450000
+tar: Read checkpoint 460000
+tar: Read checkpoint 470000
+tar: Read checkpoint 480000
+tar: Read checkpoint 490000
+tar: Read checkpoint 500000
+tar: Read checkpoint 510000
+tar: Read checkpoint 520000
+tar: Read checkpoint 530000
+tar: Read checkpoint 540000
+tar: Read checkpoint 550000
+tar: Read checkpoint 560000
+writing item=16, 9:0:secondary_gpt, 128035659264, 16896, gpt_secondary_9_0.bin, 16896, fixed-<reserved>-0, ee75adf704b021d48ebbf74c1b21f51d3814b521
+[ 246]: l4t_flash_from_kernel: Successfully flash the external device
+[ 246]: l4t_flash_from_kernel: Flashing success
+
+Reboot target
+Run command: sync; nohup reboot &>/dev/null & exit on root@fe80::1%enx1a733c308be1
+SSH ready
+Success
+Cleaning up...
+Log is saved to Linux_for_Tegra/initrdlog/flash_6-1.2.2_0_20240314-142927.log 

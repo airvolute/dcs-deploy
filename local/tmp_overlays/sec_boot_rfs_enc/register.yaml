@@ -1,0 +1,28 @@
+---
+functions:
+    img-gen-internal:
+        type: "lt4-initrd-params" # returns -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key $uefi_keys_opt
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args:
+            - "--get-internal-params"
+    img-gen-internal-prepare:
+        type: "cmd"
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args:
+            - "--gen-and-copy-eks-image"
+    img-gen-external:
+        type: "lt4-initrd-params" 
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args: 
+            - "--get-ext-params"   # -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key
+        get-env: "ROOTFS_ENC=1" # add env var for lt4-initrd-params
+        
+    img-gen-cleanup:
+        type: "cmd"
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args: 
+            - "--cleanup"
+    get-img-type:
+        type: "option"
+        options:
+            - "rfsenc" #specify type of partition to be used. rfsenc -> enable variable encryption

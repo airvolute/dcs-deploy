@@ -1,0 +1,8 @@
+L4T_rootfs_path: /home/michal/.dcs_deploy/flash/orin_nano_4gb_nvme_1.2_none_512_full/Linux_for_Tegra/
+target_device: 2
+jetpack_version: 3
+hwrev: 4
+board_expansion: 5
+storage: 6
+rootfs_type: 7
+UEFI_DB_1_KEY_FILE=db_1.key     UEFI_DB_1_CERT_FILE=db_1.crt     UEFI_DEFAULT_PK_ESL=PK.esl     UEFI_DEFAULT_KEK_ESL_0=KEK.esl     UEFI_DEFAULT_DB_ESL_0=db_0.esl     UEFI_DEFAULT_DB_ESL_1=db_1.esl     UEFI_UPDATE_PRE_SIGNED_KEK_0=kek4update_0.auth     UEFI_UPDATE_PRE_SIGNED_DB_0=db4update_0.auth     UEFI_UPDATE_PRE_SIGNED_DBX_0=dbx4update_0.auth     SBK_KEY_fname=sbk.key     RSA_PEM_fname=rsa.pem     EKS_KEK_OPTEE_KEY_file=kek_optee.key     EKS_FV_EKB_T234_file=fv_ekb_t234     EKS_SYM_T234_KEY_file=sym_t234.key     EKS_SYM2_T234_KEY_file=sym2_t234.key     UEFI_ENC_KEY_fname=uefi_enc.key     UEFI_KEYS_CFG_FILE=uefi_keys.conf     EKS_AUTH_T234_KEY_file=auth_t234.key    UEFI_DEFAULT_SECURITY_KEYS_DTBO_fname=UefiDefaultSecurityKeys.dtbo     UEFI_UPDATE_SECURITY_KEYS_DTBO_fname=UefiUpdateSecurityKeys.dtbo

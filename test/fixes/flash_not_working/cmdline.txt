@@ -1,0 +1,1 @@
+sudo ./l4t_create_default_user.sh -u dcs_user -p dronecore -n dcs --accept-license

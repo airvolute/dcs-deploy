@@ -1,0 +1,542 @@
+**********************************************
+*                                            *
+*  Step 1: Build the flashing environment    *
+*                                            *
+**********************************************
+Create flash environment 0
+/home/michal/.dcs_deploy/flash/orin_nx_nvme_2.0_51_airvolute/Linux_for_Tegra/bootloader /home/michal/.dcs_deploy/flash/orin_nx_nvme_2.0_51_airvolute/Linux_for_Tegra
+/home/michal/.dcs_deploy/flash/orin_nx_nvme_2.0_51_airvolute/Linux_for_Tegra
+Finish creating flash environment 0.
+****************************************************
+*                                                  *
+*  Step 2: Boot the device with flash initrd image *
+*                                                  *
+****************************************************
+/home/michal/.dcs_deploy/flash/orin_nx_nvme_2.0_51_airvolute/Linux_for_Tegra/temp_initrdflash/bootloader0 /home/michal/.dcs_deploy/flash/orin_nx_nvme_2.0_51_airvolute/Linux_for_Tegra
+./tegraflash.py --bl uefi_jetson_with_dtb_sigheader.bin.encrypt --bct br_bct_BR.bct --securedev  --bldtb tegra234-p3767-0000-p3509-a02.dtb --applet rcm_2_encrypt.rcm --applet_softfuse rcm_1_encrypt.rcm --cmd "rcmboot"  --cfg secureflash.xml --chip 0x23 --mb1_bct mb1_bct_MB1_sigheader.bct.encrypt --mem_bct mem_rcm_sigheader.bct.encrypt --mb1_cold_boot_bct mb1_cold_boot_bct_MB1_sigheader.bct.encrypt --mb1_bin mb1_t234_prod_aligned_sigheader.bin.encrypt --psc_bl1_bin psc_bl1_t234_prod_aligned_sigheader.bin.encrypt --mem_bct_cold_boot mem_coldboot_sigheader.bct.encrypt  --bins "psc_fw pscfw_t234_prod_sigheader.bin.encrypt; mts_mce mce_flash_o10_cr_prod_sigheader.bin.encrypt; mb2_applet applet_t234_sigheader.bin.encrypt; mb2_bootloader mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt; xusb_fw xusb_t234_prod_sigheader.bin.encrypt; dce_fw display-t234-dce_sigheader.bin.encrypt; nvdec nvdec_t234_prod_sigheader.fw.encrypt; bpmp_fw bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt; bpmp_fw_dtb tegra234-bpmp-3767-0000-a02-3509-a02_sigheader.dtb.encrypt; sce_fw camera-rtcpu-sce_sigheader.img.encrypt; rce_fw camera-rtcpu-t234-rce_sigheader.img.encrypt; ape_fw adsp-fw_sigheader.bin.encrypt; spe_fw spe_t234_sigheader.bin.encrypt; tos tos-optee_t234_sigheader.img.encrypt; eks eks_t234_sigheader.img.encrypt; kernel boot0.img; kernel_dtb tegra234-p3767-0000-p3509-a02.dtb"    --secondary_gpt_backup  --bct_backup  --boot_chain A  --instance 6-2.2
+Welcome to Tegra Flash
+version 1.0.0
+Type ? or help for help and q or quit to exit
+Use ! to execute system commands
+ 
+
+ Entering RCM boot
+
+[   0.0418 ] mb1_t234_prod_aligned_sigheader.bin.encrypt filename is from --mb1_bin
+[   0.0418 ] psc_bl1_t234_prod_aligned_sigheader.bin.encrypt filename is from --psc_bl1_bin
+[   0.0418 ] rcm boot with presigned binaries
+[   0.0426 ] tegrarcm_v2 --instance 6-2.2 --new_session --chip 0x23 0 --uid --download bct_br br_bct_BR.bct --download mb1 mb1_t234_prod_aligned_sigheader.bin.encrypt --download psc_bl1 psc_bl1_t234_prod_aligned_sigheader.bin.encrypt --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt
+[   0.0432 ] BR_CID: 0x80012344705DD5002800000018008100
+[   0.0597 ] Sending bct_br
+[   0.0708 ] Sending mb1
+[   0.0712 ] Sending psc_bl1
+[   0.0814 ] Sending bct_mb1
+[   0.0881 ] Generating blob for T23x
+[   0.0907 ] tegrahost_v2 --chip 0x23 0 --generateblob blob.xml blob.bin
+[   0.0913 ] The number of images in blob is 18
+[   0.0920 ] blobsize is 72770366
+[   0.0921 ] Added binary blob_uefi_jetson_with_dtb_sigheader.bin.encrypt of size 3171216
+[   0.1351 ] Added binary blob_pscfw_t234_prod_sigheader.bin.encrypt of size 375168
+[   0.1363 ] Added binary blob_mce_flash_o10_cr_prod_sigheader.bin.encrypt of size 190592
+[   0.1367 ] Added binary blob_applet_t234_sigheader.bin.encrypt of size 277312
+[   0.1371 ] Not supported type: mb2_applet
+[   0.1372 ] Added binary blob_mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt of size 437760
+[   0.1377 ] Added binary blob_xusb_t234_prod_sigheader.bin.encrypt of size 164352
+[   0.1380 ] Added binary blob_display-t234-dce_sigheader.bin.encrypt of size 9097216
+[   0.1460 ] Added binary blob_nvdec_t234_prod_sigheader.fw.encrypt of size 294912
+[   0.1493 ] Added binary blob_bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt of size 1047616
+[   0.1503 ] Added binary blob_tegra234-bpmp-3767-0000-a02-3509-a02_sigheader.dtb.encrypt of size 138880
+[   0.1508 ] Added binary blob_camera-rtcpu-sce_sigheader.img.encrypt of size 166304
+[   0.1512 ] Added binary blob_camera-rtcpu-t234-rce_sigheader.img.encrypt of size 537952
+[   0.1516 ] Added binary blob_adsp-fw_sigheader.bin.encrypt of size 400944
+[   0.1519 ] Added binary blob_spe_t234_sigheader.bin.encrypt of size 270336
+[   0.1523 ] Added binary blob_tos-optee_t234_sigheader.img.encrypt of size 1064752
+[   0.1528 ] Added binary blob_eks_t234_sigheader.img.encrypt of size 9232
+[   0.1532 ] Added binary blob_boot0.img of size 54788096
+[   0.2007 ] Added binary blob_tegra234-p3767-0000-p3509-a02.dtb of size 336622
+[   0.2927 ] tegrarcm_v2 --instance 6-2.2 --chip 0x23 0 --pollbl --download bct_mem mem_rcm_sigheader.bct.encrypt --download blob blob.bin
+[   0.2934 ] BL: version 0.28.0.0-t234-54845784-ec016368 last_boot_error: 0
+[   0.3086 ] Sending bct_mem
+[   0.3181 ] Sending blob
+[   3.6236 ] RCM-boot started
+
+/home/michal/.dcs_deploy/flash/orin_nx_nvme_2.0_51_airvolute/Linux_for_Tegra
+***************************************
+*                                     *
+*  Step 3: Start the flashing process *
+*                                     *
+***************************************
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for device to expose ssh ......RTNETLINK answers: File exists
+RTNETLINK answers: File exists
+Waiting for device to expose ssh ...Run command: flash on fc00:1:1:0::2
+SSH ready
+blockdev: cannot open /dev/mmcblk0boot0: No such file or directory
+[ 0]: l4t_flash_from_kernel: Starting to create gpt for emmc
+Active index file is /mnt/internal/flash.idx
+Number of lines is 58
+max_index=57
+[ 2]: l4t_flash_from_kernel: Successfully create gpt for emmc
+[ 2]: l4t_flash_from_kernel: Starting to create gpt for external device
+Active index file is /mnt/external/flash.idx
+Number of lines is 17
+max_index=16
+writing item=1, 9:0:primary_gpt, 512, 19968, gpt_primary_9_0.bin, 16896, fixed-<reserved>-0, eb5863365743d0083654c877196c86c68946dcab
+Writing primary_gpt partition with gpt_primary_9_0.bin
+Offset is not aligned to K Bytes, no optimization is applied
+dd if=/mnt/external/gpt_primary_9_0.bin of=/dev/nvme0n1 bs=1 skip=0  seek=512 count=16896
+16896+0 records in
+16896+0 records out
+16896 bytes (17 kB, 16 KiB) copied, 0.0182 s, 928 kB/s
+Writing primary_gpt partition done
+Writing secondary_gpt partition with gpt_secondary_9_0.bin
+Offset is not aligned to K Bytes, no optimization is applied
+dd if=/mnt/external/gpt_secondary_9_0.bin of=/dev/nvme0n1 bs=1 skip=0  seek=128035659264 count=16896
+16896+0 records in
+16896+0 records out
+16896 bytes (17 kB, 16 KiB) copied, 0.0187721 s, 900 kB/s
+Writing secondary_gpt partition done
+[ 9]: l4t_flash_from_kernel: Successfully create gpt for external device
+[ 9]: l4t_flash_from_kernel: Starting to flash to emmc
+[ 9]: l4t_flash_from_kernel: Starting to flash to external device
+Active index file is /mnt/internal/flash.idx
+Active index file is /mnt/external/flash.idx
+Flash index file is /mnt/internal/flash.idx
+Number of lines is 58
+max_index=57
+Number of lines is 58
+max_index=57
+Number of lines is 17
+max_index=16
+[ 9]: l4t_flash_from_kernel: Starting to flash to qspi
+Erasing 64 Kibyte @ 0 --  0 % complete writing item=0, 9:0:master_boot_record, 0, 512, mbr_9_0.bin, 512, fixed-<reserved>-0, 694898d1c345bdb31b377790ed7fc0b0db184bf7
+writing item=1, 9:0:primary_gpt, 512, 19968, gpt_primary_9_0.bin, 16896, fixed-<reserved>-0, eb5863365743d0083654c877196c86c68946dcab
+writing item=2, 9:0:kernel, 20480, 67108864, boot.img, 41998336, fixed-<reserved>-2, e4a358b71a3a7a91ccb20a52fbc7d5173f23638a
+Writing kernel partition with boot.img
+Get size of partition through connection.
+41998336 bytes from /mnt/external/boot.img to /dev/nvme0n1: 1KB block=41014 remainder=0
+dd if=/mnt/external/boot.img of=/dev/nvme0n1 bs=1K skip=0  seek=20 count=41014
+Erasing 64 Kibyte @ 10000 --  0 % complete Erasing 64 Kibyte @ 20000 --  0 % complete Erasing 64 Kibyte @ 30000 --  0 % complete Erasing 64 Kibyte @ 40000 --  0 % complete 41014+0 records in
+41014+0 records out
+41998336 bytes (42 MB, 40 MiB) copied, 1.36561 s, 30.8 MB/s
+Writing kernel partition done
+writing item=3, 9:0:kernel-dtb, 67129344, 458752, kernel_tegra234-p3767-0000-p3509-a02.dtb, 336622, fixed-<reserved>-3, da166ed037a5dca7f11359d07ad261a8d4076354
+Writing kernel-dtb partition with kernel_tegra234-p3767-0000-p3509-a02.dtb
+Get size of partition through connection.
+336622 bytes from /mnt/external/kernel_tegra234-p3767-0000-p3509-a02.dtb to /dev/nvme0n1: 1KB block=328 remainder=750
+dd if=/mnt/external/kernel_tegra234-p3767-0000-p3509-a02.dtb of=/dev/nvme0n1 bs=1K skip=0  seek=65556 count=328
+328+0 records in
+328+0 records out
+335872 bytes (336 kB, 328 KiB) copied, 0.0130324 s, 25.8 MB/s
+dd if=/mnt/external/kernel_tegra234-p3767-0000-p3509-a02.dtb of=/dev/nvme0n1 bs=1 skip=335872  seek=67465216 count=750
+750+0 records in
+750+0 records out
+750 bytes copied, 0.00131491 s, 570 kB/s
+Writing kernel-dtb partition done
+writing item=4, 9:0:reserved_for_chain_A_user, 67588096, 33554432, , , fixed-<reserved>-4, 
+[ 11]: l4t_flash_from_kernel: Warning: skip writing reserved_for_chain_A_user partition as no image is specified
+Erasing 64 Kibyte @ 50000 --  0 % complete writing item=5, 9:0:kernel_b, 101142528, 67108864, boot.img, 41998336, fixed-<reserved>-5, e4a358b71a3a7a91ccb20a52fbc7d5173f23638a
+Writing kernel_b partition with boot.img
+Get size of partition through connection.
+41998336 bytes from /mnt/external/boot.img to /dev/nvme0n1: 1KB block=41014 remainder=0
+dd if=/mnt/external/boot.img of=/dev/nvme0n1 bs=1K skip=0  seek=98772 count=41014
+[ 11]: l4t_flash_from_kernel: Successfully flash the emmc
+Erasing 64 Kibyte @ 60000 --  0 % complete 41014+0 records in
+41014+0 records out
+41998336 bytes (42 MB, 40 MiB) copied, 0.352915 s, 119 MB/s
+Writing kernel_b partition done
+writing item=6, 9:0:kernel-dtb_b, 168251392, 458752, kernel_tegra234-p3767-0000-p3509-a02.dtb, 336622, fixed-<reserved>-6, da166ed037a5dca7f11359d07ad261a8d4076354
+Writing kernel-dtb_b partition with kernel_tegra234-p3767-0000-p3509-a02.dtb
+Get size of partition through connection.
+336622 bytes from /mnt/external/kernel_tegra234-p3767-0000-p3509-a02.dtb to /dev/nvme0n1: 1KB block=328 remainder=750
+dd if=/mnt/external/kernel_tegra234-p3767-0000-p3509-a02.dtb of=/dev/nvme0n1 bs=1K skip=0  seek=164308 count=328
+328+0 records in
+328+0 records out
+335872 bytes (336 kB, 328 KiB) copied, 0.00471626 s, 71.2 MB/s
+dd if=/mnt/external/kernel_tegra234-p3767-0000-p3509-a02.dtb of=/dev/nvme0n1 bs=1 skip=335872  seek=168587264 count=750
+750+0 records in
+750+0 records out
+750 bytes copied, 0.00102109 s, 735 kB/s
+Writing kernel-dtb_b partition done
+writing item=7, 9:0:reserved_for_chain_B_user, 168710144, 33554432, , , fixed-<reserved>-7, 
+[ 11]: l4t_flash_from_kernel: Warning: skip writing reserved_for_chain_B_user partition as no image is specified
+writing item=8, 9:0:recovery, 202264576, 83886080, recovery.img, 46096384, fixed-<reserved>-8, 7da0ff9cde91e11aa8905d59d23492383950c6b8
+Writing recovery partition with recovery.img
+Get size of partition through connection.
+46096384 bytes from /mnt/external/recovery.img to /dev/nvme0n1: 1KB block=45016 remainder=0
+dd if=/mnt/external/recovery.img of=/dev/nvme0n1 bs=1K skip=0  seek=197524 count=45016
+Erasing 64 Kibyte @ 70000 --  0 % complete Erasing 64 Kibyte @ 80000 --  0 % complete Erasing 64 Kibyte @ 90000 --  0 % complete Erasing 64 Kibyte @ a0000 --  0 % complete Erasing 64 Kibyte @ b0000 --  1 % complete 45016+0 records in
+45016+0 records out
+46096384 bytes (46 MB, 44 MiB) copied, 1.49592 s, 30.8 MB/s
+Writing recovery partition done
+writing item=9, 9:0:recovery-dtb, 286150656, 524288, tegra234-p3767-0000-p3509-a02.dtb.rec, 336622, fixed-<reserved>-9, da166ed037a5dca7f11359d07ad261a8d4076354
+Writing recovery-dtb partition with tegra234-p3767-0000-p3509-a02.dtb.rec
+Get size of partition through connection.
+336622 bytes from /mnt/external/tegra234-p3767-0000-p3509-a02.dtb.rec to /dev/nvme0n1: 1KB block=328 remainder=750
+dd if=/mnt/external/tegra234-p3767-0000-p3509-a02.dtb.rec of=/dev/nvme0n1 bs=1K skip=0  seek=279444 count=328
+328+0 records in
+328+0 records out
+335872 bytes (336 kB, 328 KiB) copied, 0.0124165 s, 27.1 MB/s
+dd if=/mnt/external/tegra234-p3767-0000-p3509-a02.dtb.rec of=/dev/nvme0n1 bs=1 skip=335872  seek=286486528 count=750
+750+0 records in
+750+0 records out
+750 bytes copied, 0.00134224 s, 559 kB/s
+Writing recovery-dtb partition done
+writing item=10, 9:0:RECROOTFS, 286674944, 314572800, , , fixed-<reserved>-10, 
+Erasing 64 Kibyte @ c0000 --  1 % complete [ 13]: l4t_flash_from_kernel: Warning: skip writing RECROOTFS partition as no image is specified
+writing item=11, 9:0:esp, 601247744, 67108864, esp.img, 67108864, fixed-<reserved>-11, 742e3b663086048bab73833799fb959e9cae691b
+Writing esp partition with esp.img
+Get size of partition through connection.
+67108864 bytes from /mnt/external/esp.img to /dev/nvme0n1: 1KB block=65536 remainder=0
+dd if=/mnt/external/esp.img of=/dev/nvme0n1 bs=1K skip=0  seek=587156 count=65536
+Erasing 64 Kibyte @ d0000 --  1 % complete Erasing 64 Kibyte @ e0000 --  1 % complete Erasing 64 Kibyte @ f0000 --  1 % complete Erasing 64 Kibyte @ 100000 --  1 % complete Erasing 64 Kibyte @ 110000 --  1 % complete Erasing 64 Kibyte @ 120000 --  1 % complete 65536+0 records in
+65536+0 records out
+67108864 bytes (67 MB, 64 MiB) copied, 2.20083 s, 30.5 MB/s
+Erasing 64 Kibyte @ 130000 --  1 % complete Writing esp partition done
+writing item=12, 9:0:recovery_alt, 668356608, 83886080, , , fixed-<reserved>-12, 
+[ 16]: l4t_flash_from_kernel: Warning: skip writing recovery_alt partition as no image is specified
+writing item=13, 9:0:recovery-dtb_alt, 752242688, 524288, , , fixed-<reserved>-13, 
+[ 16]: l4t_flash_from_kernel: Warning: skip writing recovery-dtb_alt partition as no image is specified
+writing item=14, 9:0:esp_alt, 752766976, 67108864, , , fixed-<reserved>-14, 
+[ 16]: l4t_flash_from_kernel: Warning: skip writing esp_alt partition as no image is specified
+writing item=15, 9:0:APP, 819875840, 59055800320, , , fixed-<reserved>-1, 
+Erasing 64 Kibyte @ 140000 --  1 % complete Formatting APP partition /dev/nvme0n1p1 ...
+mke2fs 1.45.5 (07-Jan-2020)
+Discarding device blocks:     4096/14417920Erasing 64 Kibyte @ 150000 --  2 % complete Erasing 64 Kibyte @ 160000 --  2 % complete 11014144/14417920                 done                            
+Creating filesystem with 14417920 4k blocks and 3604480 inodes
+Filesystem UUID: 2ad45fd3-9510-4fd2-ae6c-3bd9135953f8
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 
+	4096000, 7962624, 11239424
+
+Allocating group tables:   0/440       done                            
+Writing inode tables:   0/440       done                            
+Creating journal (65536 blocks): Erasing 64 Kibyte @ 170000 --  2 % complete done
+Writing superblocks and filesystem accounting information:   0/440       done
+
+Formatting APP parition done
+Formatting APP partition /dev/nvme0n1p1 ...
+tar --xattrs -xpf /mnt/external/system.img  --checkpoint=10000 --warning=no-timestamp --numeric-owner  -C  /tmp/ci-fWCdeSucPK
+Erasing 64 Kibyte @ 180000 --  2 % complete Erasing 64 Kibyte @ 190000 --  2 % complete Erasing 64 Kibyte @ 1a0000 --  2 % complete Erasing 64 Kibyte @ 1b0000 --  2 % complete Erasing 64 Kibyte @ 1c0000 --  2 % complete Erasing 64 Kibyte @ 1d0000 --  2 % complete Erasing 64 Kibyte @ 1e0000 --  2 % complete Erasing 64 Kibyte @ 1f0000 --  3 % complete Erasing 64 Kibyte @ 200000 --  3 % complete Erasing 64 Kibyte @ 210000 --  3 % complete Erasing 64 Kibyte @ 220000 --  3 % complete tar: Read checkpoint 10000
+Erasing 64 Kibyte @ 230000 --  3 % complete Erasing 64 Kibyte @ 240000 --  3 % complete Erasing 64 Kibyte @ 250000 --  3 % complete Erasing 64 Kibyte @ 260000 --  3 % complete Erasing 64 Kibyte @ 270000 --  3 % complete Erasing 64 Kibyte @ 280000 --  3 % complete Erasing 64 Kibyte @ 290000 --  4 % complete Erasing 64 Kibyte @ 2a0000 --  4 % complete Erasing 64 Kibyte @ 2b0000 --  4 % complete Erasing 64 Kibyte @ 2c0000 --  4 % complete tar: Read checkpoint 20000
+Erasing 64 Kibyte @ 2d0000 --  4 % complete Erasing 64 Kibyte @ 2e0000 --  4 % complete Erasing 64 Kibyte @ 2f0000 --  4 % complete Erasing 64 Kibyte @ 300000 --  4 % complete Erasing 64 Kibyte @ 310000 --  4 % complete Erasing 64 Kibyte @ 320000 --  4 % complete Erasing 64 Kibyte @ 330000 --  4 % complete Erasing 64 Kibyte @ 340000 --  5 % complete Erasing 64 Kibyte @ 350000 --  5 % complete Erasing 64 Kibyte @ 360000 --  5 % complete Erasing 64 Kibyte @ 370000 --  5 % complete tar: Read checkpoint 30000
+Erasing 64 Kibyte @ 380000 --  5 % complete Erasing 64 Kibyte @ 390000 --  5 % complete Erasing 64 Kibyte @ 3a0000 --  5 % complete Erasing 64 Kibyte @ 3b0000 --  5 % complete Erasing 64 Kibyte @ 3c0000 --  5 % complete Erasing 64 Kibyte @ 3d0000 --  5 % complete Erasing 64 Kibyte @ 3e0000 --  6 % complete Erasing 64 Kibyte @ 3f0000 --  6 % complete Erasing 64 Kibyte @ 400000 --  6 % complete Erasing 64 Kibyte @ 410000 --  6 % complete tar: Read checkpoint 40000
+Erasing 64 Kibyte @ 420000 --  6 % complete Erasing 64 Kibyte @ 430000 --  6 % complete Erasing 64 Kibyte @ 440000 --  6 % complete Erasing 64 Kibyte @ 450000 --  6 % complete Erasing 64 Kibyte @ 460000 --  6 % complete Erasing 64 Kibyte @ 470000 --  6 % complete Erasing 64 Kibyte @ 480000 --  7 % complete Erasing 64 Kibyte @ 490000 --  7 % complete Erasing 64 Kibyte @ 4a0000 --  7 % complete Erasing 64 Kibyte @ 4b0000 --  7 % complete Erasing 64 Kibyte @ 4c0000 --  7 % complete tar: Read checkpoint 50000
+Erasing 64 Kibyte @ 4d0000 --  7 % complete Erasing 64 Kibyte @ 4e0000 --  7 % complete Erasing 64 Kibyte @ 4f0000 --  7 % complete Erasing 64 Kibyte @ 500000 --  7 % complete Erasing 64 Kibyte @ 510000 --  7 % complete Erasing 64 Kibyte @ 520000 --  8 % complete Erasing 64 Kibyte @ 530000 --  8 % complete Erasing 64 Kibyte @ 540000 --  8 % complete Erasing 64 Kibyte @ 550000 --  8 % complete Erasing 64 Kibyte @ 560000 --  8 % complete tar: Read checkpoint 60000
+Erasing 64 Kibyte @ 570000 --  8 % complete Erasing 64 Kibyte @ 580000 --  8 % complete Erasing 64 Kibyte @ 590000 --  8 % complete Erasing 64 Kibyte @ 5a0000 --  8 % complete Erasing 64 Kibyte @ 5b0000 --  8 % complete Erasing 64 Kibyte @ 5c0000 --  8 % complete Erasing 64 Kibyte @ 5d0000 --  9 % complete Erasing 64 Kibyte @ 5e0000 --  9 % complete Erasing 64 Kibyte @ 5f0000 --  9 % complete Erasing 64 Kibyte @ 600000 --  9 % complete Erasing 64 Kibyte @ 610000 --  9 % complete tar: Read checkpoint 70000
+Erasing 64 Kibyte @ 620000 --  9 % complete Erasing 64 Kibyte @ 630000 --  9 % complete Erasing 64 Kibyte @ 640000 --  9 % complete Erasing 64 Kibyte @ 650000 --  9 % complete Erasing 64 Kibyte @ 660000 --  9 % complete Erasing 64 Kibyte @ 670000 -- 10 % complete Erasing 64 Kibyte @ 680000 -- 10 % complete Erasing 64 Kibyte @ 690000 -- 10 % complete Erasing 64 Kibyte @ 6a0000 -- 10 % complete Erasing 64 Kibyte @ 6b0000 -- 10 % complete Erasing 64 Kibyte @ 6c0000 -- 10 % complete tar: Read checkpoint 80000
+Erasing 64 Kibyte @ 6d0000 -- 10 % complete Erasing 64 Kibyte @ 6e0000 -- 10 % complete Erasing 64 Kibyte @ 6f0000 -- 10 % complete Erasing 64 Kibyte @ 700000 -- 10 % complete Erasing 64 Kibyte @ 710000 -- 11 % complete Erasing 64 Kibyte @ 720000 -- 11 % complete Erasing 64 Kibyte @ 730000 -- 11 % complete Erasing 64 Kibyte @ 740000 -- 11 % complete Erasing 64 Kibyte @ 750000 -- 11 % complete Erasing 64 Kibyte @ 760000 -- 11 % complete tar: Read checkpoint 90000
+Erasing 64 Kibyte @ 770000 -- 11 % complete Erasing 64 Kibyte @ 780000 -- 11 % complete Erasing 64 Kibyte @ 790000 -- 11 % complete Erasing 64 Kibyte @ 7a0000 -- 11 % complete Erasing 64 Kibyte @ 7b0000 -- 12 % complete Erasing 64 Kibyte @ 7c0000 -- 12 % complete Erasing 64 Kibyte @ 7d0000 -- 12 % complete Erasing 64 Kibyte @ 7e0000 -- 12 % complete Erasing 64 Kibyte @ 7f0000 -- 12 % complete Erasing 64 Kibyte @ 800000 -- 12 % complete Erasing 64 Kibyte @ 810000 -- 12 % complete tar: Read checkpoint 100000
+Erasing 64 Kibyte @ 820000 -- 12 % complete Erasing 64 Kibyte @ 830000 -- 12 % complete Erasing 64 Kibyte @ 840000 -- 12 % complete Erasing 64 Kibyte @ 850000 -- 12 % complete Erasing 64 Kibyte @ 860000 -- 13 % complete Erasing 64 Kibyte @ 870000 -- 13 % complete Erasing 64 Kibyte @ 880000 -- 13 % complete Erasing 64 Kibyte @ 890000 -- 13 % complete Erasing 64 Kibyte @ 8a0000 -- 13 % complete Erasing 64 Kibyte @ 8b0000 -- 13 % complete tar: Read checkpoint 110000
+Erasing 64 Kibyte @ 8c0000 -- 13 % complete Erasing 64 Kibyte @ 8d0000 -- 13 % complete Erasing 64 Kibyte @ 8e0000 -- 13 % complete Erasing 64 Kibyte @ 8f0000 -- 13 % complete Erasing 64 Kibyte @ 900000 -- 14 % complete Erasing 64 Kibyte @ 910000 -- 14 % complete Erasing 64 Kibyte @ 920000 -- 14 % complete Erasing 64 Kibyte @ 930000 -- 14 % complete Erasing 64 Kibyte @ 940000 -- 14 % complete Erasing 64 Kibyte @ 950000 -- 14 % complete Erasing 64 Kibyte @ 960000 -- 14 % complete tar: Read checkpoint 120000
+Erasing 64 Kibyte @ 970000 -- 14 % complete Erasing 64 Kibyte @ 980000 -- 14 % complete Erasing 64 Kibyte @ 990000 -- 14 % complete Erasing 64 Kibyte @ 9a0000 -- 15 % complete Erasing 64 Kibyte @ 9b0000 -- 15 % complete Erasing 64 Kibyte @ 9c0000 -- 15 % complete Erasing 64 Kibyte @ 9d0000 -- 15 % complete Erasing 64 Kibyte @ 9e0000 -- 15 % complete Erasing 64 Kibyte @ 9f0000 -- 15 % complete Erasing 64 Kibyte @ a00000 -- 15 % complete tar: Read checkpoint 130000
+Erasing 64 Kibyte @ a10000 -- 15 % complete Erasing 64 Kibyte @ a20000 -- 15 % complete Erasing 64 Kibyte @ a30000 -- 15 % complete Erasing 64 Kibyte @ a40000 -- 16 % complete Erasing 64 Kibyte @ a50000 -- 16 % complete Erasing 64 Kibyte @ a60000 -- 16 % complete Erasing 64 Kibyte @ a70000 -- 16 % complete Erasing 64 Kibyte @ a80000 -- 16 % complete Erasing 64 Kibyte @ a90000 -- 16 % complete Erasing 64 Kibyte @ aa0000 -- 16 % complete Erasing 64 Kibyte @ ab0000 -- 16 % complete tar: Read checkpoint 140000
+Erasing 64 Kibyte @ ac0000 -- 16 % complete Erasing 64 Kibyte @ ad0000 -- 16 % complete Erasing 64 Kibyte @ ae0000 -- 16 % complete Erasing 64 Kibyte @ af0000 -- 17 % complete Erasing 64 Kibyte @ b00000 -- 17 % complete Erasing 64 Kibyte @ b10000 -- 17 % complete Erasing 64 Kibyte @ b20000 -- 17 % complete Erasing 64 Kibyte @ b30000 -- 17 % complete Erasing 64 Kibyte @ b40000 -- 17 % complete Erasing 64 Kibyte @ b50000 -- 17 % complete tar: Read checkpoint 150000
+Erasing 64 Kibyte @ b60000 -- 17 % complete Erasing 64 Kibyte @ b70000 -- 17 % complete Erasing 64 Kibyte @ b80000 -- 17 % complete Erasing 64 Kibyte @ b90000 -- 18 % complete Erasing 64 Kibyte @ ba0000 -- 18 % complete Erasing 64 Kibyte @ bb0000 -- 18 % complete Erasing 64 Kibyte @ bc0000 -- 18 % complete Erasing 64 Kibyte @ bd0000 -- 18 % complete Erasing 64 Kibyte @ be0000 -- 18 % complete Erasing 64 Kibyte @ bf0000 -- 18 % complete Erasing 64 Kibyte @ c00000 -- 18 % complete tar: Read checkpoint 160000
+Erasing 64 Kibyte @ c10000 -- 18 % complete Erasing 64 Kibyte @ c20000 -- 18 % complete Erasing 64 Kibyte @ c30000 -- 19 % complete Erasing 64 Kibyte @ c40000 -- 19 % complete Erasing 64 Kibyte @ c50000 -- 19 % complete Erasing 64 Kibyte @ c60000 -- 19 % complete Erasing 64 Kibyte @ c70000 -- 19 % complete Erasing 64 Kibyte @ c80000 -- 19 % complete Erasing 64 Kibyte @ c90000 -- 19 % complete Erasing 64 Kibyte @ ca0000 -- 19 % complete Erasing 64 Kibyte @ cb0000 -- 19 % complete tar: Read checkpoint 170000
+Erasing 64 Kibyte @ cc0000 -- 19 % complete Erasing 64 Kibyte @ cd0000 -- 20 % complete Erasing 64 Kibyte @ ce0000 -- 20 % complete Erasing 64 Kibyte @ cf0000 -- 20 % complete Erasing 64 Kibyte @ d00000 -- 20 % complete Erasing 64 Kibyte @ d10000 -- 20 % complete Erasing 64 Kibyte @ d20000 -- 20 % complete Erasing 64 Kibyte @ d30000 -- 20 % complete Erasing 64 Kibyte @ d40000 -- 20 % complete Erasing 64 Kibyte @ d50000 -- 20 % complete tar: Read checkpoint 180000
+Erasing 64 Kibyte @ d60000 -- 20 % complete Erasing 64 Kibyte @ d70000 -- 20 % complete Erasing 64 Kibyte @ d80000 -- 21 % complete Erasing 64 Kibyte @ d90000 -- 21 % complete Erasing 64 Kibyte @ da0000 -- 21 % complete Erasing 64 Kibyte @ db0000 -- 21 % complete Erasing 64 Kibyte @ dc0000 -- 21 % complete Erasing 64 Kibyte @ dd0000 -- 21 % complete Erasing 64 Kibyte @ de0000 -- 21 % complete Erasing 64 Kibyte @ df0000 -- 21 % complete Erasing 64 Kibyte @ e00000 -- 21 % complete tar: Read checkpoint 190000
+Erasing 64 Kibyte @ e10000 -- 21 % complete Erasing 64 Kibyte @ e20000 -- 22 % complete Erasing 64 Kibyte @ e30000 -- 22 % complete Erasing 64 Kibyte @ e40000 -- 22 % complete Erasing 64 Kibyte @ e50000 -- 22 % complete Erasing 64 Kibyte @ e60000 -- 22 % complete Erasing 64 Kibyte @ e70000 -- 22 % complete Erasing 64 Kibyte @ e80000 -- 22 % complete Erasing 64 Kibyte @ e90000 -- 22 % complete Erasing 64 Kibyte @ ea0000 -- 22 % complete tar: Read checkpoint 200000
+Erasing 64 Kibyte @ eb0000 -- 22 % complete Erasing 64 Kibyte @ ec0000 -- 23 % complete Erasing 64 Kibyte @ ed0000 -- 23 % complete Erasing 64 Kibyte @ ee0000 -- 23 % complete Erasing 64 Kibyte @ ef0000 -- 23 % complete Erasing 64 Kibyte @ f00000 -- 23 % complete Erasing 64 Kibyte @ f10000 -- 23 % complete Erasing 64 Kibyte @ f20000 -- 23 % complete Erasing 64 Kibyte @ f30000 -- 23 % complete Erasing 64 Kibyte @ f40000 -- 23 % complete Erasing 64 Kibyte @ f50000 -- 23 % complete tar: Read checkpoint 210000
+Erasing 64 Kibyte @ f60000 -- 24 % complete Erasing 64 Kibyte @ f70000 -- 24 % complete Erasing 64 Kibyte @ f80000 -- 24 % complete Erasing 64 Kibyte @ f90000 -- 24 % complete Erasing 64 Kibyte @ fa0000 -- 24 % complete Erasing 64 Kibyte @ fb0000 -- 24 % complete Erasing 64 Kibyte @ fc0000 -- 24 % complete Erasing 64 Kibyte @ fd0000 -- 24 % complete Erasing 64 Kibyte @ fe0000 -- 24 % complete Erasing 64 Kibyte @ ff0000 -- 24 % complete Erasing 64 Kibyte @ 1000000 -- 25 % complete tar: Read checkpoint 220000
+Erasing 64 Kibyte @ 1010000 -- 25 % complete Erasing 64 Kibyte @ 1020000 -- 25 % complete Erasing 64 Kibyte @ 1030000 -- 25 % complete Erasing 64 Kibyte @ 1040000 -- 25 % complete Erasing 64 Kibyte @ 1050000 -- 25 % complete Erasing 64 Kibyte @ 1060000 -- 25 % complete Erasing 64 Kibyte @ 1070000 -- 25 % complete Erasing 64 Kibyte @ 1080000 -- 25 % complete Erasing 64 Kibyte @ 1090000 -- 25 % complete Erasing 64 Kibyte @ 10a0000 -- 25 % complete tar: Read checkpoint 230000
+Erasing 64 Kibyte @ 10b0000 -- 26 % complete Erasing 64 Kibyte @ 10c0000 -- 26 % complete Erasing 64 Kibyte @ 10d0000 -- 26 % complete Erasing 64 Kibyte @ 10e0000 -- 26 % complete Erasing 64 Kibyte @ 10f0000 -- 26 % complete Erasing 64 Kibyte @ 1100000 -- 26 % complete Erasing 64 Kibyte @ 1110000 -- 26 % complete Erasing 64 Kibyte @ 1120000 -- 26 % complete Erasing 64 Kibyte @ 1130000 -- 26 % complete Erasing 64 Kibyte @ 1140000 -- 26 % complete Erasing 64 Kibyte @ 1150000 -- 27 % complete tar: Read checkpoint 240000
+Erasing 64 Kibyte @ 1160000 -- 27 % complete Erasing 64 Kibyte @ 1170000 -- 27 % complete Erasing 64 Kibyte @ 1180000 -- 27 % complete Erasing 64 Kibyte @ 1190000 -- 27 % complete Erasing 64 Kibyte @ 11a0000 -- 27 % complete Erasing 64 Kibyte @ 11b0000 -- 27 % complete Erasing 64 Kibyte @ 11c0000 -- 27 % complete Erasing 64 Kibyte @ 11d0000 -- 27 % complete Erasing 64 Kibyte @ 11e0000 -- 27 % complete Erasing 64 Kibyte @ 11f0000 -- 28 % complete Erasing 64 Kibyte @ 1200000 -- 28 % complete tar: Read checkpoint 250000
+Erasing 64 Kibyte @ 1210000 -- 28 % complete Erasing 64 Kibyte @ 1220000 -- 28 % complete Erasing 64 Kibyte @ 1230000 -- 28 % complete Erasing 64 Kibyte @ 1240000 -- 28 % complete Erasing 64 Kibyte @ 1250000 -- 28 % complete Erasing 64 Kibyte @ 1260000 -- 28 % complete Erasing 64 Kibyte @ 1270000 -- 28 % complete Erasing 64 Kibyte @ 1280000 -- 28 % complete Erasing 64 Kibyte @ 1290000 -- 29 % complete Erasing 64 Kibyte @ 12a0000 -- 29 % complete tar: Read checkpoint 260000
+Erasing 64 Kibyte @ 12b0000 -- 29 % complete Erasing 64 Kibyte @ 12c0000 -- 29 % complete Erasing 64 Kibyte @ 12d0000 -- 29 % complete Erasing 64 Kibyte @ 12e0000 -- 29 % complete Erasing 64 Kibyte @ 12f0000 -- 29 % complete Erasing 64 Kibyte @ 1300000 -- 29 % complete Erasing 64 Kibyte @ 1310000 -- 29 % complete Erasing 64 Kibyte @ 1320000 -- 29 % complete Erasing 64 Kibyte @ 1330000 -- 29 % complete Erasing 64 Kibyte @ 1340000 -- 30 % complete Erasing 64 Kibyte @ 1350000 -- 30 % complete tar: Read checkpoint 270000
+Erasing 64 Kibyte @ 1360000 -- 30 % complete Erasing 64 Kibyte @ 1370000 -- 30 % complete Erasing 64 Kibyte @ 1380000 -- 30 % complete Erasing 64 Kibyte @ 1390000 -- 30 % complete Erasing 64 Kibyte @ 13a0000 -- 30 % complete Erasing 64 Kibyte @ 13b0000 -- 30 % complete Erasing 64 Kibyte @ 13c0000 -- 30 % complete Erasing 64 Kibyte @ 13d0000 -- 30 % complete Erasing 64 Kibyte @ 13e0000 -- 31 % complete Erasing 64 Kibyte @ 13f0000 -- 31 % complete tar: Read checkpoint 280000
+Erasing 64 Kibyte @ 1400000 -- 31 % complete Erasing 64 Kibyte @ 1410000 -- 31 % complete Erasing 64 Kibyte @ 1420000 -- 31 % complete Erasing 64 Kibyte @ 1430000 -- 31 % complete Erasing 64 Kibyte @ 1440000 -- 31 % complete Erasing 64 Kibyte @ 1450000 -- 31 % complete Erasing 64 Kibyte @ 1460000 -- 31 % complete Erasing 64 Kibyte @ 1470000 -- 31 % complete Erasing 64 Kibyte @ 1480000 -- 32 % complete Erasing 64 Kibyte @ 1490000 -- 32 % complete Erasing 64 Kibyte @ 14a0000 -- 32 % complete tar: Read checkpoint 290000
+Erasing 64 Kibyte @ 14b0000 -- 32 % complete Erasing 64 Kibyte @ 14c0000 -- 32 % complete Erasing 64 Kibyte @ 14d0000 -- 32 % complete Erasing 64 Kibyte @ 14e0000 -- 32 % complete Erasing 64 Kibyte @ 14f0000 -- 32 % complete Erasing 64 Kibyte @ 1500000 -- 32 % complete Erasing 64 Kibyte @ 1510000 -- 32 % complete Erasing 64 Kibyte @ 1520000 -- 33 % complete Erasing 64 Kibyte @ 1530000 -- 33 % complete Erasing 64 Kibyte @ 1540000 -- 33 % complete Erasing 64 Kibyte @ 1550000 -- 33 % complete tar: Read checkpoint 300000
+Erasing 64 Kibyte @ 1560000 -- 33 % complete Erasing 64 Kibyte @ 1570000 -- 33 % complete Erasing 64 Kibyte @ 1580000 -- 33 % complete Erasing 64 Kibyte @ 1590000 -- 33 % complete Erasing 64 Kibyte @ 15a0000 -- 33 % complete Erasing 64 Kibyte @ 15b0000 -- 33 % complete Erasing 64 Kibyte @ 15c0000 -- 33 % complete Erasing 64 Kibyte @ 15d0000 -- 34 % complete Erasing 64 Kibyte @ 15e0000 -- 34 % complete Erasing 64 Kibyte @ 15f0000 -- 34 % complete tar: Read checkpoint 310000
+Erasing 64 Kibyte @ 1600000 -- 34 % complete Erasing 64 Kibyte @ 1610000 -- 34 % complete Erasing 64 Kibyte @ 1620000 -- 34 % complete Erasing 64 Kibyte @ 1630000 -- 34 % complete Erasing 64 Kibyte @ 1640000 -- 34 % complete Erasing 64 Kibyte @ 1650000 -- 34 % complete Erasing 64 Kibyte @ 1660000 -- 34 % complete Erasing 64 Kibyte @ 1670000 -- 35 % complete Erasing 64 Kibyte @ 1680000 -- 35 % complete Erasing 64 Kibyte @ 1690000 -- 35 % complete Erasing 64 Kibyte @ 16a0000 -- 35 % complete tar: Read checkpoint 320000
+Erasing 64 Kibyte @ 16b0000 -- 35 % complete Erasing 64 Kibyte @ 16c0000 -- 35 % complete Erasing 64 Kibyte @ 16d0000 -- 35 % complete Erasing 64 Kibyte @ 16e0000 -- 35 % complete Erasing 64 Kibyte @ 16f0000 -- 35 % complete Erasing 64 Kibyte @ 1700000 -- 35 % complete Erasing 64 Kibyte @ 1710000 -- 36 % complete Erasing 64 Kibyte @ 1720000 -- 36 % complete Erasing 64 Kibyte @ 1730000 -- 36 % complete Erasing 64 Kibyte @ 1740000 -- 36 % complete tar: Read checkpoint 330000
+Erasing 64 Kibyte @ 1750000 -- 36 % complete Erasing 64 Kibyte @ 1760000 -- 36 % complete Erasing 64 Kibyte @ 1770000 -- 36 % complete Erasing 64 Kibyte @ 1780000 -- 36 % complete Erasing 64 Kibyte @ 1790000 -- 36 % complete Erasing 64 Kibyte @ 17a0000 -- 36 % complete Erasing 64 Kibyte @ 17b0000 -- 37 % complete Erasing 64 Kibyte @ 17c0000 -- 37 % complete Erasing 64 Kibyte @ 17d0000 -- 37 % complete Erasing 64 Kibyte @ 17e0000 -- 37 % complete Erasing 64 Kibyte @ 17f0000 -- 37 % complete tar: Read checkpoint 340000
+Erasing 64 Kibyte @ 1800000 -- 37 % complete Erasing 64 Kibyte @ 1810000 -- 37 % complete Erasing 64 Kibyte @ 1820000 -- 37 % complete Erasing 64 Kibyte @ 1830000 -- 37 % complete Erasing 64 Kibyte @ 1840000 -- 37 % complete Erasing 64 Kibyte @ 1850000 -- 37 % complete Erasing 64 Kibyte @ 1860000 -- 38 % complete Erasing 64 Kibyte @ 1870000 -- 38 % complete Erasing 64 Kibyte @ 1880000 -- 38 % complete Erasing 64 Kibyte @ 1890000 -- 38 % complete tar: Read checkpoint 350000
+Erasing 64 Kibyte @ 18a0000 -- 38 % complete Erasing 64 Kibyte @ 18b0000 -- 38 % complete Erasing 64 Kibyte @ 18c0000 -- 38 % complete Erasing 64 Kibyte @ 18d0000 -- 38 % complete Erasing 64 Kibyte @ 18e0000 -- 38 % complete Erasing 64 Kibyte @ 18f0000 -- 38 % complete Erasing 64 Kibyte @ 1900000 -- 39 % complete Erasing 64 Kibyte @ 1910000 -- 39 % complete Erasing 64 Kibyte @ 1920000 -- 39 % complete Erasing 64 Kibyte @ 1930000 -- 39 % complete Erasing 64 Kibyte @ 1940000 -- 39 % complete tar: Read checkpoint 360000
+Erasing 64 Kibyte @ 1950000 -- 39 % complete Erasing 64 Kibyte @ 1960000 -- 39 % complete Erasing 64 Kibyte @ 1970000 -- 39 % complete Erasing 64 Kibyte @ 1980000 -- 39 % complete Erasing 64 Kibyte @ 1990000 -- 39 % complete Erasing 64 Kibyte @ 19a0000 -- 40 % complete Erasing 64 Kibyte @ 19b0000 -- 40 % complete Erasing 64 Kibyte @ 19c0000 -- 40 % complete Erasing 64 Kibyte @ 19d0000 -- 40 % complete Erasing 64 Kibyte @ 19e0000 -- 40 % complete Erasing 64 Kibyte @ 19f0000 -- 40 % complete tar: Read checkpoint 370000
+Erasing 64 Kibyte @ 1a00000 -- 40 % complete Erasing 64 Kibyte @ 1a10000 -- 40 % complete Erasing 64 Kibyte @ 1a20000 -- 40 % complete Erasing 64 Kibyte @ 1a30000 -- 40 % complete Erasing 64 Kibyte @ 1a40000 -- 41 % complete Erasing 64 Kibyte @ 1a50000 -- 41 % complete Erasing 64 Kibyte @ 1a60000 -- 41 % complete Erasing 64 Kibyte @ 1a70000 -- 41 % complete Erasing 64 Kibyte @ 1a80000 -- 41 % complete Erasing 64 Kibyte @ 1a90000 -- 41 % complete tar: Read checkpoint 380000
+Erasing 64 Kibyte @ 1aa0000 -- 41 % complete Erasing 64 Kibyte @ 1ab0000 -- 41 % complete Erasing 64 Kibyte @ 1ac0000 -- 41 % complete Erasing 64 Kibyte @ 1ad0000 -- 41 % complete Erasing 64 Kibyte @ 1ae0000 -- 41 % complete Erasing 64 Kibyte @ 1af0000 -- 42 % complete Erasing 64 Kibyte @ 1b00000 -- 42 % complete Erasing 64 Kibyte @ 1b10000 -- 42 % complete Erasing 64 Kibyte @ 1b20000 -- 42 % complete Erasing 64 Kibyte @ 1b30000 -- 42 % complete Erasing 64 Kibyte @ 1b40000 -- 42 % complete tar: Read checkpoint 390000
+Erasing 64 Kibyte @ 1b50000 -- 42 % complete Erasing 64 Kibyte @ 1b60000 -- 42 % complete Erasing 64 Kibyte @ 1b70000 -- 42 % complete Erasing 64 Kibyte @ 1b80000 -- 42 % complete Erasing 64 Kibyte @ 1b90000 -- 43 % complete Erasing 64 Kibyte @ 1ba0000 -- 43 % complete Erasing 64 Kibyte @ 1bb0000 -- 43 % complete Erasing 64 Kibyte @ 1bc0000 -- 43 % complete Erasing 64 Kibyte @ 1bd0000 -- 43 % complete Erasing 64 Kibyte @ 1be0000 -- 43 % complete tar: Read checkpoint 400000
+Erasing 64 Kibyte @ 1bf0000 -- 43 % complete Erasing 64 Kibyte @ 1c00000 -- 43 % complete Erasing 64 Kibyte @ 1c10000 -- 43 % complete Erasing 64 Kibyte @ 1c20000 -- 43 % complete Erasing 64 Kibyte @ 1c30000 -- 44 % complete Erasing 64 Kibyte @ 1c40000 -- 44 % complete Erasing 64 Kibyte @ 1c50000 -- 44 % complete Erasing 64 Kibyte @ 1c60000 -- 44 % complete Erasing 64 Kibyte @ 1c70000 -- 44 % complete Erasing 64 Kibyte @ 1c80000 -- 44 % complete Erasing 64 Kibyte @ 1c90000 -- 44 % complete tar: Read checkpoint 410000
+Erasing 64 Kibyte @ 1ca0000 -- 44 % complete Erasing 64 Kibyte @ 1cb0000 -- 44 % complete Erasing 64 Kibyte @ 1cc0000 -- 44 % complete Erasing 64 Kibyte @ 1cd0000 -- 45 % complete Erasing 64 Kibyte @ 1ce0000 -- 45 % complete Erasing 64 Kibyte @ 1cf0000 -- 45 % complete Erasing 64 Kibyte @ 1d00000 -- 45 % complete Erasing 64 Kibyte @ 1d10000 -- 45 % complete Erasing 64 Kibyte @ 1d20000 -- 45 % complete Erasing 64 Kibyte @ 1d30000 -- 45 % complete Erasing 64 Kibyte @ 1d40000 -- 45 % complete tar: Read checkpoint 420000
+Erasing 64 Kibyte @ 1d50000 -- 45 % complete Erasing 64 Kibyte @ 1d60000 -- 45 % complete Erasing 64 Kibyte @ 1d70000 -- 45 % complete Erasing 64 Kibyte @ 1d80000 -- 46 % complete Erasing 64 Kibyte @ 1d90000 -- 46 % complete Erasing 64 Kibyte @ 1da0000 -- 46 % complete Erasing 64 Kibyte @ 1db0000 -- 46 % complete Erasing 64 Kibyte @ 1dc0000 -- 46 % complete Erasing 64 Kibyte @ 1dd0000 -- 46 % complete Erasing 64 Kibyte @ 1de0000 -- 46 % complete tar: Read checkpoint 430000
+Erasing 64 Kibyte @ 1df0000 -- 46 % complete Erasing 64 Kibyte @ 1e00000 -- 46 % complete Erasing 64 Kibyte @ 1e10000 -- 46 % complete Erasing 64 Kibyte @ 1e20000 -- 47 % complete Erasing 64 Kibyte @ 1e30000 -- 47 % complete Erasing 64 Kibyte @ 1e40000 -- 47 % complete Erasing 64 Kibyte @ 1e50000 -- 47 % complete Erasing 64 Kibyte @ 1e60000 -- 47 % complete Erasing 64 Kibyte @ 1e70000 -- 47 % complete Erasing 64 Kibyte @ 1e80000 -- 47 % complete Erasing 64 Kibyte @ 1e90000 -- 47 % complete tar: Read checkpoint 440000
+Erasing 64 Kibyte @ 1ea0000 -- 47 % complete Erasing 64 Kibyte @ 1eb0000 -- 47 % complete Erasing 64 Kibyte @ 1ec0000 -- 48 % complete Erasing 64 Kibyte @ 1ed0000 -- 48 % complete Erasing 64 Kibyte @ 1ee0000 -- 48 % complete Erasing 64 Kibyte @ 1ef0000 -- 48 % complete Erasing 64 Kibyte @ 1f00000 -- 48 % complete Erasing 64 Kibyte @ 1f10000 -- 48 % complete Erasing 64 Kibyte @ 1f20000 -- 48 % complete Erasing 64 Kibyte @ 1f30000 -- 48 % complete tar: Read checkpoint 450000
+Erasing 64 Kibyte @ 1f40000 -- 48 % complete Erasing 64 Kibyte @ 1f50000 -- 48 % complete Erasing 64 Kibyte @ 1f60000 -- 49 % complete Erasing 64 Kibyte @ 1f70000 -- 49 % complete Erasing 64 Kibyte @ 1f80000 -- 49 % complete Erasing 64 Kibyte @ 1f90000 -- 49 % complete Erasing 64 Kibyte @ 1fa0000 -- 49 % complete Erasing 64 Kibyte @ 1fb0000 -- 49 % complete Erasing 64 Kibyte @ 1fc0000 -- 49 % complete Erasing 64 Kibyte @ 1fd0000 -- 49 % complete Erasing 64 Kibyte @ 1fe0000 -- 49 % complete tar: Read checkpoint 460000
+Erasing 64 Kibyte @ 1ff0000 -- 49 % complete Erasing 64 Kibyte @ 2000000 -- 50 % complete Erasing 64 Kibyte @ 2010000 -- 50 % complete Erasing 64 Kibyte @ 2020000 -- 50 % complete Erasing 64 Kibyte @ 2030000 -- 50 % complete Erasing 64 Kibyte @ 2040000 -- 50 % complete Erasing 64 Kibyte @ 2050000 -- 50 % complete Erasing 64 Kibyte @ 2060000 -- 50 % complete Erasing 64 Kibyte @ 2070000 -- 50 % complete Erasing 64 Kibyte @ 2080000 -- 50 % complete Erasing 64 Kibyte @ 2090000 -- 50 % complete tar: Read checkpoint 470000
+Erasing 64 Kibyte @ 20a0000 -- 50 % complete Erasing 64 Kibyte @ 20b0000 -- 51 % complete Erasing 64 Kibyte @ 20c0000 -- 51 % complete Erasing 64 Kibyte @ 20d0000 -- 51 % complete Erasing 64 Kibyte @ 20e0000 -- 51 % complete Erasing 64 Kibyte @ 20f0000 -- 51 % complete Erasing 64 Kibyte @ 2100000 -- 51 % complete Erasing 64 Kibyte @ 2110000 -- 51 % complete Erasing 64 Kibyte @ 2120000 -- 51 % complete Erasing 64 Kibyte @ 2130000 -- 51 % complete tar: Read checkpoint 480000
+Erasing 64 Kibyte @ 2140000 -- 51 % complete Erasing 64 Kibyte @ 2150000 -- 52 % complete Erasing 64 Kibyte @ 2160000 -- 52 % complete Erasing 64 Kibyte @ 2170000 -- 52 % complete Erasing 64 Kibyte @ 2180000 -- 52 % complete Erasing 64 Kibyte @ 2190000 -- 52 % complete Erasing 64 Kibyte @ 21a0000 -- 52 % complete Erasing 64 Kibyte @ 21b0000 -- 52 % complete Erasing 64 Kibyte @ 21c0000 -- 52 % complete Erasing 64 Kibyte @ 21d0000 -- 52 % complete Erasing 64 Kibyte @ 21e0000 -- 52 % complete tar: Read checkpoint 490000
+Erasing 64 Kibyte @ 21f0000 -- 53 % complete Erasing 64 Kibyte @ 2200000 -- 53 % complete Erasing 64 Kibyte @ 2210000 -- 53 % complete Erasing 64 Kibyte @ 2220000 -- 53 % complete Erasing 64 Kibyte @ 2230000 -- 53 % complete Erasing 64 Kibyte @ 2240000 -- 53 % complete Erasing 64 Kibyte @ 2250000 -- 53 % complete Erasing 64 Kibyte @ 2260000 -- 53 % complete Erasing 64 Kibyte @ 2270000 -- 53 % complete Erasing 64 Kibyte @ 2280000 -- 53 % complete tar: Read checkpoint 500000
+Erasing 64 Kibyte @ 2290000 -- 54 % complete Erasing 64 Kibyte @ 22a0000 -- 54 % complete Erasing 64 Kibyte @ 22b0000 -- 54 % complete Erasing 64 Kibyte @ 22c0000 -- 54 % complete Erasing 64 Kibyte @ 22d0000 -- 54 % complete Erasing 64 Kibyte @ 22e0000 -- 54 % complete Erasing 64 Kibyte @ 22f0000 -- 54 % complete Erasing 64 Kibyte @ 2300000 -- 54 % complete Erasing 64 Kibyte @ 2310000 -- 54 % complete Erasing 64 Kibyte @ 2320000 -- 54 % complete Erasing 64 Kibyte @ 2330000 -- 54 % complete tar: Read checkpoint 510000
+Erasing 64 Kibyte @ 2340000 -- 55 % complete Erasing 64 Kibyte @ 2350000 -- 55 % complete Erasing 64 Kibyte @ 2360000 -- 55 % complete Erasing 64 Kibyte @ 2370000 -- 55 % complete Erasing 64 Kibyte @ 2380000 -- 55 % complete Erasing 64 Kibyte @ 2390000 -- 55 % complete Erasing 64 Kibyte @ 23a0000 -- 55 % complete Erasing 64 Kibyte @ 23b0000 -- 55 % complete Erasing 64 Kibyte @ 23c0000 -- 55 % complete Erasing 64 Kibyte @ 23d0000 -- 55 % complete Erasing 64 Kibyte @ 23e0000 -- 56 % complete tar: Read checkpoint 520000
+Erasing 64 Kibyte @ 23f0000 -- 56 % complete Erasing 64 Kibyte @ 2400000 -- 56 % complete Erasing 64 Kibyte @ 2410000 -- 56 % complete Erasing 64 Kibyte @ 2420000 -- 56 % complete Erasing 64 Kibyte @ 2430000 -- 56 % complete Erasing 64 Kibyte @ 2440000 -- 56 % complete Erasing 64 Kibyte @ 2450000 -- 56 % complete Erasing 64 Kibyte @ 2460000 -- 56 % complete Erasing 64 Kibyte @ 2470000 -- 56 % complete Erasing 64 Kibyte @ 2480000 -- 57 % complete tar: Read checkpoint 530000
+Erasing 64 Kibyte @ 2490000 -- 57 % complete Erasing 64 Kibyte @ 24a0000 -- 57 % complete Erasing 64 Kibyte @ 24b0000 -- 57 % complete Erasing 64 Kibyte @ 24c0000 -- 57 % complete Erasing 64 Kibyte @ 24d0000 -- 57 % complete Erasing 64 Kibyte @ 24e0000 -- 57 % complete Erasing 64 Kibyte @ 24f0000 -- 57 % complete Erasing 64 Kibyte @ 2500000 -- 57 % complete Erasing 64 Kibyte @ 2510000 -- 57 % complete Erasing 64 Kibyte @ 2520000 -- 58 % complete Erasing 64 Kibyte @ 2530000 -- 58 % complete tar: Read checkpoint 540000
+Erasing 64 Kibyte @ 2540000 -- 58 % complete Erasing 64 Kibyte @ 2550000 -- 58 % complete Erasing 64 Kibyte @ 2560000 -- 58 % complete Erasing 64 Kibyte @ 2570000 -- 58 % complete Erasing 64 Kibyte @ 2580000 -- 58 % complete Erasing 64 Kibyte @ 2590000 -- 58 % complete Erasing 64 Kibyte @ 25a0000 -- 58 % complete Erasing 64 Kibyte @ 25b0000 -- 58 % complete Erasing 64 Kibyte @ 25c0000 -- 58 % complete Erasing 64 Kibyte @ 25d0000 -- 59 % complete Erasing 64 Kibyte @ 25e0000 -- 59 % complete tar: Read checkpoint 550000
+Erasing 64 Kibyte @ 25f0000 -- 59 % complete Erasing 64 Kibyte @ 2600000 -- 59 % complete Erasing 64 Kibyte @ 2610000 -- 59 % complete Erasing 64 Kibyte @ 2620000 -- 59 % complete Erasing 64 Kibyte @ 2630000 -- 59 % complete Erasing 64 Kibyte @ 2640000 -- 59 % complete Erasing 64 Kibyte @ 2650000 -- 59 % complete Erasing 64 Kibyte @ 2660000 -- 59 % complete Erasing 64 Kibyte @ 2670000 -- 60 % complete Erasing 64 Kibyte @ 2680000 -- 60 % complete tar: Read checkpoint 560000
+Erasing 64 Kibyte @ 2690000 -- 60 % complete Erasing 64 Kibyte @ 26a0000 -- 60 % complete Erasing 64 Kibyte @ 26b0000 -- 60 % complete Erasing 64 Kibyte @ 26c0000 -- 60 % complete Erasing 64 Kibyte @ 26d0000 -- 60 % complete Erasing 64 Kibyte @ 26e0000 -- 60 % complete Erasing 64 Kibyte @ 26f0000 -- 60 % complete Erasing 64 Kibyte @ 2700000 -- 60 % complete Erasing 64 Kibyte @ 2710000 -- 61 % complete Erasing 64 Kibyte @ 2720000 -- 61 % complete Erasing 64 Kibyte @ 2730000 -- 61 % complete tar: Read checkpoint 570000
+Erasing 64 Kibyte @ 2740000 -- 61 % complete Erasing 64 Kibyte @ 2750000 -- 61 % complete Erasing 64 Kibyte @ 2760000 -- 61 % complete Erasing 64 Kibyte @ 2770000 -- 61 % complete Erasing 64 Kibyte @ 2780000 -- 61 % complete Erasing 64 Kibyte @ 2790000 -- 61 % complete Erasing 64 Kibyte @ 27a0000 -- 61 % complete Erasing 64 Kibyte @ 27b0000 -- 62 % complete Erasing 64 Kibyte @ 27c0000 -- 62 % complete Erasing 64 Kibyte @ 27d0000 -- 62 % complete tar: Read checkpoint 580000
+Erasing 64 Kibyte @ 27e0000 -- 62 % complete Erasing 64 Kibyte @ 27f0000 -- 62 % complete Erasing 64 Kibyte @ 2800000 -- 62 % complete Erasing 64 Kibyte @ 2810000 -- 62 % complete Erasing 64 Kibyte @ 2820000 -- 62 % complete Erasing 64 Kibyte @ 2830000 -- 62 % complete Erasing 64 Kibyte @ 2840000 -- 62 % complete Erasing 64 Kibyte @ 2850000 -- 62 % complete Erasing 64 Kibyte @ 2860000 -- 63 % complete Erasing 64 Kibyte @ 2870000 -- 63 % complete Erasing 64 Kibyte @ 2880000 -- 63 % complete tar: Read checkpoint 590000
+Erasing 64 Kibyte @ 2890000 -- 63 % complete Erasing 64 Kibyte @ 28a0000 -- 63 % complete Erasing 64 Kibyte @ 28b0000 -- 63 % complete Erasing 64 Kibyte @ 28c0000 -- 63 % complete Erasing 64 Kibyte @ 28d0000 -- 63 % complete Erasing 64 Kibyte @ 28e0000 -- 63 % complete Erasing 64 Kibyte @ 28f0000 -- 63 % complete Erasing 64 Kibyte @ 2900000 -- 64 % complete Erasing 64 Kibyte @ 2910000 -- 64 % complete Erasing 64 Kibyte @ 2920000 -- 64 % complete Erasing 64 Kibyte @ 2930000 -- 64 % complete tar: Read checkpoint 600000
+Erasing 64 Kibyte @ 2940000 -- 64 % complete Erasing 64 Kibyte @ 2950000 -- 64 % complete Erasing 64 Kibyte @ 2960000 -- 64 % complete Erasing 64 Kibyte @ 2970000 -- 64 % complete Erasing 64 Kibyte @ 2980000 -- 64 % complete Erasing 64 Kibyte @ 2990000 -- 64 % complete Erasing 64 Kibyte @ 29a0000 -- 65 % complete Erasing 64 Kibyte @ 29b0000 -- 65 % complete Erasing 64 Kibyte @ 29c0000 -- 65 % complete Erasing 64 Kibyte @ 29d0000 -- 65 % complete Erasing 64 Kibyte @ 29e0000 -- 65 % complete Erasing 64 Kibyte @ 29f0000 -- 65 % complete Erasing 64 Kibyte @ 2a00000 -- 65 % complete Erasing 64 Kibyte @ 2a10000 -- 65 % complete Erasing 64 Kibyte @ 2a20000 -- 65 % complete Erasing 64 Kibyte @ 2a30000 -- 65 % complete writing item=16, 9:0:secondary_gpt, 128035659264, 16896, gpt_secondary_9_0.bin, 16896, fixed-<reserved>-0, 561987361377c99c7c5424cf0baac2db7f37188a
+[ 226]: l4t_flash_from_kernel: Successfully flash the external device
+Erasing 64 Kibyte @ 2a40000 -- 66 % complete Erasing 64 Kibyte @ 2a50000 -- 66 % complete Erasing 64 Kibyte @ 2a60000 -- 66 % complete Erasing 64 Kibyte @ 2a70000 -- 66 % complete Erasing 64 Kibyte @ 2a80000 -- 66 % complete Erasing 64 Kibyte @ 2a90000 -- 66 % complete Erasing 64 Kibyte @ 2aa0000 -- 66 % complete Erasing 64 Kibyte @ 2ab0000 -- 66 % complete Erasing 64 Kibyte @ 2ac0000 -- 66 % complete Erasing 64 Kibyte @ 2ad0000 -- 66 % complete Erasing 64 Kibyte @ 2ae0000 -- 66 % complete Erasing 64 Kibyte @ 2af0000 -- 67 % complete Erasing 64 Kibyte @ 2b00000 -- 67 % complete Erasing 64 Kibyte @ 2b10000 -- 67 % complete Erasing 64 Kibyte @ 2b20000 -- 67 % complete Erasing 64 Kibyte @ 2b30000 -- 67 % complete Erasing 64 Kibyte @ 2b40000 -- 67 % complete Erasing 64 Kibyte @ 2b50000 -- 67 % complete Erasing 64 Kibyte @ 2b60000 -- 67 % complete Erasing 64 Kibyte @ 2b70000 -- 67 % complete Erasing 64 Kibyte @ 2b80000 -- 67 % complete Erasing 64 Kibyte @ 2b90000 -- 68 % complete Erasing 64 Kibyte @ 2ba0000 -- 68 % complete Erasing 64 Kibyte @ 2bb0000 -- 68 % complete Erasing 64 Kibyte @ 2bc0000 -- 68 % complete Erasing 64 Kibyte @ 2bd0000 -- 68 % complete Erasing 64 Kibyte @ 2be0000 -- 68 % complete Erasing 64 Kibyte @ 2bf0000 -- 68 % complete Erasing 64 Kibyte @ 2c00000 -- 68 % complete Erasing 64 Kibyte @ 2c10000 -- 68 % complete Erasing 64 Kibyte @ 2c20000 -- 68 % complete Erasing 64 Kibyte @ 2c30000 -- 69 % complete Erasing 64 Kibyte @ 2c40000 -- 69 % complete Erasing 64 Kibyte @ 2c50000 -- 69 % complete Erasing 64 Kibyte @ 2c60000 -- 69 % complete Erasing 64 Kibyte @ 2c70000 -- 69 % complete Erasing 64 Kibyte @ 2c80000 -- 69 % complete Erasing 64 Kibyte @ 2c90000 -- 69 % complete Erasing 64 Kibyte @ 2ca0000 -- 69 % complete Erasing 64 Kibyte @ 2cb0000 -- 69 % complete Erasing 64 Kibyte @ 2cc0000 -- 69 % complete Erasing 64 Kibyte @ 2cd0000 -- 70 % complete Erasing 64 Kibyte @ 2ce0000 -- 70 % complete Erasing 64 Kibyte @ 2cf0000 -- 70 % complete Erasing 64 Kibyte @ 2d00000 -- 70 % complete Erasing 64 Kibyte @ 2d10000 -- 70 % complete Erasing 64 Kibyte @ 2d20000 -- 70 % complete Erasing 64 Kibyte @ 2d30000 -- 70 % complete Erasing 64 Kibyte @ 2d40000 -- 70 % complete Erasing 64 Kibyte @ 2d50000 -- 70 % complete Erasing 64 Kibyte @ 2d60000 -- 70 % complete Erasing 64 Kibyte @ 2d70000 -- 70 % complete Erasing 64 Kibyte @ 2d80000 -- 71 % complete Erasing 64 Kibyte @ 2d90000 -- 71 % complete Erasing 64 Kibyte @ 2da0000 -- 71 % complete Erasing 64 Kibyte @ 2db0000 -- 71 % complete Erasing 64 Kibyte @ 2dc0000 -- 71 % complete Erasing 64 Kibyte @ 2dd0000 -- 71 % complete Erasing 64 Kibyte @ 2de0000 -- 71 % complete Erasing 64 Kibyte @ 2df0000 -- 71 % complete Erasing 64 Kibyte @ 2e00000 -- 71 % complete Erasing 64 Kibyte @ 2e10000 -- 71 % complete Erasing 64 Kibyte @ 2e20000 -- 72 % complete Erasing 64 Kibyte @ 2e30000 -- 72 % complete Erasing 64 Kibyte @ 2e40000 -- 72 % complete Erasing 64 Kibyte @ 2e50000 -- 72 % complete Erasing 64 Kibyte @ 2e60000 -- 72 % complete Erasing 64 Kibyte @ 2e70000 -- 72 % complete Erasing 64 Kibyte @ 2e80000 -- 72 % complete Erasing 64 Kibyte @ 2e90000 -- 72 % complete Erasing 64 Kibyte @ 2ea0000 -- 72 % complete Erasing 64 Kibyte @ 2eb0000 -- 72 % complete Erasing 64 Kibyte @ 2ec0000 -- 73 % complete Erasing 64 Kibyte @ 2ed0000 -- 73 % complete Erasing 64 Kibyte @ 2ee0000 -- 73 % complete Erasing 64 Kibyte @ 2ef0000 -- 73 % complete Erasing 64 Kibyte @ 2f00000 -- 73 % complete Erasing 64 Kibyte @ 2f10000 -- 73 % complete Erasing 64 Kibyte @ 2f20000 -- 73 % complete Erasing 64 Kibyte @ 2f30000 -- 73 % complete Erasing 64 Kibyte @ 2f40000 -- 73 % complete Erasing 64 Kibyte @ 2f50000 -- 73 % complete Erasing 64 Kibyte @ 2f60000 -- 74 % complete Erasing 64 Kibyte @ 2f70000 -- 74 % complete Erasing 64 Kibyte @ 2f80000 -- 74 % complete Erasing 64 Kibyte @ 2f90000 -- 74 % complete Erasing 64 Kibyte @ 2fa0000 -- 74 % complete Erasing 64 Kibyte @ 2fb0000 -- 74 % complete Erasing 64 Kibyte @ 2fc0000 -- 74 % complete Erasing 64 Kibyte @ 2fd0000 -- 74 % complete Erasing 64 Kibyte @ 2fe0000 -- 74 % complete Erasing 64 Kibyte @ 2ff0000 -- 74 % complete Erasing 64 Kibyte @ 3000000 -- 75 % complete Erasing 64 Kibyte @ 3010000 -- 75 % complete Erasing 64 Kibyte @ 3020000 -- 75 % complete Erasing 64 Kibyte @ 3030000 -- 75 % complete Erasing 64 Kibyte @ 3040000 -- 75 % complete Erasing 64 Kibyte @ 3050000 -- 75 % complete Erasing 64 Kibyte @ 3060000 -- 75 % complete Erasing 64 Kibyte @ 3070000 -- 75 % complete Erasing 64 Kibyte @ 3080000 -- 75 % complete Erasing 64 Kibyte @ 3090000 -- 75 % complete Erasing 64 Kibyte @ 30a0000 -- 75 % complete Erasing 64 Kibyte @ 30b0000 -- 76 % complete Erasing 64 Kibyte @ 30c0000 -- 76 % complete Erasing 64 Kibyte @ 30d0000 -- 76 % complete Erasing 64 Kibyte @ 30e0000 -- 76 % complete Erasing 64 Kibyte @ 30f0000 -- 76 % complete Erasing 64 Kibyte @ 3100000 -- 76 % complete Erasing 64 Kibyte @ 3110000 -- 76 % complete Erasing 64 Kibyte @ 3120000 -- 76 % complete Erasing 64 Kibyte @ 3130000 -- 76 % complete Erasing 64 Kibyte @ 3140000 -- 76 % complete Erasing 64 Kibyte @ 3150000 -- 77 % complete Erasing 64 Kibyte @ 3160000 -- 77 % complete Erasing 64 Kibyte @ 3170000 -- 77 % complete Erasing 64 Kibyte @ 3180000 -- 77 % complete Erasing 64 Kibyte @ 3190000 -- 77 % complete Erasing 64 Kibyte @ 31a0000 -- 77 % complete Erasing 64 Kibyte @ 31b0000 -- 77 % complete Erasing 64 Kibyte @ 31c0000 -- 77 % complete Erasing 64 Kibyte @ 31d0000 -- 77 % complete Erasing 64 Kibyte @ 31e0000 -- 77 % complete Erasing 64 Kibyte @ 31f0000 -- 78 % complete Erasing 64 Kibyte @ 3200000 -- 78 % complete Erasing 64 Kibyte @ 3210000 -- 78 % complete Erasing 64 Kibyte @ 3220000 -- 78 % complete Erasing 64 Kibyte @ 3230000 -- 78 % complete Erasing 64 Kibyte @ 3240000 -- 78 % complete Erasing 64 Kibyte @ 3250000 -- 78 % complete Erasing 64 Kibyte @ 3260000 -- 78 % complete Erasing 64 Kibyte @ 3270000 -- 78 % complete Erasing 64 Kibyte @ 3280000 -- 78 % complete Erasing 64 Kibyte @ 3290000 -- 79 % complete Erasing 64 Kibyte @ 32a0000 -- 79 % complete Erasing 64 Kibyte @ 32b0000 -- 79 % complete Erasing 64 Kibyte @ 32c0000 -- 79 % complete Erasing 64 Kibyte @ 32d0000 -- 79 % complete Erasing 64 Kibyte @ 32e0000 -- 79 % complete Erasing 64 Kibyte @ 32f0000 -- 79 % complete Erasing 64 Kibyte @ 3300000 -- 79 % complete Erasing 64 Kibyte @ 3310000 -- 79 % complete Erasing 64 Kibyte @ 3320000 -- 79 % complete Erasing 64 Kibyte @ 3330000 -- 79 % complete Erasing 64 Kibyte @ 3340000 -- 80 % complete Erasing 64 Kibyte @ 3350000 -- 80 % complete Erasing 64 Kibyte @ 3360000 -- 80 % complete Erasing 64 Kibyte @ 3370000 -- 80 % complete Erasing 64 Kibyte @ 3380000 -- 80 % complete Erasing 64 Kibyte @ 3390000 -- 80 % complete Erasing 64 Kibyte @ 33a0000 -- 80 % complete Erasing 64 Kibyte @ 33b0000 -- 80 % complete Erasing 64 Kibyte @ 33c0000 -- 80 % complete Erasing 64 Kibyte @ 33d0000 -- 80 % complete Erasing 64 Kibyte @ 33e0000 -- 81 % complete Erasing 64 Kibyte @ 33f0000 -- 81 % complete Erasing 64 Kibyte @ 3400000 -- 81 % complete Erasing 64 Kibyte @ 3410000 -- 81 % complete Erasing 64 Kibyte @ 3420000 -- 81 % complete Erasing 64 Kibyte @ 3430000 -- 81 % complete Erasing 64 Kibyte @ 3440000 -- 81 % complete Erasing 64 Kibyte @ 3450000 -- 81 % complete Erasing 64 Kibyte @ 3460000 -- 81 % complete Erasing 64 Kibyte @ 3470000 -- 81 % complete Erasing 64 Kibyte @ 3480000 -- 82 % complete Erasing 64 Kibyte @ 3490000 -- 82 % complete Erasing 64 Kibyte @ 34a0000 -- 82 % complete Erasing 64 Kibyte @ 34b0000 -- 82 % complete Erasing 64 Kibyte @ 34c0000 -- 82 % complete Erasing 64 Kibyte @ 34d0000 -- 82 % complete Erasing 64 Kibyte @ 34e0000 -- 82 % complete Erasing 64 Kibyte @ 34f0000 -- 82 % complete Erasing 64 Kibyte @ 3500000 -- 82 % complete Erasing 64 Kibyte @ 3510000 -- 82 % complete Erasing 64 Kibyte @ 3520000 -- 83 % complete Erasing 64 Kibyte @ 3530000 -- 83 % complete Erasing 64 Kibyte @ 3540000 -- 83 % complete Erasing 64 Kibyte @ 3550000 -- 83 % complete Erasing 64 Kibyte @ 3560000 -- 83 % complete Erasing 64 Kibyte @ 3570000 -- 83 % complete Erasing 64 Kibyte @ 3580000 -- 83 % complete Erasing 64 Kibyte @ 3590000 -- 83 % complete Erasing 64 Kibyte @ 35a0000 -- 83 % complete Erasing 64 Kibyte @ 35b0000 -- 83 % complete Erasing 64 Kibyte @ 35c0000 -- 83 % complete Erasing 64 Kibyte @ 35d0000 -- 84 % complete Erasing 64 Kibyte @ 35e0000 -- 84 % complete Erasing 64 Kibyte @ 35f0000 -- 84 % complete Erasing 64 Kibyte @ 3600000 -- 84 % complete Erasing 64 Kibyte @ 3610000 -- 84 % complete Erasing 64 Kibyte @ 3620000 -- 84 % complete Erasing 64 Kibyte @ 3630000 -- 84 % complete Erasing 64 Kibyte @ 3640000 -- 84 % complete Erasing 64 Kibyte @ 3650000 -- 84 % complete Erasing 64 Kibyte @ 3660000 -- 84 % complete Erasing 64 Kibyte @ 3670000 -- 85 % complete Erasing 64 Kibyte @ 3680000 -- 85 % complete Erasing 64 Kibyte @ 3690000 -- 85 % complete Erasing 64 Kibyte @ 36a0000 -- 85 % complete Erasing 64 Kibyte @ 36b0000 -- 85 % complete Erasing 64 Kibyte @ 36c0000 -- 85 % complete Erasing 64 Kibyte @ 36d0000 -- 85 % complete Erasing 64 Kibyte @ 36e0000 -- 85 % complete Erasing 64 Kibyte @ 36f0000 -- 85 % complete Erasing 64 Kibyte @ 3700000 -- 85 % complete Erasing 64 Kibyte @ 3710000 -- 86 % complete Erasing 64 Kibyte @ 3720000 -- 86 % complete Erasing 64 Kibyte @ 3730000 -- 86 % complete Erasing 64 Kibyte @ 3740000 -- 86 % complete Erasing 64 Kibyte @ 3750000 -- 86 % complete Erasing 64 Kibyte @ 3760000 -- 86 % complete Erasing 64 Kibyte @ 3770000 -- 86 % complete Erasing 64 Kibyte @ 3780000 -- 86 % complete Erasing 64 Kibyte @ 3790000 -- 86 % complete Erasing 64 Kibyte @ 37a0000 -- 86 % complete Erasing 64 Kibyte @ 37b0000 -- 87 % complete Erasing 64 Kibyte @ 37c0000 -- 87 % complete Erasing 64 Kibyte @ 37d0000 -- 87 % complete Erasing 64 Kibyte @ 37e0000 -- 87 % complete Erasing 64 Kibyte @ 37f0000 -- 87 % complete Erasing 64 Kibyte @ 3800000 -- 87 % complete Erasing 64 Kibyte @ 3810000 -- 87 % complete Erasing 64 Kibyte @ 3820000 -- 87 % complete Erasing 64 Kibyte @ 3830000 -- 87 % complete Erasing 64 Kibyte @ 3840000 -- 87 % complete Erasing 64 Kibyte @ 3850000 -- 87 % complete Erasing 64 Kibyte @ 3860000 -- 88 % complete Erasing 64 Kibyte @ 3870000 -- 88 % complete Erasing 64 Kibyte @ 3880000 -- 88 % complete Erasing 64 Kibyte @ 3890000 -- 88 % complete Erasing 64 Kibyte @ 38a0000 -- 88 % complete Erasing 64 Kibyte @ 38b0000 -- 88 % complete Erasing 64 Kibyte @ 38c0000 -- 88 % complete Erasing 64 Kibyte @ 38d0000 -- 88 % complete Erasing 64 Kibyte @ 38e0000 -- 88 % complete Erasing 64 Kibyte @ 38f0000 -- 88 % complete Erasing 64 Kibyte @ 3900000 -- 89 % complete Erasing 64 Kibyte @ 3910000 -- 89 % complete Erasing 64 Kibyte @ 3920000 -- 89 % complete Erasing 64 Kibyte @ 3930000 -- 89 % complete Erasing 64 Kibyte @ 3940000 -- 89 % complete Erasing 64 Kibyte @ 3950000 -- 89 % complete Erasing 64 Kibyte @ 3960000 -- 89 % complete Erasing 64 Kibyte @ 3970000 -- 89 % complete Erasing 64 Kibyte @ 3980000 -- 89 % complete Erasing 64 Kibyte @ 3990000 -- 89 % complete Erasing 64 Kibyte @ 39a0000 -- 90 % complete Erasing 64 Kibyte @ 39b0000 -- 90 % complete Erasing 64 Kibyte @ 39c0000 -- 90 % complete Erasing 64 Kibyte @ 39d0000 -- 90 % complete Erasing 64 Kibyte @ 39e0000 -- 90 % complete Erasing 64 Kibyte @ 39f0000 -- 90 % complete Erasing 64 Kibyte @ 3a00000 -- 90 % complete Erasing 64 Kibyte @ 3a10000 -- 90 % complete Erasing 64 Kibyte @ 3a20000 -- 90 % complete Erasing 64 Kibyte @ 3a30000 -- 90 % complete Erasing 64 Kibyte @ 3a40000 -- 91 % complete Erasing 64 Kibyte @ 3a50000 -- 91 % complete Erasing 64 Kibyte @ 3a60000 -- 91 % complete Erasing 64 Kibyte @ 3a70000 -- 91 % complete Erasing 64 Kibyte @ 3a80000 -- 91 % complete Erasing 64 Kibyte @ 3a90000 -- 91 % complete Erasing 64 Kibyte @ 3aa0000 -- 91 % complete Erasing 64 Kibyte @ 3ab0000 -- 91 % complete Erasing 64 Kibyte @ 3ac0000 -- 91 % complete Erasing 64 Kibyte @ 3ad0000 -- 91 % complete Erasing 64 Kibyte @ 3ae0000 -- 91 % complete Erasing 64 Kibyte @ 3af0000 -- 92 % complete Erasing 64 Kibyte @ 3b00000 -- 92 % complete Erasing 64 Kibyte @ 3b10000 -- 92 % complete Erasing 64 Kibyte @ 3b20000 -- 92 % complete Erasing 64 Kibyte @ 3b30000 -- 92 % complete Erasing 64 Kibyte @ 3b40000 -- 92 % complete Erasing 64 Kibyte @ 3b50000 -- 92 % complete Erasing 64 Kibyte @ 3b60000 -- 92 % complete Erasing 64 Kibyte @ 3b70000 -- 92 % complete Erasing 64 Kibyte @ 3b80000 -- 92 % complete Erasing 64 Kibyte @ 3b90000 -- 93 % complete Erasing 64 Kibyte @ 3ba0000 -- 93 % complete Erasing 64 Kibyte @ 3bb0000 -- 93 % complete Erasing 64 Kibyte @ 3bc0000 -- 93 % complete Erasing 64 Kibyte @ 3bd0000 -- 93 % complete Erasing 64 Kibyte @ 3be0000 -- 93 % complete Erasing 64 Kibyte @ 3bf0000 -- 93 % complete Erasing 64 Kibyte @ 3c00000 -- 93 % complete Erasing 64 Kibyte @ 3c10000 -- 93 % complete Erasing 64 Kibyte @ 3c20000 -- 93 % complete Erasing 64 Kibyte @ 3c30000 -- 94 % complete Erasing 64 Kibyte @ 3c40000 -- 94 % complete Erasing 64 Kibyte @ 3c50000 -- 94 % complete Erasing 64 Kibyte @ 3c60000 -- 94 % complete Erasing 64 Kibyte @ 3c70000 -- 94 % complete Erasing 64 Kibyte @ 3c80000 -- 94 % complete Erasing 64 Kibyte @ 3c90000 -- 94 % complete Erasing 64 Kibyte @ 3ca0000 -- 94 % complete Erasing 64 Kibyte @ 3cb0000 -- 94 % complete Erasing 64 Kibyte @ 3cc0000 -- 94 % complete Erasing 64 Kibyte @ 3cd0000 -- 95 % complete Erasing 64 Kibyte @ 3ce0000 -- 95 % complete Erasing 64 Kibyte @ 3cf0000 -- 95 % complete Erasing 64 Kibyte @ 3d00000 -- 95 % complete Erasing 64 Kibyte @ 3d10000 -- 95 % complete Erasing 64 Kibyte @ 3d20000 -- 95 % complete Erasing 64 Kibyte @ 3d30000 -- 95 % complete Erasing 64 Kibyte @ 3d40000 -- 95 % complete Erasing 64 Kibyte @ 3d50000 -- 95 % complete Erasing 64 Kibyte @ 3d60000 -- 95 % complete Erasing 64 Kibyte @ 3d70000 -- 95 % complete Erasing 64 Kibyte @ 3d80000 -- 96 % complete Erasing 64 Kibyte @ 3d90000 -- 96 % complete Erasing 64 Kibyte @ 3da0000 -- 96 % complete Erasing 64 Kibyte @ 3db0000 -- 96 % complete Erasing 64 Kibyte @ 3dc0000 -- 96 % complete Erasing 64 Kibyte @ 3dd0000 -- 96 % complete Erasing 64 Kibyte @ 3de0000 -- 96 % complete Erasing 64 Kibyte @ 3df0000 -- 96 % complete Erasing 64 Kibyte @ 3e00000 -- 96 % complete Erasing 64 Kibyte @ 3e10000 -- 96 % complete Erasing 64 Kibyte @ 3e20000 -- 97 % complete Erasing 64 Kibyte @ 3e30000 -- 97 % complete Erasing 64 Kibyte @ 3e40000 -- 97 % complete Erasing 64 Kibyte @ 3e50000 -- 97 % complete Erasing 64 Kibyte @ 3e60000 -- 97 % complete Erasing 64 Kibyte @ 3e70000 -- 97 % complete Erasing 64 Kibyte @ 3e80000 -- 97 % complete Erasing 64 Kibyte @ 3e90000 -- 97 % complete Erasing 64 Kibyte @ 3ea0000 -- 97 % complete Erasing 64 Kibyte @ 3eb0000 -- 97 % complete Erasing 64 Kibyte @ 3ec0000 -- 98 % complete Erasing 64 Kibyte @ 3ed0000 -- 98 % complete Erasing 64 Kibyte @ 3ee0000 -- 98 % complete Erasing 64 Kibyte @ 3ef0000 -- 98 % complete Erasing 64 Kibyte @ 3f00000 -- 98 % complete Erasing 64 Kibyte @ 3f10000 -- 98 % complete Erasing 64 Kibyte @ 3f20000 -- 98 % complete Erasing 64 Kibyte @ 3f30000 -- 98 % complete Erasing 64 Kibyte @ 3f40000 -- 98 % complete Erasing 64 Kibyte @ 3f50000 -- 98 % complete Erasing 64 Kibyte @ 3f60000 -- 99 % complete Erasing 64 Kibyte @ 3f70000 -- 99 % complete Erasing 64 Kibyte @ 3f80000 -- 99 % complete Erasing 64 Kibyte @ 3f90000 -- 99 % complete Erasing 64 Kibyte @ 3fa0000 -- 99 % complete Erasing 64 Kibyte @ 3fb0000 -- 99 % complete Erasing 64 Kibyte @ 3fc0000 -- 99 % complete Erasing 64 Kibyte @ 3fd0000 -- 99 % complete Erasing 64 Kibyte @ 3fe0000 -- 99 % complete Erasing 64 Kibyte @ 3ff0000 -- 99 % complete Erasing 64 Kibyte @ 3ff0000 -- 100 % complete 
+Flash index file is /mnt/internal/flash.idx
+Number of lines is 58
+max_index=57
+Writing br_bct_BR.bct (parittion: BCT) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/br_bct_BR.bct
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:0
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00000000 in flash
+[ 337]: l4t_flash_from_kernel: QSPI erase block size is 65536
+[ 337]: l4t_flash_from_kernel: Writing 16 copies of /mnt/internal/br_bct_BR.bct
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:65536
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00010000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:131072
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00020000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:196608
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00030000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:262144
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00040000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:327680
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00050000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:393216
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00060000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:458752
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00070000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:524288
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00080000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:589824
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x00090000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:655360
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x000a0000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:720896
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x000b0000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:786432
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x000c0000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:851968
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x000d0000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:917504
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x000e0000 in flash
+Writing /mnt/internal/br_bct_BR.bct (8192 bytes) into  /dev/mtd0:983040
+Copied 8192 bytes from /mnt/internal/br_bct_BR.bct to address 0x000f0000 in flash
+Writing mb1_t234_prod_aligned_sigheader.bin.encrypt (parittion: A_mb1) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb1_t234_prod_aligned_sigheader.bin.encrypt
+Writing /mnt/internal/mb1_t234_prod_aligned_sigheader.bin.encrypt (259296 bytes) into  /dev/mtd0:1048576
+Copied 259296 bytes from /mnt/internal/mb1_t234_prod_aligned_sigheader.bin.encrypt to address 0x00100000 in flash
+Writing psc_bl1_t234_prod_aligned_sigheader.bin.encrypt (parittion: A_psc_bl1) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/psc_bl1_t234_prod_aligned_sigheader.bin.encrypt
+Writing /mnt/internal/psc_bl1_t234_prod_aligned_sigheader.bin.encrypt (119296 bytes) into  /dev/mtd0:1572864
+Copied 119296 bytes from /mnt/internal/psc_bl1_t234_prod_aligned_sigheader.bin.encrypt to address 0x00180000 in flash
+Writing mb1_cold_boot_bct_MB1_sigheader.bct.encrypt (parittion: A_MB1_BCT) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb1_cold_boot_bct_MB1_sigheader.bct.encrypt
+Writing /mnt/internal/mb1_cold_boot_bct_MB1_sigheader.bct.encrypt (16880 bytes) into  /dev/mtd0:1835008
+Copied 16880 bytes from /mnt/internal/mb1_cold_boot_bct_MB1_sigheader.bct.encrypt to address 0x001c0000 in flash
+Writing mem_coldboot_sigheader.bct.encrypt (parittion: A_MEM_BCT) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mem_coldboot_sigheader.bct.encrypt
+Writing /mnt/internal/mem_coldboot_sigheader.bct.encrypt (243712 bytes) into  /dev/mtd0:1966080
+Copied 243712 bytes from /mnt/internal/mem_coldboot_sigheader.bct.encrypt to address 0x001e0000 in flash
+[ 339]: l4t_flash_from_kernel: Warning: skip writing A_tsec-fw partition as no image is specified
+Writing nvdec_t234_prod_sigheader.fw.encrypt (parittion: A_nvdec) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/nvdec_t234_prod_sigheader.fw.encrypt
+Writing /mnt/internal/nvdec_t234_prod_sigheader.fw.encrypt (294912 bytes) into  /dev/mtd0:3276800
+Copied 294912 bytes from /mnt/internal/nvdec_t234_prod_sigheader.fw.encrypt to address 0x00320000 in flash
+Writing mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt (parittion: A_mb2) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt
+Writing /mnt/internal/mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt (437760 bytes) into  /dev/mtd0:4325376
+Copied 437760 bytes from /mnt/internal/mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt to address 0x00420000 in flash
+Writing xusb_t234_prod_sigheader.bin.encrypt (parittion: A_xusb-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/xusb_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/xusb_t234_prod_sigheader.bin.encrypt (164352 bytes) into  /dev/mtd0:4849664
+Copied 164352 bytes from /mnt/internal/xusb_t234_prod_sigheader.bin.encrypt to address 0x004a0000 in flash
+Writing bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt (parittion: A_bpmp-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt
+Writing /mnt/internal/bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt (1047616 bytes) into  /dev/mtd0:5111808
+Copied 1047616 bytes from /mnt/internal/bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt to address 0x004e0000 in flash
+Writing tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt (parittion: A_bpmp-fw-dtb) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt
+Writing /mnt/internal/tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt (138880 bytes) into  /dev/mtd0:6684672
+Copied 138880 bytes from /mnt/internal/tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt to address 0x00660000 in flash
+Writing pscfw_t234_prod_sigheader.bin.encrypt (parittion: A_psc-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/pscfw_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/pscfw_t234_prod_sigheader.bin.encrypt (375168 bytes) into  /dev/mtd0:10878976
+Copied 375168 bytes from /mnt/internal/pscfw_t234_prod_sigheader.bin.encrypt to address 0x00a60000 in flash
+Writing mce_flash_o10_cr_prod_sigheader.bin.encrypt (parittion: A_mts-mce) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mce_flash_o10_cr_prod_sigheader.bin.encrypt
+Writing /mnt/internal/mce_flash_o10_cr_prod_sigheader.bin.encrypt (190592 bytes) into  /dev/mtd0:11665408
+Copied 190592 bytes from /mnt/internal/mce_flash_o10_cr_prod_sigheader.bin.encrypt to address 0x00b20000 in flash
+Writing sc7_t234_prod_sigheader.bin.encrypt (parittion: A_sc7) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/sc7_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/sc7_t234_prod_sigheader.bin.encrypt (164384 bytes) into  /dev/mtd0:12189696
+Copied 164384 bytes from /mnt/internal/sc7_t234_prod_sigheader.bin.encrypt to address 0x00ba0000 in flash
+Writing psc_rf_t234_prod_sigheader.bin.encrypt (parittion: A_pscrf) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/psc_rf_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/psc_rf_t234_prod_sigheader.bin.encrypt (118784 bytes) into  /dev/mtd0:12386304
+Copied 118784 bytes from /mnt/internal/psc_rf_t234_prod_sigheader.bin.encrypt to address 0x00bd0000 in flash
+Writing mb2rf_t234_sigheader.bin.encrypt (parittion: A_mb2rf) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb2rf_t234_sigheader.bin.encrypt
+Writing /mnt/internal/mb2rf_t234_sigheader.bin.encrypt (122784 bytes) into  /dev/mtd0:12582912
+Copied 122784 bytes from /mnt/internal/mb2rf_t234_sigheader.bin.encrypt to address 0x00c00000 in flash
+Writing uefi_jetson_with_dtb_sigheader.bin.encrypt (parittion: A_cpu-bootloader) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/uefi_jetson_with_dtb_sigheader.bin.encrypt
+Writing /mnt/internal/uefi_jetson_with_dtb_sigheader.bin.encrypt (3171216 bytes) into  /dev/mtd0:12713984
+Copied 3171216 bytes from /mnt/internal/uefi_jetson_with_dtb_sigheader.bin.encrypt to address 0x00c20000 in flash
+Writing tos-optee_t234_sigheader.img.encrypt (parittion: A_secure-os) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/tos-optee_t234_sigheader.img.encrypt
+Writing /mnt/internal/tos-optee_t234_sigheader.img.encrypt (1064752 bytes) into  /dev/mtd0:16384000
+Copied 1064752 bytes from /mnt/internal/tos-optee_t234_sigheader.img.encrypt to address 0x00fa0000 in flash
+[ 352]: l4t_flash_from_kernel: Warning: skip writing A_smm-fw partition as no image is specified
+Writing eks_t234_sigheader.img.encrypt (parittion: A_eks) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/eks_t234_sigheader.img.encrypt
+Writing /mnt/internal/eks_t234_sigheader.img.encrypt (9232 bytes) into  /dev/mtd0:22675456
+Copied 9232 bytes from /mnt/internal/eks_t234_sigheader.img.encrypt to address 0x015a0000 in flash
+Writing display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt (parittion: A_dce-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt
+Writing /mnt/internal/display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt (736064 bytes) into  /dev/mtd0:22937600
+Copied 736064 bytes from /mnt/internal/display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt to address 0x015e0000 in flash
+Writing spe_t234_sigheader.bin.encrypt (parittion: A_spe-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/spe_t234_sigheader.bin.encrypt
+Writing /mnt/internal/spe_t234_sigheader.bin.encrypt (270336 bytes) into  /dev/mtd0:28180480
+Copied 270336 bytes from /mnt/internal/spe_t234_sigheader.bin.encrypt to address 0x01ae0000 in flash
+Writing camera-rtcpu-t234-rce_sigheader.img.encrypt (parittion: A_rce-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/camera-rtcpu-t234-rce_sigheader.img.encrypt
+Writing /mnt/internal/camera-rtcpu-t234-rce_sigheader.img.encrypt (537952 bytes) into  /dev/mtd0:28770304
+Copied 537952 bytes from /mnt/internal/camera-rtcpu-t234-rce_sigheader.img.encrypt to address 0x01b70000 in flash
+Writing adsp-fw_sigheader.bin.encrypt (parittion: A_adsp-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/adsp-fw_sigheader.bin.encrypt
+Writing /mnt/internal/adsp-fw_sigheader.bin.encrypt (400944 bytes) into  /dev/mtd0:29818880
+Copied 400944 bytes from /mnt/internal/adsp-fw_sigheader.bin.encrypt to address 0x01c70000 in flash
+[ 355]: l4t_flash_from_kernel: Warning: skip writing A_reserved_on_boot partition as no image is specified
+Writing mb1_t234_prod_aligned_sigheader.bin.encrypt (parittion: B_mb1) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb1_t234_prod_aligned_sigheader.bin.encrypt
+Writing /mnt/internal/mb1_t234_prod_aligned_sigheader.bin.encrypt (259296 bytes) into  /dev/mtd0:33292288
+Copied 259296 bytes from /mnt/internal/mb1_t234_prod_aligned_sigheader.bin.encrypt to address 0x01fc0000 in flash
+Writing psc_bl1_t234_prod_aligned_sigheader.bin.encrypt (parittion: B_psc_bl1) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/psc_bl1_t234_prod_aligned_sigheader.bin.encrypt
+Writing /mnt/internal/psc_bl1_t234_prod_aligned_sigheader.bin.encrypt (119296 bytes) into  /dev/mtd0:33816576
+Copied 119296 bytes from /mnt/internal/psc_bl1_t234_prod_aligned_sigheader.bin.encrypt to address 0x02040000 in flash
+Writing mb1_cold_boot_bct_MB1_sigheader.bct.encrypt (parittion: B_MB1_BCT) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb1_cold_boot_bct_MB1_sigheader.bct.encrypt
+Writing /mnt/internal/mb1_cold_boot_bct_MB1_sigheader.bct.encrypt (16880 bytes) into  /dev/mtd0:34078720
+Copied 16880 bytes from /mnt/internal/mb1_cold_boot_bct_MB1_sigheader.bct.encrypt to address 0x02080000 in flash
+Writing mem_coldboot_sigheader.bct.encrypt (parittion: B_MEM_BCT) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mem_coldboot_sigheader.bct.encrypt
+Writing /mnt/internal/mem_coldboot_sigheader.bct.encrypt (243712 bytes) into  /dev/mtd0:34209792
+Copied 243712 bytes from /mnt/internal/mem_coldboot_sigheader.bct.encrypt to address 0x020a0000 in flash
+[ 357]: l4t_flash_from_kernel: Warning: skip writing B_tsec-fw partition as no image is specified
+Writing nvdec_t234_prod_sigheader.fw.encrypt (parittion: B_nvdec) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/nvdec_t234_prod_sigheader.fw.encrypt
+Writing /mnt/internal/nvdec_t234_prod_sigheader.fw.encrypt (294912 bytes) into  /dev/mtd0:35520512
+Copied 294912 bytes from /mnt/internal/nvdec_t234_prod_sigheader.fw.encrypt to address 0x021e0000 in flash
+Writing mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt (parittion: B_mb2) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt
+Writing /mnt/internal/mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt (437760 bytes) into  /dev/mtd0:36569088
+Copied 437760 bytes from /mnt/internal/mb2_t234_with_mb2_cold_boot_bct_MB2_sigheader.bin.encrypt to address 0x022e0000 in flash
+Writing xusb_t234_prod_sigheader.bin.encrypt (parittion: B_xusb-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/xusb_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/xusb_t234_prod_sigheader.bin.encrypt (164352 bytes) into  /dev/mtd0:37093376
+Copied 164352 bytes from /mnt/internal/xusb_t234_prod_sigheader.bin.encrypt to address 0x02360000 in flash
+Writing bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt (parittion: B_bpmp-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt
+Writing /mnt/internal/bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt (1047616 bytes) into  /dev/mtd0:37355520
+Copied 1047616 bytes from /mnt/internal/bpmp_t234-TE990M-A1_prod_sigheader.bin.encrypt to address 0x023a0000 in flash
+Writing tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt (parittion: B_bpmp-fw-dtb) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt
+Writing /mnt/internal/tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt (138880 bytes) into  /dev/mtd0:38928384
+Copied 138880 bytes from /mnt/internal/tegra234-bpmp-3767-0000-a02-3509-a02_with_odm_sigheader.dtb.encrypt to address 0x02520000 in flash
+Writing pscfw_t234_prod_sigheader.bin.encrypt (parittion: B_psc-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/pscfw_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/pscfw_t234_prod_sigheader.bin.encrypt (375168 bytes) into  /dev/mtd0:43122688
+Copied 375168 bytes from /mnt/internal/pscfw_t234_prod_sigheader.bin.encrypt to address 0x02920000 in flash
+Writing mce_flash_o10_cr_prod_sigheader.bin.encrypt (parittion: B_mts-mce) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mce_flash_o10_cr_prod_sigheader.bin.encrypt
+Writing /mnt/internal/mce_flash_o10_cr_prod_sigheader.bin.encrypt (190592 bytes) into  /dev/mtd0:43909120
+Copied 190592 bytes from /mnt/internal/mce_flash_o10_cr_prod_sigheader.bin.encrypt to address 0x029e0000 in flash
+Writing sc7_t234_prod_sigheader.bin.encrypt (parittion: B_sc7) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/sc7_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/sc7_t234_prod_sigheader.bin.encrypt (164384 bytes) into  /dev/mtd0:44433408
+Copied 164384 bytes from /mnt/internal/sc7_t234_prod_sigheader.bin.encrypt to address 0x02a60000 in flash
+Writing psc_rf_t234_prod_sigheader.bin.encrypt (parittion: B_pscrf) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/psc_rf_t234_prod_sigheader.bin.encrypt
+Writing /mnt/internal/psc_rf_t234_prod_sigheader.bin.encrypt (118784 bytes) into  /dev/mtd0:44630016
+Copied 118784 bytes from /mnt/internal/psc_rf_t234_prod_sigheader.bin.encrypt to address 0x02a90000 in flash
+Writing mb2rf_t234_sigheader.bin.encrypt (parittion: B_mb2rf) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/mb2rf_t234_sigheader.bin.encrypt
+Writing /mnt/internal/mb2rf_t234_sigheader.bin.encrypt (122784 bytes) into  /dev/mtd0:44826624
+Copied 122784 bytes from /mnt/internal/mb2rf_t234_sigheader.bin.encrypt to address 0x02ac0000 in flash
+Writing uefi_jetson_with_dtb_sigheader.bin.encrypt (parittion: B_cpu-bootloader) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/uefi_jetson_with_dtb_sigheader.bin.encrypt
+Writing /mnt/internal/uefi_jetson_with_dtb_sigheader.bin.encrypt (3171216 bytes) into  /dev/mtd0:44957696
+Copied 3171216 bytes from /mnt/internal/uefi_jetson_with_dtb_sigheader.bin.encrypt to address 0x02ae0000 in flash
+Writing tos-optee_t234_sigheader.img.encrypt (parittion: B_secure-os) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/tos-optee_t234_sigheader.img.encrypt
+Writing /mnt/internal/tos-optee_t234_sigheader.img.encrypt (1064752 bytes) into  /dev/mtd0:48627712
+Copied 1064752 bytes from /mnt/internal/tos-optee_t234_sigheader.img.encrypt to address 0x02e60000 in flash
+[ 369]: l4t_flash_from_kernel: Warning: skip writing B_smm-fw partition as no image is specified
+Writing eks_t234_sigheader.img.encrypt (parittion: B_eks) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/eks_t234_sigheader.img.encrypt
+Writing /mnt/internal/eks_t234_sigheader.img.encrypt (9232 bytes) into  /dev/mtd0:54919168
+Copied 9232 bytes from /mnt/internal/eks_t234_sigheader.img.encrypt to address 0x03460000 in flash
+Writing display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt (parittion: B_dce-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt
+Writing /mnt/internal/display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt (736064 bytes) into  /dev/mtd0:55181312
+Copied 736064 bytes from /mnt/internal/display-t234-dce_with_tegra234-p3767-0000-p3509-a02_with_odm_aligned_blob_w_bin_sigheader.bin.encrypt to address 0x034a0000 in flash
+Writing spe_t234_sigheader.bin.encrypt (parittion: B_spe-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/spe_t234_sigheader.bin.encrypt
+Writing /mnt/internal/spe_t234_sigheader.bin.encrypt (270336 bytes) into  /dev/mtd0:60424192
+Copied 270336 bytes from /mnt/internal/spe_t234_sigheader.bin.encrypt to address 0x039a0000 in flash
+Writing camera-rtcpu-t234-rce_sigheader.img.encrypt (parittion: B_rce-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/camera-rtcpu-t234-rce_sigheader.img.encrypt
+Writing /mnt/internal/camera-rtcpu-t234-rce_sigheader.img.encrypt (537952 bytes) into  /dev/mtd0:61014016
+Copied 537952 bytes from /mnt/internal/camera-rtcpu-t234-rce_sigheader.img.encrypt to address 0x03a30000 in flash
+Writing adsp-fw_sigheader.bin.encrypt (parittion: B_adsp-fw) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/adsp-fw_sigheader.bin.encrypt
+Writing /mnt/internal/adsp-fw_sigheader.bin.encrypt (400944 bytes) into  /dev/mtd0:62062592
+Copied 400944 bytes from /mnt/internal/adsp-fw_sigheader.bin.encrypt to address 0x03b30000 in flash
+[ 373]: l4t_flash_from_kernel: Warning: skip writing B_reserved_on_boot partition as no image is specified
+[ 373]: l4t_flash_from_kernel: Warning: skip writing uefi_variables partition as no image is specified
+[ 373]: l4t_flash_from_kernel: Warning: skip writing uefi_ftw partition as no image is specified
+[ 373]: l4t_flash_from_kernel: Warning: skip writing worm partition as no image is specified
+Writing bct_backup.img (parittion: BCT-boot-chain_backup) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/bct_backup.img
+Writing /mnt/internal/bct_backup.img (32768 bytes) into  /dev/mtd0:66715648
+Copied 32768 bytes from /mnt/internal/bct_backup.img to address 0x03fa0000 in flash
+[ 373]: l4t_flash_from_kernel: Warning: skip writing reserved_partition partition as no image is specified
+Writing gpt_secondary_3_0.bin (parittion: secondary_gpt_backup) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/gpt_secondary_3_0.bin
+Writing /mnt/internal/gpt_secondary_3_0.bin (16896 bytes) into  /dev/mtd0:66846720
+Copied 16896 bytes from /mnt/internal/gpt_secondary_3_0.bin to address 0x03fc0000 in flash
+Writing qspi_bootblob_ver.txt (parittion: B_VER) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/qspi_bootblob_ver.txt
+Writing /mnt/internal/qspi_bootblob_ver.txt (90 bytes) into  /dev/mtd0:66912256
+Copied 90 bytes from /mnt/internal/qspi_bootblob_ver.txt to address 0x03fd0000 in flash
+Writing qspi_bootblob_ver.txt (parittion: A_VER) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/qspi_bootblob_ver.txt
+Writing /mnt/internal/qspi_bootblob_ver.txt (90 bytes) into  /dev/mtd0:66977792
+Copied 90 bytes from /mnt/internal/qspi_bootblob_ver.txt to address 0x03fe0000 in flash
+Writing gpt_secondary_3_0.bin (parittion: secondary_gpt) into /dev/mtd0
+Sha1 checksum matched for /mnt/internal/gpt_secondary_3_0.bin
+Writing /mnt/internal/gpt_secondary_3_0.bin (16896 bytes) into  /dev/mtd0:67091968
+Copied 16896 bytes from /mnt/internal/gpt_secondary_3_0.bin to address 0x03ffbe00 in flash
+[ 373]: l4t_flash_from_kernel: Successfully flash the qspi
+[ 373]: l4t_flash_from_kernel: Flashing success
+Flash is successful
+Reboot device
+Cleaning up...

@@ -1,0 +1,47 @@
+
+RESOURCES_dir=${RESOURCES_dir:-out}
+UEFI_KEYS_DIR=${UEFI_KEYS_DIR:-"${RESOURCES_dir}/uefi_keys"}
+
+# function fills uefi_files_all and test if files inside exist
+uefi_files_all=()
+extract_uefi_cfg_files() {
+    local cfg_file="$1"
+    local files=()  # global or caller-visible
+
+    if [[ ! -f "$cfg_file" ]]; then
+        echo "[ERROR] Config file not found: $cfg_file" >&2
+        return 1
+    fi
+    
+    # Source config in a subshell to avoid polluting global scope
+    local uefi_vars
+    uefi_vars=$( ( source "$cfg_file"; declare -p ) | grep -oP '^declare\s+-[^ ]+\s+UEFI_[^=]+' | awk '{print $3}' )
+
+    # Source for real this time to extract actual values
+    source "$cfg_file"
+    base_dir=$(dirname $cfg_file)
+    for var in $uefi_vars; do
+        val="${!var}"
+        local exclude_vars=("UEFI_KEYS_DIR" "UEFI_KEYS_CFG_FILE" "UEFI_ENC_KEY_fname" "UEFI_DEFAULT_SECURITY_KEYS_DTBO_fname" "UEFI_UPDATE_SECURITY_KEYS_DTBO_fname" "UEFI_STMM_PATH" "UEFI_JETSON_bin")
+        if [[ "${exclude_vars[@]}" =~ "${var}" ]]; then
+            continue
+        fi
+        if [[ -n "$val" ]]; then
+            if [[ -f "$base_dir/$val" ]]; then
+                files+=("$base_dir/$val")
+                continue
+            elif [[ -f "$val" ]]; then # value is not from uefi file
+                echo "[ERROR] Full path is not supported! $var - $val" >&2
+                #files+=("$val")
+                return 2
+            fi
+            return 1
+        else
+            echo "[WARN] Skipping missing or empty file for var: $var ($val)" >&2
+            return 1
+        fi
+    done
+    uefi_files_all=${files[@]}
+    #echo "files:${files[@]}" >&2
+    return 0
+}

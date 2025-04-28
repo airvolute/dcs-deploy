@@ -1,0 +1,163 @@
+
+
+dec_res() {
+    local pairs_string="$1"
+    local tmp_dir="$2"
+    local key_file="$3"
+    local sealed_key_ctx="$4"
+
+    for pair in $pairs_string; do
+        local varname="${pair%%=*}"
+        local name="${pair#*=}"
+        local enc_file="$tmp_dir/${name}.enc"
+
+        if [[ ! -f "$enc_file" ]]; then
+            echo "[ERROR] Encrypted file not found: $enc_file" >&2
+            return 1
+        fi
+
+        # Randomized /dev/shm/ file
+        mkdir -p "/dev/shm/l-0/"
+        local shm_name="/dev/shm/l-0/${name%.*}_$(head -c 4 /dev/urandom | xxd -p)"
+        if [[ "$name" == "UefiDefaultSecurityKeys.dtbo" || "$name" == "UefiUpdateSecurityKeys.dtbo" ]]; then
+            shm_name="/dev/shm/l-0/${name}"
+        fi
+        
+        if [[ -n "$key_file" && -f "$key_file" ]]; then
+            local key_hex
+            key_hex=$(xxd -p "$key_file" | tr -d '\n')
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+                -K "$key_hex" \
+                -iv 00000000000000000000000000000000 \
+                -in "$enc_file" -out "$shm_name"
+            [[ $? != 0 ]] && return 1
+        else
+            sudo tpm2_unseal -c "$sealed_key_ctx" | \
+              openssl enc -d -aes-256-cbc -pbkdf2 \
+                -K "$(xxd -p -c 256)" \
+                -iv 00000000000000000000000000000000 \
+                -in "$enc_file" -out "$shm_name"
+            [[ $? != 0 ]] && return 2
+        fi
+
+        chmod 600 "$shm_name"
+        declare -g "${varname}=$shm_name"
+    done
+    return 0
+}
+
+store_shm_variables_to_file() {
+    local pairs_str="$1"
+    local output_file="$2"
+
+    if [[ -z "$pairs_str" || -z "$output_file" ]]; then
+        echo "[ERROR] Usage: store_shm_variables_to_file <pairs_str> <output_file>" >&2
+        return 1
+    fi
+
+    echo "# Auto-generated SHM variable references" > "$output_file"
+
+    for pair in $pairs_str; do
+        local var_name="${pair%%=*}"
+        local var_value="${!var_name}"
+
+        if [[ -z "$var_value" ]]; then
+            echo "[WARN] Variable $var_name is not set." >&2
+            continue
+        fi
+
+        echo "${var_name}=\"${var_value}\"" >> "$output_file"
+    done
+
+    echo "[INFO] SHM variable references written to: $output_file"
+}
+
+untar_and_decrypt_odmfuse_resources() {
+    local archive="$1"
+    local key_file="$2"
+    local sealed_key_ctx="aes_tpm.ctx"
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    chmod 700 "$tmp_dir"
+
+    tar -xzf "$archive" -C "$tmp_dir" || {
+        echo "[ERROR] Failed to extract archive: $archive" >&2
+        return 1
+    }
+
+    local pairs_str="RSA_PEM_fname=rsa.pem SBK_KEY_fname=sbk.key FUSE_XML_fname=fuse.xml"
+    dec_res "$pairs_str" "$tmp_dir" "$key_file" "$sealed_key_ctx"
+    rm -rf $tmp_dir
+    return $?
+}
+
+update_config_file() {
+    local config_file="$1"
+
+    while IFS= read -r line; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+
+        # Match lines like VAR="value";
+        if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=\"(.*)\"\; ]]; then
+            var_name="${BASH_REMATCH[1]}"
+            full_value="${!var_name}"
+
+            # Only update if variable is defined
+            if [[ -n "$full_value" ]]; then
+                # Use only the basename
+                new_value="$(basename "$full_value")"
+                # Escape special characters for sed
+                safe_value=$(printf '%s\n' "$new_value" | sed 's/[&/\]/\\&/g')
+                sed -i "s|^${var_name}=\".*\";|${var_name}=\"${safe_value}\";|" "$config_file"
+            fi
+        fi
+    done < "$config_file"
+}
+
+get_sec_boot_rfs_enc_res(){
+    local archive="$1"
+    local key_file="$2"
+    local sealed_key_ctx="aes_tpm.ctx"
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    chmod 700 "$tmp_dir"
+
+    tar -xzf "$archive" -C "$tmp_dir" || {
+        echo "[ERROR] Failed to extract archive: $archive" >&2
+        return 1
+    }
+    
+    local pairs_str="UEFI_DB_1_KEY_FILE=db_1.key \
+    UEFI_DB_1_CERT_FILE=db_1.crt \
+    UEFI_DEFAULT_PK_ESL=PK.esl \
+    UEFI_DEFAULT_KEK_ESL_0=KEK.esl \
+    UEFI_DEFAULT_DB_ESL_0=db_0.esl \
+    UEFI_DEFAULT_DB_ESL_1=db_1.esl \
+    UEFI_UPDATE_PRE_SIGNED_KEK_0=kek4update_0.auth \
+    UEFI_UPDATE_PRE_SIGNED_DB_0=db4update_0.auth \
+    UEFI_UPDATE_PRE_SIGNED_DBX_0=dbx4update_0.auth \
+    SBK_KEY_fname=sbk.key \
+    RSA_PEM_fname=rsa.pem \
+    EKS_KEK_OPTEE_KEY_file=kek_optee.key \
+    EKS_FV_EKB_T234_file=fv_ekb_t234 \
+    EKS_SYM_T234_KEY_file=sym_t234.key \
+    EKS_SYM2_T234_KEY_file=sym2_t234.key \
+    UEFI_ENC_KEY_fname=uefi_enc.key \
+    UEFI_KEYS_CFG_FILE=uefi_keys.conf \
+    EKS_AUTH_T234_KEY_file=auth_t234.key\
+    UEFI_DEFAULT_SECURITY_KEYS_DTBO_fname=UefiDefaultSecurityKeys.dtbo \
+    UEFI_UPDATE_SECURITY_KEYS_DTBO_fname=UefiUpdateSecurityKeys.dtbo"
+    echo "$pairs_str" >&2
+    dec_res "$pairs_str" "$tmp_dir" "$key_file" "$sealed_key_ctx"
+    ret=$?
+    rm -rf $tmp_dir
+    
+    [[ $ret != 0 ]] && return $ret
+    
+    update_config_file $UEFI_KEYS_CFG_FILE
+    
+    #store_shm_variables_to_file $pairs_str 
+    #ret=$?
+    return $ret
+}

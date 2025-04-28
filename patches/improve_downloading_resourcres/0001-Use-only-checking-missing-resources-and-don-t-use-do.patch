@@ -1,0 +1,153 @@
+From 1b3a332cea2c06b9f40026e71a727d2cece22586 Mon Sep 17 00:00:00 2001
+From: Michal Bachraty <michal.bachraty@gmail.com>
+Date: Mon, 11 Sep 2023 11:42:44 +0200
+Subject: [PATCH] Use only checking missing resources and don't use
+ 'downloaded_versions.json' file. This file is no more needed when downloading
+ resources. Each resource will be checked from download location, if not in
+ local download folder, then it will be downloaded again. Fix default value
+ for --force parameter
+
+Signed-off-by: Michal Bachraty <michal.bachraty@gmail.com>
+---
+ dcs_deploy.py | 76 +++++++++++++--------------------------------------
+ 1 file changed, 19 insertions(+), 57 deletions(-)
+
+diff --git a/dcs_deploy.py b/dcs_deploy.py
+index f78e7ef..f737a86 100755
+--- a/dcs_deploy.py
++++ b/dcs_deploy.py
+@@ -175,7 +175,7 @@ class DcsDeploy:
+         subparser.add_argument('rootfs_type', help=rootfs_type_help)
+         
+         force_help = 'Files will be deleted, downloaded and extracted again.'
+-        subparser.add_argument('--force', action='store_true',  default='', help=force_help)
++        subparser.add_argument('--force', action='store_true', help=force_help)
+ 
+         regen_help = 'Regenerate files. Extract resources and apply them again'
+         subparser.add_argument('--regen', action='store_true', help=regen_help)
+@@ -260,19 +260,6 @@ class DcsDeploy:
+                 print()
+                 return
+ 
+-    def save_downloaded_versions(self):
+-        if os.path.isfile(self.downloaded_config_path):
+-            with open(self.downloaded_config_path, "r+") as download_dict:
+-                file_data = json.load(download_dict)
+-                file_data[self.selected_config_name] = self.config
+-                download_dict.seek(0)
+-                json.dump(file_data, download_dict, indent = 4)
+-        else:
+-            with open(self.downloaded_config_path, "a") as download_dict:
+-                config_to_save = {}
+-                config_to_save[self.selected_config_name] = self.config
+-                json.dump(config_to_save, download_dict, indent=4)
+-
+     def run_loading_animation(self, event):
+         t = Thread(target=self.loading_animation, args=(event,))
+         t.start()
+@@ -315,7 +302,6 @@ class DcsDeploy:
+         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
+         self.rootfs_extract_dir = os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs')
+         self.l4t_root_dir = os.path.join(self.flash_path, 'Linux_for_Tegra')
+-        self.downloaded_config_path = os.path.join(self.dsc_deploy_root, 'downloaded_versions.json')
+         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
+         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
+         self.first_boot_file_path = os.path.join(self.rootfs_extract_dir, 'etc', 'first_boot')
+@@ -366,48 +352,29 @@ class DcsDeploy:
+                 print("exitting!")
+                 exit(1)
+ 
+-    def get_missing_resources(self):
++    def get_missing_resources(self, force_all_missing = False):
+         res = []
+         for resouce in self.resource_paths:
+-            if os.path.isfile(self.resource_paths[resouce]):
++            if os.path.isfile(self.resource_paths[resouce]) and force_all_missing == False:
+                 continue
+             # return only resource which is possible to download
+             if(self.get_resource_url(resouce) != None):
+                 res += [resouce]
+         return res
+ 
+-    def compare_downloaded_source(self):
+-        """Compares current input of the program with previously downloaded sources. If resouces are not complete, try to fullfill them
+-
+-        return True, if sources are already present locally.
+-        return False, if sources need to be downloaded.
+-        """
+-        if self.args.force == True:
+-            return False
+-
+-        if os.path.exists(self.downloaded_config_path):
+-            downloaded_configs = json.load(open(self.downloaded_config_path))
+-
+-            for config in downloaded_configs:
+-                if config == self.selected_config_name:
+-                    for missing_resource in self.get_missing_resources():
+-                        print("missing resource '%s'. Going to download it!" % missing_resource)    
+-                        ret = self.download_resource(missing_resource, self.resource_paths[missing_resource])
+-                        if ret < 0:
+-                            print("can't download resource '" + missing_resource + "'!.")
+-                            print("exitting!")
+-                            exit(4)
+-                        # regenerate
+-                        self.cleanup_flash_dir()
+-                    print('Resources for your config are already downloaded!')
+-                    return True
+-            
+-            print('New resources will be downloaded!')
+-            return False
++    def download_resources(self):
++        for missing_resource in self.get_missing_resources(force_all_missing = self.args.force):
++            print("missing resource '%s'. Going to download it!" % missing_resource)
++            ret = self.download_resource(missing_resource, self.resource_paths[missing_resource])
++            if ret < 0:
++                print("can't download resource '" + missing_resource + "'!.")
++                print("exitting!")
++                exit(4)
++            # regenerate
++            self.cleanup_flash_dir()
++        print('Resources for your config are already downloaded!')
++        return True
+ 
+-        else:
+-            return False
+-    
+     def get_resource_url(self, resource_name):
+         url = self.config[resource_name]
+         if url == None or url == "none" or url == "":
+@@ -429,6 +396,9 @@ class DcsDeploy:
+             yes = yes_no_question("Downloaded file %s already exist! Would you like to download it again? " % dst_path)
+             if yes == False:
+                 return 0
++        if os.path.isfile(dst_path):
++            print("removing existing file! " + dst_path)
++            cmd_exec(f"rm '{dst_path}'", print_command=True)
+         try:
+             wget.download(
+                 self.config[resource_name],
+@@ -436,20 +406,12 @@ class DcsDeploy:
+             )
+         except Exception as e:
+             print("Got error while downloading resource", resource_name, "Error: ", str(e))
++            print("download params: %s, %s" %(self.config[resource_name], dst_path))
+             return -1
+           
+         print()
+         return 0
+     
+-    def download_resources(self):
+-        if self.compare_downloaded_source():
+-            return
+-        
+-        for resource in self.resource_paths:
+-            self.download_resource(resource, self.resource_paths[resource])    
+-
+-        self.save_downloaded_versions()
+-    
+     def extract_resource(self, resource, extract_path = None, need_sudo = False):
+         if extract_path == None:
+             extract_path = self.flash_path
+-- 
+2.34.1
+
