@@ -1,0 +1,146 @@
+# Generate eks_t234.img - Encrypted Key Storage (EKS) image for Jetson Orin (T234).
+# - contains cryptographic keys (disk encryption keys, user secrets, or secure boot material), encrypted using KEK2, and is stored in a reserved boot partition.
+# - used at boot time by MB1 or later bootloaders to securely load cryptographic assets.
+# - AES-256 in ECB mode
+SCRIPT_dir=${SCRIPT_dir:-$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )}
+EKS_IMG_filename="eks_t234.img"
+
+EKS_KEK_OPTEE_KEY_file=${EKS_KEK_OPTEE_KEY_file:-"${RESOURCES_dir}/kek_optee.key"}
+EKS_FV_EKB_T234_file=${EKS_FV_EKB_T234_file:-"${RESOURCES_dir}/fv_ekb_t234"}
+EKS_SYM_T234_KEY_file=${EKS_SYM_T234_KEY_file:-"${RESOURCES_dir}/sym_t234.key"}
+EKS_SYM2_T234_KEY_file=${EKS_SYM2_T234_KEY_file:-"${RESOURCES_dir}/sym2_t234.key"}
+EKS_AUTH_T234_KEY_file=${EKS_AUTH_T234_KEY_file:-"${RESOURCES_dir}/auth_t234.key"}
+TOOLS_dir=${TOOLS_dir:-tools}
+GEN_EKB_PY_path="${TOOLS_dir}/gen_ekb.py"
+# 0 - OK - files exist
+
+# 1 - version 1.5 or later, 0 - less than 1.5
+
+source "${SCRIPT_dir}/tools.func"
+
+check_gen_ekb_tool_exist() {
+    disable_set_e_flag
+    [ ! -f "${GEN_EKB_PY_path}" ] && echo "${GEN_EKB_PY_path} is not found" && exit 10
+    restore_set_e_flag
+    return 0
+}
+
+is_gen_ekb_version_v1_5() {
+    check_gen_ekb_tool_exist
+    disable_set_e_flag
+    grep "1.5: Add encoding fTPM serial number (SN)" $GEN_EKB_PY_path > /dev/null
+    ret=$?
+    restore_set_e_flag
+    [[ $ret == 0 ]] && return 1
+    return 0
+}
+
+is_eks_keys_gen() {
+    if [[ -f ${EKS_KEK_OPTEE_KEY_file} && \
+          -f ${EKS_FV_EKB_T234_file} && \
+          -f ${EKS_SYM_T234_KEY_file} && \
+          -f ${EKS_SYM2_T234_KEY_file} && \
+          -f ${EKS_AUTH_T234_KEY_file} ]]; then
+          return 0
+    fi
+    return 1
+}
+
+#required variables
+check_eks_gen_vars_set() {
+    [ -z $EKS_IMAGE_dir ] && return 1
+    [ -z ${TOOLS_dir} ] && return 2
+    [ -z ${L4T_dir} ] && return 3
+    [ -z ${GEN_EKB_PY_path} ] && return 4
+    [ -z ${EKS_KEK_OPTEE_KEY_file} ] && return 5
+    [ -z ${EKS_FV_EKB_T234_file} ] && return 6
+    [ -z ${EKS_SYM_T234_KEY_file} ] && return 7
+    [ -z ${EKS_SYM2_T234_KEY_file} ] && return 8
+    [ -z ${EKS_AUTH_T234_KEY_file} ] && return 9
+    return 0
+}
+
+
+gen_tee_eks_image() {
+    echo "[INFO]  generate eks image"
+    local out_dir=$1
+    disable_set_e_flag
+    check_gen_ekb_tool_exist
+    
+    oem_k1_key=""
+    oem_k2_key="-oem_k2_key ${EKS_KEK_OPTEE_KEY_file}"
+    if [ -s "${oem_k1_key_file}" ]; then
+        oem_k1_key="-oem_k1_key=${oem_k1_key_file}"
+        oem_k2_key=""
+    fi
+    
+    auth_t234_key=""
+    is_gen_ekb_version_v1_5
+    version_1_5=$?
+    if [[ $version_1_5 == 1 ]]; then
+        echo "version 1.5 detected!"
+        auth_t234_key="-in_auth_key ${EKS_AUTH_T234_KEY_file}"
+        echo "adding parameter $auth_t234_key"
+    fi
+    
+    ! check_eks_gen_vars_set && echo "eks variables are not successfully set! ret $?" && exit 1
+
+    ! is_eks_keys_gen && echo "ekb keys are not fully generated! Missing input file! Exitting!" && exit 2
+    # -oem_k1_key if set when entered 
+    # only one k1 or k2 can be set. No both of them
+    python3 ${GEN_EKB_PY_path} -chip t234 ${oem_k1_key} ${oem_k2_key} ${auth_t234_key} \
+        -fv ${EKS_FV_EKB_T234_file} \
+        -in_sym_key ${EKS_SYM_T234_KEY_file} \
+        -in_sym_key2 ${EKS_SYM2_T234_KEY_file} \
+        -out ${out_dir}/$EKS_IMG_filename
+    ret=$?
+    restore_set_e_flag
+    return $ret
+}
+
+verify_eks_image() {
+    local ekb_dir="$1"
+    local ekb_file="${ekb_dir}/$EKS_IMG_filename"
+    if [[ ! -f "${ekb_file}" ]]; then
+        echo "[ERROR] File not found: $ekb_file"
+        return 2
+    fi
+
+    local out
+    out=$(hexdump -C -n 4 -s 0x24 "$ekb_file" 2>/dev/null | grep "EEKB")
+    local ret=$?
+    if [[ "$ret" == "0" ]]; then
+        return 0  # Valid EKB
+    fi
+    echo "[ERROR] Invalid EKB magic: $out"
+    return 1
+}
+
+prepare_tee_eks_image() {
+    ! check_eks_gen_vars_set && echo "eks variables are not successfully set! ret $?" && exit 1
+    mkdir -p ${EKS_IMAGE_dir}
+    gen_tee_eks_image ${EKS_IMAGE_dir}
+    ret=$?
+    if [[ $ret != 0 ]]; then 
+        echo "gen_tee_eks_image returned $ret" && exit 1
+    fi
+    verify_eks_image ${EKS_IMAGE_dir}
+    ret=$?
+    if [[ $ret != 0 ]]; then 
+        echo "verify_eks_image returned $ret" && exit 1
+    fi
+    return 0
+}
+
+deploy_tee_eks_image() {
+    local eks_img_file="${EKS_IMAGE_dir}/$EKS_IMG_filename"
+    if [ ! -f "${eks_img_file}" ]; then
+        echo "${eks_img_file} cannot be found" && exit 1
+    fi
+    
+    [[ -z $L4T_dir || ! -d $L4T_dir ]] && echo "missing L4T_dir var! (${L4T_dir})" && exit 2
+    
+    sudo cp "$eks_img_file" "${L4T_dir}/bootloader/$EKS_IMG_filename"
+    [[ $? -ne 0 ]] && echo "deploy_tee_eks_image failed! $?" && exit 1
+    return 0
+}

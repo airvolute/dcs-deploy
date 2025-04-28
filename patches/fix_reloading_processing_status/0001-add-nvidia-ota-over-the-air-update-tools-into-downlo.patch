@@ -1,0 +1,28 @@
+From fa2d91892d57071b71a361935003b20fdf3e7bd8 Mon Sep 17 00:00:00 2001
+From: Michal Bachraty <michal.bachraty@gmail.com>
+Date: Mon, 11 Sep 2023 16:50:03 +0200
+Subject: [PATCH 1/4] add nvidia ota (over the air) update tools into
+ downloading and extract it
+
+Signed-off-by: Michal Bachraty <michal.bachraty@gmail.com>
+
+# Conflicts:
+#	dcs_deploy.py
+---
+ dcs_deploy.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dcs_deploy.py b/dcs_deploy.py
+index 26650e9..c8896ee 100755
+--- a/dcs_deploy.py
++++ b/dcs_deploy.py
+@@ -664,4 +664,4 @@ class DcsDeploy:
+ 
+ if __name__ == "__main__":
+     dcs_deploy = DcsDeploy()
+-    dcs_deploy.run()
+\ No newline at end of file
++    dcs_deploy.run()
+-- 
+2.34.1
+

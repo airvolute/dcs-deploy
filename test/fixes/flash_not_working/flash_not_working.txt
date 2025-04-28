@@ -1,0 +1,114 @@
+****************************************************
+*                                                  *
+*  Step 2: Boot the device with flash initrd image *
+*                                                  *
+****************************************************
+/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra/temp_initrdflash/bootloader0 /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra
+./tegraflash.py --bl nvtboot_recovery_cpu_t194_sigheader.bin.encrypt --bct br_bct_BR.bct --securedev  --bldtb tegra194-p3668-0001-p3509-0000.dtb --applet rcm_2_encrypt.rcm --applet_softfuse rcm_1_encrypt.rcm --cmd "rcmboot"  --cfg secureflash.xml --chip 0x19 --mb1_bct mb1_bct_MB1_sigheader.bct.encrypt --mem_bct mem_rcm_sigheader.bct.encrypt --mb1_cold_boot_bct mb1_cold_boot_bct_MB1_sigheader.bct.encrypt --mem_bct_cold_boot mem_coldboot_sigheader.bct.encrypt  --bins "mb2_bootloader nvtboot_recovery_t194_sigheader.bin.encrypt; mts_preboot preboot_c10_prod_cr_sigheader.bin.encrypt; mts_mce mce_c10_prod_cr_sigheader.bin.encrypt; mts_proper mts_c10_prod_cr_sigheader.bin.encrypt; bpmp_fw bpmp-2_t194_sigheader.bin.encrypt; bpmp_fw_dtb tegra194-a02-bpmp-p3668-a00_lz4_sigheader.dtb.encrypt; spe_fw spe_t194_sigheader.bin.encrypt; tos tos-optee_t194_sigheader.img.encrypt; eks eks_t194_sigheader.img.encrypt; kernel boot0.img; kernel_dtb kernel_tegra194-p3668-0001-p3509-0000.dtb; bootloader_dtb tegra194-p3668-0001-p3509-0000_sigheader.dtb.encrypt"    --secondary_gpt_backup  --bct_backup  --boot_chain A  --instance 6-1.2.2
+Welcome to Tegra Flash
+version 1.0.0
+Type ? or help for help and q or quit to exit
+Use ! to execute system commands
+ 
+
+ Entering RCM boot
+
+[   0.0000 ] rcm boot with presigned binaries
+[   0.0000 ] Boot Rom communication
+[   0.0022 ] tegrarcm_v2 --instance 6-1.2.2 --chip 0x19 0 --rcm rcm_1_encrypt.rcm --rcm rcm_2_encrypt.rcm
+[   0.0031 ] BR_CID: 0x88021911644501c1000000000bff0240
+[   0.3705 ] Boot Rom communication completed
+[   2.4065 ] tegrarcm_v2 --instance 6-1.2.2 --isapplet
+[   2.4074 ] Applet version 01.00.0000
+[   2.4325 ] Sending BCTs
+[   2.4345 ] tegrarcm_v2 --instance 6-1.2.2 --download bct_bootrom br_bct_BR.bct --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt --download bct_mem mem_rcm_sigheader.bct.encrypt
+[   2.4353 ] Applet version 01.00.0000
+[   2.4632 ] Sending bct_bootrom
+[   2.4633 ] [................................................] 100%
+[   2.4649 ] Sending bct_mb1
+[   2.4697 ] [................................................] 100%
+[   2.4738 ] Sending bct_mem
+[   2.5277 ] [................................................] 100%
+[   2.5645 ] Generating blob
+[   2.5742 ] tegrahost_v2 --chip 0x19 --generateblob blob.xml blob.bin
+[   2.5751 ] number of images in blob are 13
+[   2.5789 ] blobsize is 53880436
+[   2.5790 ] Added binary blob_nvtboot_recovery_cpu_t194_sigheader.bin.encrypt of size 233040
+[   2.6234 ] Added binary blob_nvtboot_recovery_t194_sigheader.bin.encrypt of size 206016
+[   2.6238 ] Added binary blob_preboot_c10_prod_cr_sigheader.bin.encrypt of size 24016
+[   2.6241 ] Added binary blob_mce_c10_prod_cr_sigheader.bin.encrypt of size 145184
+[   2.6245 ] Added binary blob_mts_c10_prod_cr_sigheader.bin.encrypt of size 3430416
+[   2.6273 ] Added binary blob_bpmp-2_t194_sigheader.bin.encrypt of size 1007392
+[   2.6290 ] Added binary blob_tegra194-a02-bpmp-p3668-a00_lz4_sigheader.dtb.encrypt of size 36176
+[   2.6297 ] Added binary blob_spe_t194_sigheader.bin.encrypt of size 95232
+[   2.6301 ] Added binary blob_tos-optee_t194_sigheader.img.encrypt of size 914992
+[   2.6317 ] Added binary blob_eks_t194_sigheader.img.encrypt of size 5136
+[   2.6324 ] Added binary blob_boot0.img of size 47110144
+[   2.6701 ] Added binary blob_kernel_tegra194-p3668-0001-p3509-0000.dtb of size 330268
+[   2.6822 ] Added binary blob_tegra194-p3668-0001-p3509-0000_sigheader.dtb.encrypt of size 342208
+[   3.5347 ] Sending bootloader and pre-requisite binaries
+[   3.5379 ] tegrarcm_v2 --instance 6-1.2.2 --download blob blob.bin
+[   3.5388 ] Applet version 01.00.0000
+[   3.5673 ] Sending blob
+[   3.5673 ] [................................................] 100%
+[  11.3459 ] tegrarcm_v2 --instance 6-1.2.2 --boot rcm
+[  11.3471 ] Applet version 01.00.0000
+[  11.3745 ] RCM-boot started
+
+/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra
+***************************************
+*                                     *
+*  Step 3: Start the flashing process *
+*                                     *
+***************************************
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for device to expose ssh ......RTNETLINK answers: File exists
+RTNETLINK answers: File exists
+Run command: if [ -f /qspi/l4t_flash_from_kernel.sh ]; then USER=root /qspi/l4t_flash_from_kernel.sh --no-reboot --qspi-only ; fi on root@fe80::1%enxe21b88a74ede
+4194304
+[ 0]: l4t_flash_from_kernel: Starting to create gpt for external device
+Active index file is /media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra/tools/kernel_flash/images/external/flash.idx
+Number of lines is 17
+max_index=16
+writing item=1, 9:0:primary_gpt, 512, 19968, gpt_primary_9_0.bin, 16896, fixed-<reserved>-0, 776abc5e47d94b58559f14f7f8ab64c748837c5d
+Writing primary_gpt partition with gpt_primary_9_0.bin
+Offset is not aligned to K Bytes, no optimization is applied
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra/tools/kernel_flash/images/external/gpt_primary_9_0.bin of=/dev/sdf bs=1 skip=0  seek=512 count=16896
+16896+0 records in
+16896+0 records out
+16896 bytes (17 kB, 16 KiB) copied, 0,0380186 s, 444 kB/s
+Writing primary_gpt partition done
+Writing secondary_gpt partition with gpt_secondary_9_0.bin
+Offset is not aligned to K Bytes, no optimization is applied
+dd if=/media/data/work/.dcs_deploy/flash/xavier_nx_nvme_1.2_51_minimal/Linux_for_Tegra/tools/kernel_flash/images/external/gpt_secondary_9_0.bin of=/dev/sdf bs=1 skip=0  seek=128035659264 count=16896
+16896+0 records in
+16896+0 records out
+16896 bytes (17 kB, 16 KiB) copied, 0,0483056 s, 350 kB/s
+Writing secondary_gpt partition done
+[ 3]: l4t_flash_from_kernel: Successfully create gpt for external device
+Run command: partprobe on root@fe80::1%enxe21b88a74ede
+SSH is not ready
+Error flashing non-qspi storage
+Error flashing qspi
+
+Cleaning up...

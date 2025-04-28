@@ -1,0 +1,31 @@
+michal@centaurus:~/src/airvolute/dcs-deploy$ ./dcs_deploy.py flash xavier_nx 512 1.2 nvme minimal
+identifier: ['flash', 'xavier_nx', '512', '1.2', 'nvme', 'minimal']
+prev_identifier: []
+matched configuration: config_8
+Resources for your config are already downloaded!
+identifier: ['flash', 'xavier_nx', '512', '1.2', 'nvme', 'minimal']
+
+
+
+Setting up nvidia-l4t-init (35.4.1-20230801124926) ...
+dpkg: dependency problems prevent configuration of nvidia-l4t-jetsonpower-gui-tools:
+ nvidia-l4t-jetsonpower-gui-tools depends on python3-tk; however:
+  Package python3-tk is not installed.
+ nvidia-l4t-jetsonpower-gui-tools depends on python3-matplotlib; however:
+  Package python3-matplotlib is not installed.
+
+dpkg: error processing package nvidia-l4t-jetsonpower-gui-tools (--install):
+ dependency problems - leaving unconfigured
+Setting up nvidia-l4t-libvulkan (35.4.1-20230801124926) ...
+Setting up nvidia-l4t-multimedia-utils (35.4.1-20230801124926) ...
+Setting up nvidia-l4t-nvfancontrol (35.4.1-20230801124926) ...
+Setting up nvidia-l4t-nvpmodel (35.4.1-20230801124926) ...
+dpkg: dependency problems prevent configuration of nvidia-l4t-nvpmodel-gui-tools:
+ nvidia-l4t-nvpmodel-gui-tools depends on gir1.2-appindicator3-0.1; however:
+  Package gir1.2-appindicator3-0.1 is not installed.
+
+dpkg: error processing package nvidia-l4t-nvpmodel-gui-tools (--install):
+ dependency problems - leaving unconfigured
+Setting up nvidia-l4t-nvsci (35.4.1-20230801124926) ...
+Setting up nvidia-l4t-oem-config (35.4.1-20230801124926) ...
+Setting up nvidia-l4t-openwfd (35.4.1-20230801124926) ...

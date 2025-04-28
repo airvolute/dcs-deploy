@@ -1,0 +1,4 @@
+# jetson naming
+https://docs.nvidia.com/jetson/archives/r35.2.1/DeveloperGuide/text/IN/QuickStart.html#jetson-modules-and-configurations
+- Jetson Orin NX (P3767-0000) - p3509-a02+p3767-0000
+- Jetson Xavier NX 8 GB-DRAM (P3668-0001) and 16 GB-DRAM (P3668-0003) (Production)

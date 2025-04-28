@@ -1,0 +1,15 @@
+---
+functions:
+    flash-gen-prepare-is-needed:
+        type: "cmd"
+        cmd: "apply_odmfuse.sh"
+        args:
+            - "--is-fused"
+            - "<BOARD_CONFIG_NAME>"
+
+    flash-gen-prepare:
+        type: "cmd"
+        cmd: "apply_odmfuse.sh"
+        args:
+            - "--fuse"
+            - "<BOARD_CONFIG_NAME>"

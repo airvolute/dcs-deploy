@@ -1,0 +1,56 @@
+@log1
+67: /home/michal/.dcs_deploy/flash/orin_nx_nvme_2.0_51_airvolute/Linux_for_Tegra/flash.sh: line 2860: python: command not found
+1. added alias python=python3
+
+2. connected USB connector
+[   0.1917 ] tegrahost_v2 --chip 0x23 0 --updatesigheader mb1_bct_MB1_aligned_sigheader.bct.encrypt mb1_bct_MB1_aligned_sigheader.bct.hash zerosbk
+[   0.1936 ] Error: Skip generating mem_bct because sdram_config is not defined
+[   0.1937 ] Error: Skip generating mem_bct because sdram_config is not defined
+[   0.1937 ] Copying signatures
+[   0.1944 ] tegrahost_v2 --chip 0x23 0 --partitionlayout readinfo_t234_min_prod.xml.bin --updatesig images_list_signed.xml
+[   0.2038 ] mb1_t234_prod_aligned_sigheader.bin.encrypt filename is from images_list
+[   0.2041 ] psc_bl1_t234_prod_aligned_sigheader.bin.encrypt filename is from images_list
+[   0.2041 ] Boot Rom communication
+[   0.2049 ] tegrarcm_v2 --new_session --chip 0x23 0 --uid --download bct_br br_bct_BR.bct --download mb1 mb1_t234_prod_aligned_sigheader.bin.encrypt --download psc_bl1 psc_bl1_t234_prod_aligned_sigheader.bin.encrypt --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt
+[   0.2056 ] BR_CID: 0x80012344705DD5002800000018008100
+[   0.2610 ] Sending bct_br
+[   0.3160 ] ERROR: might be timeout in USB write.
+Error: Return value 3
+Command tegrarcm_v2 --new_session --chip 0x23 0 --uid --download bct_br br_bct_BR.bct --download mb1 mb1_t234_prod_aligned_sigheader.bin.encrypt --download psc_bl1 psc_bl1_t234_prod_aligned_sigheader.bin.encrypt --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt
+Reading board information failed.
+Error: failed to generate images
+Cleaning up...
+sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1  -c tools/kernel_flash/flash_l4t_external_custom.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml"  --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 internal
+Generating images was not sucessfull! ret = 1
+Exitting!
+
+https://forums.developer.nvidia.com/t/unable-to-clone-jetson-orin-with-jetpack-5-0-2-using-flash-sh-error-might-be-timeout-in-usb-write/230088/5
+
+Changed USB connector:
+[   0.1917 ] tegrahost_v2 --chip 0x23 0 --updatesigheader mb1_bct_MB1_aligned_sigheader.bct.encrypt mb1_bct_MB1_aligned_sigheader.bct.hash zerosbk
+[   0.1936 ] Error: Skip generating mem_bct because sdram_config is not defined
+[   0.1937 ] Error: Skip generating mem_bct because sdram_config is not defined
+[   0.1937 ] Copying signatures
+[   0.1944 ] tegrahost_v2 --chip 0x23 0 --partitionlayout readinfo_t234_min_prod.xml.bin --updatesig images_list_signed.xml
+[   0.2038 ] mb1_t234_prod_aligned_sigheader.bin.encrypt filename is from images_list
+[   0.2041 ] psc_bl1_t234_prod_aligned_sigheader.bin.encrypt filename is from images_list
+[   0.2041 ] Boot Rom communication
+[   0.2049 ] tegrarcm_v2 --new_session --chip 0x23 0 --uid --download bct_br br_bct_BR.bct --download mb1 mb1_t234_prod_aligned_sigheader.bin.encrypt --download psc_bl1 psc_bl1_t234_prod_aligned_sigheader.bin.encrypt --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt
+[   0.2056 ] BR_CID: 0x80012344705DD5002800000018008100
+[   0.2610 ] Sending bct_br
+[   0.3160 ] ERROR: might be timeout in USB write.
+Error: Return value 3
+Command tegrarcm_v2 --new_session --chip 0x23 0 --uid --download bct_br br_bct_BR.bct --download mb1 mb1_t234_prod_aligned_sigheader.bin.encrypt --download psc_bl1 psc_bl1_t234_prod_aligned_sigheader.bin.encrypt --download bct_mb1 mb1_bct_MB1_sigheader.bct.encrypt
+Reading board information failed.
+Error: failed to generate images
+Cleaning up...
+sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1  -c tools/kernel_flash/flash_l4t_external_custom.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml"  --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 internal
+Generating images was not sucessfull! ret = 1
+Exitting!
+
+
+https://community.stereolabs.com/t/zedbox-not-working-unable-to-reset-or-boot/3097/3
+more notes for 
+https://github.com/balena-os/jetson-flash/issues/110
+
+changing to jetson_linux_r35.3.1

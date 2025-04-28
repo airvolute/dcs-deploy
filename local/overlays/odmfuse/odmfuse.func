@@ -1,0 +1,150 @@
+if [ -z $SCRIPT_dir ]; then
+    SCRIPT_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+fi
+
+source "${SCRIPT_dir}/tools.func"
+
+# please setup this variables before using this functions
+RSA_PEM_fname=${RSA_PEM_fname:-${RESOURCES_dir}/rsa.pem}
+SBK_KEY_fname=${SBK_KEY_fname:-${RESOURCES_dir}/sbk.key}
+FUSE_XML_fname=${FUSE_XML_fname:-${RESOURCES_dir}/fuse.xml}
+# also these global vars must be set before using functions
+global_var_prepared() {
+    [ -z "${L4T_dir}" ] && echo "Missing L4T_dir" && return 1
+    [ -z "${RESOURCES_dir}" ] && echo "Missing RESOURCES_dir" && return 2
+    return 0
+}
+
+# 0 - OK - files exist
+is_odm_fuses_generated() {
+    if [[ -f ${RSA_PEM_fname} && \
+          -f ${SBK_KEY_fname} && \
+          -f ${FUSE_XML_fname} ]]; then
+          return 0
+    fi
+    return 1
+}
+ODMFUSEREAD_RET=
+# env_vars_prepared() {
+#     BOARDSKU
+#     BOARDID
+#     FAB
+#     BOARDREV
+#     CHIP_SKU
+#     CHIPREV
+# }
+
+odmfuse() {
+    board_config_name=$1 #"jetson-orin-nano-devkit"
+    option=$2
+    env=""
+    test=""
+    blob=""
+    
+    
+    ! global_var_prepared && exit 5
+    
+    if [[ $option == "test" ]]; then
+        test="--test"
+    elif [[ $option == "blob" ]]; then
+        blob="--noburn --auth NS"
+        # for offline mode, env variables must be provided from environment
+        # this is example for orina nano 4G
+        env="BOARDSKU=0004 BOARDID=3767 FAB=300 BOARDREV=S.1 CHIP_SKU=00:00:00:D6 CHIPREV=1"
+    elif [[ ! -z $option ]]; then
+        echo "Unsupported parameter! $option"
+        return 1
+    fi
+
+    ! is_odm_fuses_generated && echo "Input files are not properly generated!" && exit 1
+    # check if files are generated
+    echo "Starting fusing"
+    run_sudo_identification
+    sudo $env ${L4T_dir}/odmfuse.sh -i 0x23 -k ${RSA_PEM_fname} -S ${SBK_KEY_fname} -X ${FUSE_XML_fname} ${blob} ${test} ${board_config_name}
+}
+
+cleanup_pid() {
+    echo "calling cleanup PID:$loop_pid, ret=$?"
+    [ ! -z $loop_pid ] && kill $loop_pid
+    if [ -z $ODMFUSEREAD_RET ]; then
+        return 3
+    fi
+    if [[ $ODMFUSEREAD_RET != 0 ]]; then
+        return 5
+    fi
+    return 0
+}
+
+print_dec_files() {
+        # Show resulting files
+        echo "[INFO] Decrypted files:"
+        echo "  RSA_PEM_fname = $RSA_PEM_fname"
+        echo "  SBK_KEY_fname = $SBK_KEY_fname"
+        echo "  FUSE_XML_fname = $FUSE_XML_fname"
+}
+
+is_device_fused() {
+    local board_cfg_name="$1"
+    local out_logs
+    local log_file="${L4T_dir}/odmfuseread.log"
+    
+    if [ -z ${board_cfg_name} ]; then 
+        echo "Please provide board_cfg_name!"
+        exit 4
+    fi
+    
+    ! global_var_prepared && exit 5
+
+    echo -n "[INFO] Checking fuse status via odmfuseread.sh. Please wait ..."
+    # Run fuse read and capture full output
+    run_sudo_identification
+    #trap 'cleanup_pid "$LINENO" "$?" "$BASH_COMMAND"' EXIT
+    disable_set_e_flag
+    odmfuseread_k_arg=""
+    odmfuseread_S_arg=""
+    if [ -f "${RSA_PEM_fname}" ]; then
+        odmfuseread_k_arg="-k ${RSA_PEM_fname}"
+    fi
+    if [ -f "${SBK_KEY_fname}" ]; then
+        odmfuseread_S_arg="-S ${SBK_KEY_fname}"
+    fi
+    while sleep 1; do printf "."; done &
+    loop_pid=$!
+    out_logs=$(sudo ${L4T_dir}/odmfuseread.sh -i 0x23 ${odmfuseread_k_arg} ${odmfuseread_S_arg} "$board_cfg_name")
+    ODMFUSEREAD_RET=$?
+    kill $loop_pid
+    loop_pid=""
+
+    echo ""
+    #echo "$out_logs - $ret"
+    echo "ret:$ODMFUSEREAD_RET"
+    echo "$out_logs" > "${log_file}" 
+    
+    if [[ $ODMFUSEREAD_RET != 0 ]]; then
+        echo "${out_logs}" | grep "SBK+PKC protected target board"
+        ret=$?
+        restore_set_e_flag
+        if [[ $ret == 0 ]]; then
+            echo "[INFO] Device IS fused "
+            return 0
+        fi
+        echo "[ERROR] Could not read fuses. Is the device in recovery mode?"
+        return 2
+    fi
+    # Extract BootSecurityInfo from either log or output file
+    local bootsec_info
+    bootsec_info=$(echo "$out_logs" | grep -i "^BootSecurityInfo:" | awk '{print $2}')
+    restore_set_e_flag
+    if [[ -z "$bootsec_info" ]]; then
+        echo "[ERROR] BootSecurityInfo not found in output."
+        return 2
+    fi
+
+    if [[ "$bootsec_info" == "00000000" ]]; then
+        echo "[INFO] Device is NOT fused (BootSecurityInfo = 0x0)."
+        return 1
+    else
+        echo "[INFO] Device IS fused (BootSecurityInfo = $bootsec_info)."
+        return 0
+    fi
+}

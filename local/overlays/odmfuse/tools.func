@@ -1,0 +1,370 @@
+secure_delete_file() {
+    local file="$1"
+
+    if [[ -z "$file" || ! -f "$file" ]]; then
+        echo "[ERROR] Target must be a valid file: $file" >&2
+        return 1
+    fi
+
+    local size
+    size=$(stat -c %s "$file")
+
+    if [[ "$size" -eq 0 ]]; then
+        #echo "[INFO] Skipping empty file: $file"
+        rm -f -- "$file"
+        return 0
+    fi
+
+    #echo "[INFO] Overwriting: $file (${size} bytes)"
+    dd if=/dev/urandom of="$file" bs=1 count="$size" conv=notrunc status=none
+
+    #echo "[INFO] Removing file: $file"
+    rm -f -- "$file"
+
+    echo "[INFO] Secure deleted: $file"
+    return 0
+}
+
+secure_delete_files() {
+    if [[ "$#" -lt 1 ]]; then
+        echo "[ERROR] No files provided to delete." >&2
+        return 1
+    fi
+
+    for file in "$@"; do
+        secure_delete_file $file
+    done
+}
+
+secure_delete_dir() {
+    local target_dir="$1"
+
+    if [[ -z "$target_dir" || ! -d "$target_dir" ]]; then
+        echo "[ERROR] Target must be a valid directory." >&2
+        return 1
+    fi
+
+#    echo "[INFO] Securely wiping files in: $target_dir"
+
+    # Iterate over all regular files
+    find "$target_dir" -type f | while IFS= read -r file; do
+        local size
+        size=$(stat -c %s "$file")
+
+        if [[ "$size" -gt 0 ]]; then
+            echo "[INFO] Overwriting: $file (${size} bytes)"
+            dd if=/dev/urandom of="$file" bs=1 count="$size" conv=notrunc status=none
+        else
+            echo "[INFO] Skipping empty file: $file"
+        fi
+    done
+
+#    echo "[INFO] Removing directory: $target_dir"
+    rm -rf -- "$target_dir"
+    echo "[INFO] Secure delete complete."
+    return 0
+}
+
+
+run_sudo_identification() {
+    /usr/bin/sudo /usr/bin/id > /dev/null
+}
+
+get_set_e_flag() {
+    if [[ "$-" == *e* ]]; then
+        _SET_E_STATE=1
+    else
+        _SET_E_STATE=0
+    fi
+}
+
+
+disable_set_e_flag() {
+    if [[ "$-" == *e* ]]; then
+        _SET_E_STATE=1
+        set +e
+    else
+        _SET_E_STATE=0
+    fi
+}
+
+enable_set_e_flag() {
+    if [[ "$-" == *e* ]]; then
+        _SET_E_STATE=1
+    else
+        _SET_E_STATE=0
+        set -e
+    fi
+}
+
+restore_set_e_flag() {
+    if [[ "${_SET_E_STATE}" == "1" ]]; then
+        set -e
+    else
+        set +e
+    fi
+    unset _SET_E_STATE
+}
+
+enable_xtrace() {
+    case "$-" in
+        *x*) _SET_XTRACE_STATE=1 ;;  # already enabled
+        *)   _SET_XTRACE_STATE=0 ;;  # not enabled
+    esac
+    set -x
+}
+
+disable_xtrace() {
+    case "$-" in
+        *x*) _SET_XTRACE_STATE=1 ;;  # currently enabled
+        *)   _SET_XTRACE_STATE=0 ;;  # already disabled
+    esac
+    set +x
+}
+
+recover_xtrace() {
+    if [[ "${_SET_XTRACE_STATE:-0}" == 1 ]]; then #when not set, disable debugging
+        set -x
+    else
+        set +x
+    fi
+    unset _SET_XTRACE_STATE
+}
+
+# Check APT packages
+check_apt_requirements() {
+    local required=("$@")
+    local missing=()
+    for pkg in "${required[@]}"; do
+        echo "$pkg"
+        dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+    done
+
+    if [ "${#missing[@]}" -ne 0 ]; then
+        echo "The following APT packages are missing:"
+        for pkg in "${missing[@]}"; do
+            echo "  $pkg"
+        done
+        echo "Install them using: sudo apt install ${missing[*]}"
+        return 1
+    fi
+    return 0
+}
+
+# Check Python3 pip packages
+check_python3_requirements() {
+    local required=("$@")
+    local missing=()
+    for pkg in "${required[@]}"; do
+        pip list | grep  $pkg 2>/dev/null || missing+=("$pkg")
+    done
+    
+    for pkg in "${required[@]}"; do
+        sudo pip list | grep  $pkg 2>/dev/null || missing+=("$pkg")
+    done
+
+    if [ "${#missing[@]}" -ne 0 ]; then
+        echo "The following Python3 pip packages are missing:"
+        for pkg in "${missing[@]}"; do
+            echo "  $pkg"
+        done
+        echo "Install them using: pip3 install ${missing[*]}"
+        return 1
+    fi
+    return 0
+}
+
+check_min_ubuntu_version() {
+    local required_version="$1"
+    local current_version
+
+    # Get current Ubuntu version (e.g., 20.04)
+    if ! current_version=$(lsb_release -rs 2>/dev/null); then
+        echo "ERROR: lsb_release not found!" >&2
+        return 2
+    fi
+
+    # Use dpkg to compare versions
+    if dpkg --compare-versions "$current_version" lt "$required_version"; then
+        echo "Current Ubuntu version ($current_version) is less than required ($required_version)." >&2
+        return 1
+    fi
+
+    return 0
+}
+
+check_write_permission() {
+    local file="$1"
+
+    if [[ -z "$file" ]]; then
+        echo "No file specified"
+        return 2
+    fi
+
+    if [[ -e "$file" ]]; then
+        # File exists: check if it's writable
+        if [[ ! -w "$file" ]]; then
+            echo "No write permission: $file"
+            return 1
+        fi
+    else
+        echo "File $file does't exist!"
+        return 3
+    fi
+    echo "Writable: $file"
+    return 0
+}
+
+#sed -i '/\* generation process\./,/\*\//c\ * updated by script\n' your_file.c
+         #/ * generation process./,/ *//c\ * generation process.\n * dad66eb4484983684b992fe54a648bb8\n */' jetson_user_key_pta.c
+replace_text_between_markers() {
+    local file="$1"
+    local start_marker="$2"
+    local end_marker="$3"
+    local replacement_text="$4"
+
+    if [[ ! -f "$file" ]]; then
+        echo "Error: file '$file' not found"
+        return 1
+    fi
+
+    # Escape backslashes and newlines for sed
+    local formatted_text
+    # Append start and the end marker
+    formatted_text="$start_marker$replacement_text${end_marker}"
+    echo "$formatted_text"
+    
+    # escape start and end marker &.*;\{}[]
+    #end_marker=$(printf '%s' "$end_marker" | sed 's/[&.*\;/\\\{\}\[\]]/\\&/g; s/$//' )
+    end_marker=$(printf '%s' "$end_marker" | sed 's/[][\/.^$*]/\\&/g')
+    #start_marker=$(printf '%s' "$start_marker" | sed 's/[&.*\;/\\\{\}\[\]]/\\&/g; s/$//' )
+    start_marker=$(printf '%s' "$start_marker" | sed 's/[][\/.^$*]/\\&/g')
+    
+    # Replace the block including markers
+    check_write_permission "$file"
+    ret=$?
+    if [[ $ret == 0 ]]; then
+        use_sudo=""
+    elif [[ $ret == 1 ]]; then
+        use_sudo="sudo"
+    else
+        return 1
+    fi
+    $($use_sudo sed -i "/${start_marker}/,/${end_marker}/c\\${formatted_text}" "$file")
+    return $?
+}
+# for indent use "\t" or spaces...
+format_hex_str_to_c_data_array(){
+    local str_hex="$1"
+    local indent="$2"
+    str_hex=${str_hex,,}  # convert to lowercase
+    new_str_hex=${str_hex//[^a-f0-9]/}  # remove anything not hex
+    if [[ "$new_str_hex" != "$str_hex" ]]; then
+        return 1
+    fi
+
+    # Format as C array: 8 bytes per line
+    local new_c_array=""
+    for ((i=0; i<${#str_hex}; i+=2)); do
+        if (( (i % 16) == 0 )); then
+            new_c_array+="$indent"
+        fi
+        byte="0x${str_hex:$i:2}"
+        new_c_array+="$byte, "
+        if (( (i + 2) % 16 == 0 )); then
+            new_c_array+="\n"
+        fi
+    done
+    new_c_array=${new_c_array%, }  # trim trailing comma
+    new_c_array=${new_c_array//$'\n'/'\n'}  # escape literal newline for sed
+    echo "${new_c_array}"
+    return 0
+}
+# 1 - is number
+is_num(){
+    local input="$1"
+    if [[ "$input" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+    return 0
+}
+
+#input orin_nano_4gb_nvme_1.2_none_515_full
+l4t_extract_version(){
+    local input="$1"
+
+    # Split string by underscore and get second-to-last part
+    local version_part
+    version_part=$(echo "$input" | awk -F'_' '{print $(NF-1)}')
+
+    # Check if it's a number (integer)
+    if [[ "$version_part" =~ ^[0-9]+$ ]]; then
+        echo "$version_part"
+        return 0
+    fi
+    echo "Invalid version: $version_part" >&2
+    return 1
+}
+
+extract_version_from_dcs_deploy_L4T_path(){
+    local path=$1
+    # remove Linux_for_tegra
+    path="${path%/Linux_for_Tegra}"
+    local input=$(basename "$path")
+    l4t_extract_version $input
+    ret=$?
+}
+
+set_L4T_ver(){
+    # get L4T version name if exist from global variable
+    if [ -z "$L4T_ver" ]; then
+        L4T_ver=$(extract_version_from_dcs_deploy_L4T_path ${L4T_dir})
+        if [[ $? != 0 ]]; then
+            echo "could not detect L4T version! Please provide L4T_ver env var!"
+            return 3
+        fi
+        echo "Detected version L4T_ver=$L4T_ver"
+    else
+        echo "Provided version L4T_ver=$L4T_ver" 
+    fi
+    
+    is_num $L4T_ver
+    if [[ $? == 0 ]]; then
+        echo "$L4T_ver is not number!"
+        return 1
+    fi
+    return 0
+}
+
+activate_user_group() {
+    local group="$1"
+
+    if [ -z "$group" ]; then
+        echo "Usage: activate_group <group>" >&2
+        return 1
+    fi
+
+    if ! getent group "$group" > /dev/null; then
+        echo "Group '$group' does not exist." >&2
+        return 2
+    fi
+
+    if ! groups | grep -qw "$group"; then
+        echo "User is not a member of group '$group'. Adding temporarily using newgrp..."
+        newgrp "$group"
+    else
+        echo "User already in group '$group'."
+    fi
+    return 0
+}
+
+create_archive_tar_gz(){
+    local in_dir=$1
+    local out_dir=$2
+    local archive_name=$3
+    
+    archive_path="${out_dir}/${archive_name}"
+
+    echo "Creating archive: $archive_path"
+    tar --dereference -czf "$archive_path" -C "$in_dir/" .
+}
