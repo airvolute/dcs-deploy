@@ -780,6 +780,7 @@ class DcsDeploy:
         os.chdir(self.l4t_root_dir)
         #set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
+        self.board_system_vars=""
         
         if self.config['device'] == 'xavier_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
@@ -798,6 +799,7 @@ class DcsDeploy:
         elif self.config['device'] == 'orin_nano_4gb':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0004"
             self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+            #self.board_system_vars="ADDITIONAL_DTB_OVERLAY_OPT=BootOrderNvme.dtbo SKIP_EEPROM_CHECK=1 BOARDSKU=0004 BOARDID=3767 FAB=300 BOARDREV=H.0 CHIPID=0x23 CHIP_SKU=00:00:00:D6"
         else:
             print("Unknown device! [%s] exitting" % self.config['device'])
             exit(8)
@@ -835,17 +837,18 @@ class DcsDeploy:
 
         # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
         # flash internal emmc"
+        env_vars = ""
         if self.config['storage'] == 'emmc':
             ret = cmd_exec(f"sudo ./{self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
         # flash external nvme drive
         elif self.config['storage'] == 'nvme':
             #file to check: initrdflashparam.txt - contains last enterred parameters
-            env_vars = ""
+            env_vars = self.board_system_vars
             opt_app_size_arg = ""
             external_only = "--external-only" # flash only external device
             
             if self.args.ab_partition == True:
-                env_vars = "ROOTFS_AB=1"
+                env_vars += " ROOTFS_AB=1"
                 if self.args.rootfs_type == "minimal":
                     opt_app_size = 4
                 else:
