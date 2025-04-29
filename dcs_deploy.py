@@ -782,23 +782,31 @@ class DcsDeploy:
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         self.board_system_vars=""
         
-        if self.config['device'] == 'xavier_nx':
-            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
-            self.orin_options = ""
-        elif self.config['device'] == 'orin_nx':
-            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+        self.gen_external_only = False
+        
+        self.flashing_network=""
+        if self.config['storage'] == 'nvme':
+            self.flashing_network = "--network usb0"
+
+        self.internal_flash_options = ""
+        if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
             # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
             # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+            self.internal_flash_options = f'-p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+        # TODO test flashing XAVIER NX with emmc and nvme separately - maybe this part is not necessary!!!
+        #elif self.config['device'] == "xavier_nx":
+        #    self.internal_flash_options = f'-p "-c bootloader/t186ref/cfg/flash_t194_uefi_qspi_p3668.xml"'
+
+        if self.config['device'] == 'xavier_nx':
+            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+        elif self.config['device'] == 'orin_nx':
+            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
         elif self.config['device'] == 'orin_nx_8gb':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0001"
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
         elif self.config['device'] == 'orin_nano_8gb':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0003"
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
         elif self.config['device'] == 'orin_nano_4gb':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0004"
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
             #self.board_system_vars="ADDITIONAL_DTB_OVERLAY_OPT=BootOrderNvme.dtbo SKIP_EEPROM_CHECK=1 BOARDSKU=0004 BOARDID=3767 FAB=300 BOARDREV=H.0 CHIPID=0x23 CHIP_SKU=00:00:00:D6"
         else:
             print("Unknown device! [%s] exitting" % self.config['device'])
@@ -830,7 +838,7 @@ class DcsDeploy:
             print("Images already generated! Skipping generating images!")
             return 0
 
-        self.prepare_status.set_processing_step("generate_images")
+        
         print("-"*80)
         print("Generating images! ...")
         ret = -2
@@ -839,14 +847,15 @@ class DcsDeploy:
         # flash internal emmc"
         env_vars = ""
         if self.config['storage'] == 'emmc':
+            self.prepare_status.set_processing_step("generate_images-emmc")
             ret = cmd_exec(f"sudo ./{self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
         # flash external nvme drive
         elif self.config['storage'] == 'nvme':
             #file to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = self.board_system_vars
             opt_app_size_arg = ""
-            external_only = "--external-only" # flash only external device
-            
+            #external_only = True # flash only external device
+            external_only = False
             if self.args.ab_partition == True:
                 env_vars += " ROOTFS_AB=1"
                 if self.args.rootfs_type == "minimal":
@@ -854,18 +863,28 @@ class DcsDeploy:
                 else:
                     opt_app_size = 8
                 opt_app_size_arg = f"-S {opt_app_size}GiB"
-                external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
 
             if self.args.app_size is not None:
                 opt_app_size_arg = f"-S {self.args.app_size}GiB"
-
-            if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
-                external_only = "" # don't flash only external device
-                
+               
             cmd_exec("pwd")
-            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} " +
-                           f"-c {self.ext_partition_layout} {self.orin_options} --showlogs {self.board_name} {self.rootdev}", print_command=True)
+            append=""
+            if not self.gen_external_only:
+                print("Generating internal memory! ...")
+                self.prepare_status.set_processing_step("generate_images-internal")
+                #./${flash_script_path} -u ./rsa.pem -v ./sbk.key $uefi_keys_opt --no-flash --network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" --showlogs ${board_config_name} internal
+                ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} --no-flash {self.flashing_network} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
+                self.prepare_status.set_status(ret)
+                append = "--append"
+            
+            print("Generating external memory! ...")
+            self.prepare_status.set_processing_step("generate_images-external")
+            #sudo ROOTFS_ENC=1 ./${flash_script_path} -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key  -i ${OUT_dir}/sym2_t234.key -S ${partition_size} --no-flash --network usb0 --showlogs
+            #  --external-device ${nvme_device} -c ./tools/kernel_flash/flash_l4t_t234_nvme_rootfs_enc.xml --external-only --append  ${board_config_name} external
+            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {self.flashing_network} --showlogs " + 
+                           f"{self.external_device} -c {self.ext_partition_layout} --external-only {append} {self.board_name} {self.rootdev}", print_command=True)
+            
         self.prepare_status.set_status(ret, last_step= True)
         return ret
 
@@ -886,7 +905,7 @@ class DcsDeploy:
         self.prepare_status.set_processing_step("flash_only")
         # Run sudo identification if not enterred
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
-        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.orin_options} {self.board_name} {self.rootdev}", print_command=True)
+        ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.flashing_network} {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
 
 
