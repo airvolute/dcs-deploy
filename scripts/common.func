@@ -1,0 +1,28 @@
+
+part_xml_update_num_sectors() {
+    local input_file="$1"
+    local new_sectors="$2"
+    local output_file="$3"
+
+    if [[ ! -f "$input_file" ]]; then
+        echo "Error: Input file '$input_file' not found."
+        return 1
+    fi
+
+    if [[ -z "$new_sectors" ]]; then
+        echo "Error: No new sectors number provided."
+        return 2
+    fi
+
+    # If output filename not provided, generate based on input
+    if [[ -z "$output_file" ]]; then
+        local filename_ext="${input_file##*.}"
+        local filename_base="${input_file%.*}"
+        output_file="${filename_base}_custom.${filename_ext}"
+    fi
+
+    # Replace NUM_SECTORS pattern and save to output
+    sed "s/NUM_SECTORS/${new_sectors}/g" "$input_file" > "$output_file"
+
+    echo "Updated file saved to: $output_file"
+}
