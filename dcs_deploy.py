@@ -24,6 +24,17 @@ def cmd_exec(command_line:str, print_command = False) -> int:
         print("Exitting!")
         exit(5)
 
+# Usage:
+# call_bash_function("tools.func", "update_num_sectors", "partition_layout.xml", "123456")
+def call_bash_function(script_file: str, function_name: str, use_sudo: bool, *args) -> int:
+    args_joined = " ".join(args)
+    sudo=""
+    if use_sudo:
+        sudo="sudo"
+    full_command = f'{sudo} bash -c "source {script_file} && {function_name} {args_joined}"'
+    return cmd_exec(full_command, print_command=True)
+
+
 def check_and_create_symlink(link_path, target_path):
     """
     Check if a symbolic link exists at link_path and points to target_path.
@@ -209,6 +220,7 @@ class DcsDeploy:
         self.selected_config_name = None
         self.load_db()
         self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
+        self.dsc_deploy_app_dir = os.path.abspath(os.path.join('.'))
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
@@ -245,6 +257,10 @@ class DcsDeploy:
 
         opt_app_size_help = 'Set APP partition size in GB. Use when you get "No space left on device" error while flashing custom rootfs'
         subparser.add_argument('--app_size', help=opt_app_size_help)
+
+        opt_nvme_disk_size_help = 'Set NVME disk size in bytes necessary for preparing partition layout. Use disk tools eg.'\
+                                  '`fdisk -l /dev/<your disc> to read number. Default: 128035676160 (128GiB)'
+        subparser.add_argument('--nvme_disk_size', help=opt_nvme_disk_size_help, type=int, default=128035676160)
 
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
@@ -775,6 +791,25 @@ class DcsDeploy:
         self.config['storage'] = self.args.storage
 
         self.selected_config_name = config
+    
+    # default size 128GiB
+    def get_ext_partition_layout_file(self, ab_partition, rfs_enc, nvme_disk_size_B=128035676160):
+        src_part_layout_file_name = ""
+        path_prefix = "tools/kernel_flash/flash_l4t_nvme"
+        
+        rootfs_prefix = "_rootfs" if ab_partition or rfs_enc else ""
+        ab = "_ab" if ab_partition == True else ""
+        enc = "_enc" if rfs_enc == True else ""
+        src_part_layout_file_base_name=f"{path_prefix}{rootfs_prefix}{ab}{enc}"
+        src_part_layout_file_name =  os.path.abspath(f"{src_part_layout_file_base_name}.xml")
+        print(f"selecting source partition file: {src_part_layout_file_name}")
+        # update partition number of sectors and generate new xml <file>_custom.xml
+        ret = call_bash_function(f"{self.dsc_deploy_app_dir}/scripts/common.func", "part_xml_update_num_sectors", True, src_part_layout_file_name, str(nvme_disk_size_B//512))
+        if ret != 0:
+            raise  Exception(f'part_xml_update_num_sectors returned {ret}')
+        out_part_layout_file_name=f"{src_part_layout_file_base_name}_custom.xml"
+        return os.path.relpath(out_part_layout_file_name)
+
 
     def setup_initrd_flashing(self):
         os.chdir(self.l4t_root_dir)
@@ -818,30 +853,9 @@ class DcsDeploy:
         elif self.config['storage'] == 'nvme':
             self.rootdev = "external"
             self.external_device = "--external-device nvme0n1p1 "
-            if self.args.ab_partition == True:
-                # setup multiple app partitions
-                self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
-            else:
-                print("Unknown device! [%s] exitting" % self.config['device'])
-                exit(8)
-
-            if self.config['storage'] == 'emmc':
-                self.rootdev = "mmcblk0p1"
-                self.external_device = ""
-            elif self.config['storage'] == 'nvme':
-                self.rootdev = "external"
-                self.external_device = "--external-device nvme0n1p1 "
-                if self.args.ab_partition == True:
-                    # setup multiple app partitions
-                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
-                else:
-                    # setup no multiple app partitions
-                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external_custom.xml')
-            else:
-                print("Unknown storage [%s]! exitting" % self.config['storage'])
-                exit(9)
-
-        # setup for JP 62
+            self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, False, self.args.nvme_disk_size)
+            print(f"Selected ext_partition_layout: {self.ext_partition_layout}")
+            exit(0)
         else:
             if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
