@@ -36,6 +36,7 @@ validate_initialization() {
         echo "Error: One or more initialization variables are not set."
         echo "Ensure all variables are provided during initialization:"
         echo "L4T_rootfs_path, target_device, jetpack_version, hwrev, board_expansion, storage, rootfs_type"
+        print_variables
         exit 1
     fi
 }
