@@ -14,6 +14,8 @@ init_variables() {
     validate_L4T_rootfs_path
 }
 
+INIT_VAR_NUM=7
+
 # Function to validate that L4T_rootfs_path exists
 validate_L4T_rootfs_path() {
     if [ -z "$L4T_rootfs_path" ]; then
