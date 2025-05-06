@@ -9,6 +9,9 @@ from threading import Thread, Event
 import time
 from urllib.parse import urlparse
 import sys as _sys
+import yaml
+from typing import Dict, List, Optional
+from pathlib import Path
 
 dcs_deploy_version = "3.0.0"
 
@@ -209,7 +212,100 @@ class ProcessingStatus:
         if group == None:
             group = self.group
         return self.status[group]["status"]
-   
+
+
+class OverlayFunction:
+    def __init__(self, name: str, fn_type:str, overlay: str, cmd: str, args: List[str], env:str,  options: List):
+        self.name = name
+        self.overlay = overlay
+        self.cmd = cmd
+        self.args = args
+        self.type = fn_type
+        self.env = env
+        self.options = options
+
+    def resolve(self, keymap: Dict[str, str], general_args) -> str:
+        resolved_args = []
+        for arg in self.args:
+            if arg.startswith("<") and arg.endswith(">"):
+                key = arg.strip("<>")
+                if key not in keymap:
+                    raise ValueError(f"[{self.name}] Missing value for key: <{key}> in overlay '{self.overlay}'")
+                resolved_args.append(keymap[key])
+            else:
+                resolved_args.append(arg)
+        return f"{self.cmd} {general_args} {' '.join(resolved_args)}"
+
+
+class FunctionOverlayRegistry:
+    def __init__(self, overlays_base_path, overlay_args):
+        self.keymap = {}
+        self._fucnt_overlays: List[str] = []
+        self._registry: Dict[str, List[OverlayFunction]] = {}
+        self.overlays_base_path : Path = overlays_base_path
+        self.register_yaml: str = "register.yaml"
+        self.overlay_args = overlay_args
+
+    def register_overlay(self, overlay_name: str):
+        if overlay_name in self._fucnt_overlays:
+            raise ValueError(f"Overlay '{overlay_name}' already registered")
+        
+        
+        overlay_register_file_path = self.overlays_base_path / overlay_name / self.register_yaml
+        if not overlay_register_file_path.exists():
+            print("Overlay do not register functions!")
+            return 1
+
+        
+        with open(overlay_register_file_path, 'r') as f:
+            data = yaml.safe_load(f)
+
+        valid_fn_names = {'flash-gen-pre', 'flash-gen-internal', 'flash-gen-mid', 'flash-gen-external', 'flash-cleanup', 'get-flash-type'}
+
+        for fn_name, fn_data in data.get('functions', {}).items():
+            if fn_name not in valid_fn_names:
+                raise ValueError(f"Function '{fn_name}' is not allowed")
+
+            cmd = fn_data.get('cmd', "")
+            args = fn_data.get('args', [])
+            env = fn_data.get('get-env', "")
+            fn_type = fn_data.get('type',"")
+            options = fn_data.get('options',[])
+
+            fn = OverlayFunction(fn_name, fn_type, overlay_name, cmd, args, env, options)
+            self._registry.setdefault(fn_name, []).append(fn)
+
+        self._fucnt_overlays.append(overlay_name)
+        print(f"Overlay {overlay_name} added")
+        return 0
+
+    def set_special_vars(self, keymap: Dict[str, str]):
+        """Set known values for placeholders like BOARD_CONFIG_NAME"""
+        self.keymap = keymap
+    
+    def add_special_var(self, var: Dict[str, str] ):
+        self.keymap = {**self.keymap, **var }
+
+    def get(self, fn_name: str) -> List[Dict]:
+        out=[]
+        for fn in self._registry[fn_name]:
+            if fn.type == "lt4-initrd-params":
+                out.append(
+                    {
+                        "overlay": fn.overlay,
+                        "cmd": fn.resolve(self.keymap, self.overlay_args),
+                        "env":fn.env
+                    })
+            elif fn.type == "cmd":
+                out.append(
+                    {
+                        "overlay": fn.overlay,
+                        "cmd": fn.resolve(self.keymap, self.overlay_args),
+                    })
+            elif fn.type == "option":
+                out.append(fn.options)
+        return out
+
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
