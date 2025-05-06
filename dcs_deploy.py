@@ -260,7 +260,7 @@ class FunctionOverlayRegistry:
         with open(overlay_register_file_path, 'r') as f:
             data = yaml.safe_load(f)
 
-        valid_fn_names = {'flash-gen-pre', 'flash-gen-internal', 'flash-gen-mid', 'flash-gen-external', 'flash-cleanup', 'get-flash-type'}
+        valid_fn_names = {'flash-gen-pre', 'flash-gen-pre-is-needed', 'flash-gen-internal', 'flash-gen-mid', 'flash-gen-external', 'flash-cleanup', 'get-flash-type'}
 
         for fn_name, fn_data in data.get('functions', {}).items():
             if fn_name not in valid_fn_names:
