@@ -778,44 +778,40 @@ class DcsDeploy:
     def install_overlays(self, is_last_install_step=False):
         overlays = self.list_local_overlays()
 
-        dirs = overlays["dirs"]
-        cnt = len(dirs)
-        for i, overlay_entry in enumerate(dirs, start=1):
-            if isinstance(overlay_entry, dict):
-                overlay, args = next(iter(overlay_entry.items()))
-            else:
-                overlay = overlay_entry
-                args = {}
+        total = sum(len(lst) for lst in overlays.values())
+        step_idx = 0
 
-            print(f"[{i}/{cnt}] installing overlay {overlay}")
-            self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
-            ret = self.install_overlay_dir(overlay, args)
-            self.prepare_status.set_status(ret, last_step=((i == cnt) and is_last_install_step))
+        for file_or_dir, entries in overlays.items():
+            for overlay_entry in entries:
+                step_idx += 1
 
-            with_error = "." if not ret else " with error!"
-            print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+                if isinstance(overlay_entry, dict):
+                    overlay, args = next(iter(overlay_entry.items()))
+                else:
+                    overlay = overlay_entry
+                    args = {}
 
-            if ret:
-                exit(10)
+                print(f"[{step_idx}/{total}] installing overlay {overlay}")
+                self.prepare_status.set_processing_step(f"install_local_overlay@{overlay}")
 
-        files = overlays["files"]
-        cnt = len(files)
-        for i, overlay_entry in enumerate(files, start=1):
-            if isinstance(overlay_entry, dict):
-                overlay, args = next(iter(overlay_entry.items()))
-            else:
-                overlay = overlay_entry
-                args = {}
+                if file_or_dir == "dirs":
+                    ret = self.install_overlay_dir(overlay, args)
+                else:  # file_or_dir == "files"
+                    ret = self.install_overlay_file(overlay, args)
 
-            print(f"[{i}/{cnt}] installing overlay {overlay}")
-            self.prepare_status.set_processing_step("install_local_overlay@" + overlay)
-            ret = self.install_overlay_file(overlay, args)
-            self.prepare_status.set_status(ret, last_step=((i == cnt) and is_last_install_step))
+                is_last = step_idx == total and is_last_install_step
+                self.prepare_status.set_status(ret, last_step=is_last)
 
-            with_error = "." if not ret else " with error!"
-            print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
-            if ret:
-                exit(11)
+                with_error = "." if not ret else " with error!"
+                print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+
+                if ret:
+                    if file_or_dir == "dirs":
+                        return 10
+                    else:
+                        return 11
+        return 0
+
 
     def get_base_overlay_params(self):
         return " ".join((
