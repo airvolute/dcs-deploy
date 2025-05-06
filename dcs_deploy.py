@@ -721,6 +721,16 @@ class DcsDeploy:
             if ret:
                 exit(11)
 
+    def get_base_overlay_params(self):
+        return " ".join((
+                self.rootfs_extract_dir, 
+                self.args.target_device, 
+                self.args.jetpack, 
+                self.args.hwrev, 
+                self.args.board_expansion, 
+                self.args.storage, 
+                self.args.rootfs_type))
+
     def install_overlay_file(self, overlay_name, custom_args=None):
         if custom_args is None:
             custom_args = {}
@@ -729,11 +739,7 @@ class DcsDeploy:
 
         custom_args_str = " ".join(f"{k}={v}" for k, v in custom_args.items())
 
-        cmd = (
-            f"sudo {overlay_script_name} {self.rootfs_extract_dir} "
-            f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} {self.args.board_expansion} "
-            f"{self.args.storage} {self.args.rootfs_type} {custom_args_str}"
-        )
+        cmd = (f"sudo {overlay_script_name} {self.get_base_overlay_params()} {custom_args_str}")
         ret = cmd_exec(cmd, print_command=True)
         return ret
     
@@ -745,11 +751,7 @@ class DcsDeploy:
 
         custom_args_str = " ".join(f"{k}={v}" for k, v in custom_args.items())
 
-        cmd = (
-            f"sudo {overlay_script_name} {self.rootfs_extract_dir} "
-            f"{self.args.target_device} {self.args.jetpack} {self.args.hwrev} {self.args.board_expansion} "
-            f"{self.args.storage} {self.args.rootfs_type} {custom_args_str}"
-        )
+        cmd = (f"sudo {overlay_script_name} {self.get_base_overlay_params()} {custom_args_str}")
         ret = cmd_exec(cmd, print_command=True)
         return ret
 
