@@ -665,10 +665,14 @@ class DcsDeploy:
         
 
     def prepare_sources_production(self):
-        if self.prepare_status.get_status() == True and self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]):
+        is_same, status = self.prepare_status.compare_states("prepare", "install_local_overlay@", self.get_local_overlays())
+        if self.prepare_status.get_status() == True and self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and is_same:
             print("Binaries already prepared!. Skipping!")
             return 0
         else:
+            if not is_same:
+                print(f"local overlays was changed!- {status}")
+                print("Sources must be regenerated!")
             self.cleanup_flash_dir()
             self.prepare_status.load()
 
@@ -745,15 +749,19 @@ class DcsDeploy:
                 
         return None
     
-    def get_cfg_local_overlays(self):
+    def get_local_overlays(self, src="config"):
         print("overlay dir:", self.local_overlay_dir)
+        allowed_src=["config", "directory"]
+        if src not in allowed_src:
+            raise ValueError(f"Wrong src={src}")
 
         if hasattr(self, "config") and "local_overlays" in self.config:
             print("Selecting overlays list from configuration['local_overlays']")
             cfg_overlays_list = self.config["local_overlays"]
-        else:
-            print("WARNING! Selecting overlays list from local/overlays directory!")
+        if src == "directory":
+            print("Selecting overlays list from local/overlays directory!")
             cfg_overlays_list = os.listdir(self.local_overlay_dir)
+            cfg_overlays_list.remove("lib")
 
         print("cfg_overlays_list: " + str(cfg_overlays_list))
         return cfg_overlays_list
@@ -762,7 +770,7 @@ class DcsDeploy:
         return os.path.join(self.local_overlay_dir, overlay_name)
 
     def register_local_overlays(self):
-        all_cfg_overlays_list = self.get_cfg_local_overlays()
+        all_cfg_overlays_list = self.get_local_overlays()
 
         registred_local_overlays = []
         # prepare function overlays
@@ -1082,7 +1090,7 @@ class DcsDeploy:
     def run(self):
         if self.args.command == 'list':
             if self.args.local_overlays == True:
-                self.register_local_overlays()
+                self.get_local_overlays("directory")
                 quit()
             self.list_all_versions()
             quit()
