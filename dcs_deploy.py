@@ -750,6 +750,8 @@ class DcsDeploy:
         dirs = []
         files = []
 
+        self.functionOnverlays = FunctionOverlayRegistry(self.local_overlay_dir, self.get_base_overlay_params())
+
         for item in all_overlays_list:
             if isinstance(item, dict):
                 overlay_name = next(iter(item))
@@ -764,6 +766,7 @@ class DcsDeploy:
 
             if os.path.isdir(overlay_path):
                 dirs.append(item)
+                self.functionOnverlays.register_overlay(overlay_name) #function overlays support only directories
             elif os.path.isfile(overlay_path):
                 files.append(item)
 
