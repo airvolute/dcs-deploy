@@ -754,7 +754,7 @@ class DcsDeploy:
 
         for item in all_overlays_list:
             if isinstance(item, dict):
-                overlay_name = next(iter(item))
+                overlay_name = next(iter(item)) #return key when config is used eg. item = {"secureboot": {"config": "custom.yaml"}} -> "secureboot"
             else:
                 overlay_name = item
 
