@@ -857,7 +857,6 @@ class DcsDeploy:
             self.external_device = "--external-device nvme0n1p1 "
             self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, False, self.args.nvme_disk_size)
             print(f"Selected ext_partition_layout: {self.ext_partition_layout}")
-            exit(0)
         else:
             if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
@@ -931,12 +930,14 @@ class DcsDeploy:
             append=""
             if not self.gen_external_only:
                 print("Generating internal memory! ...")
+                print("-"*80)
                 self.prepare_status.set_processing_step("generate_images-internal")
                 #./${flash_script_path} -u ./rsa.pem -v ./sbk.key $uefi_keys_opt --no-flash --network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" --showlogs ${board_config_name} internal
                 ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} --no-flash {self.flashing_network} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
                 self.prepare_status.set_status(ret)
                 append = "--append"
             
+            print("-"*80)
             print("Generating external memory! ...")
             self.prepare_status.set_processing_step("generate_images-external")
             #sudo ROOTFS_ENC=1 ./${flash_script_path} -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key  -i ${OUT_dir}/sym2_t234.key -S ${partition_size} --no-flash --network usb0 --showlogs
