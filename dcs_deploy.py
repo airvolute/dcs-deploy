@@ -170,6 +170,12 @@ class ProcessingStatus:
             print("identifier not same as previous!")
             return False
         return True
+    
+    # True when states are equal
+    def compare_states(self, group, prefix, expected_state_list):
+        all_states = self.status[group]["states"]
+        found_suffixes = [key[len(prefix):] for key in all_states if key.startswith(prefix)]
+        return set(found_suffixes) == set(expected_state_list), {"new": set(expected_state_list) - set(found_suffixes), "missing": set(found_suffixes) - set(expected_state_list)}
 
     def change_group(self, group):
         self.group = group
@@ -242,7 +248,7 @@ class FunctionOverlayRegistry:
         self.keymap = {}
         self._fucnt_overlays: List[str] = []
         self._registry: Dict[str, List[OverlayFunction]] = {}
-        self.overlays_base_path : Path = overlays_base_path
+        self.overlays_base_path : Path = Path(overlays_base_path)
         self.register_yaml: str = "register.yaml"
         self.overlay_args = overlay_args
 
@@ -253,7 +259,7 @@ class FunctionOverlayRegistry:
         
         overlay_register_file_path = self.overlays_base_path / overlay_name / self.register_yaml
         if not overlay_register_file_path.exists():
-            print("Overlay do not register functions!")
+            print(f"Overlay '{overlay_name}' do not register functions")
             return 1
 
         
@@ -261,8 +267,8 @@ class FunctionOverlayRegistry:
             data = yaml.safe_load(f)
 
         valid_fn_names = {'flash-gen-pre', 'flash-gen-pre-is-needed', 'flash-gen-internal', 'flash-gen-mid', 'flash-gen-external', 'flash-cleanup', 'get-flash-type'}
-
-        for fn_name, fn_data in data.get('functions', {}).items():
+        fn_list =  data.get('functions', {}).items()
+        for fn_name, fn_data in fn_list:
             if fn_name not in valid_fn_names:
                 raise ValueError(f"Function '{fn_name}' is not allowed")
 
@@ -276,7 +282,8 @@ class FunctionOverlayRegistry:
             self._registry.setdefault(fn_name, []).append(fn)
 
         self._fucnt_overlays.append(overlay_name)
-        print(f"Overlay {overlay_name} added")
+        print(f"Overlay {overlay_name} register functions:")
+        print(fn_list)
         return 0
 
     def set_special_vars(self, keymap: Dict[str, str]):
@@ -708,7 +715,10 @@ class DcsDeploy:
 
 
         print('Installing overlays ...')
-        ret = self.install_overlays(is_last_install_step = True)
+        ret += self.install_overlays(self.register_local_overlays(), is_last_install_step = True)
+        if(ret):
+            print(f"Errors were found when callling prepare_sources_production - {ret}")
+            exit(1)
 
     def prepare_airvolute_overlay(self):
         return self.extract_resource('airvolute_overlay')
@@ -734,85 +744,79 @@ class DcsDeploy:
                 return config
                 
         return None
-
-    def list_local_overlays(self):
+    
+    def get_cfg_local_overlays(self):
         print("overlay dir:", self.local_overlay_dir)
 
         if hasattr(self, "config") and "local_overlays" in self.config:
             print("Selecting overlays list from configuration['local_overlays']")
-            all_overlays_list = self.config["local_overlays"]
+            cfg_overlays_list = self.config["local_overlays"]
         else:
-            print("Selecting overlays list from local/overlays directory")
-            all_overlays_list = os.listdir(self.local_overlay_dir)
+            print("WARNING! Selecting overlays list from local/overlays directory!")
+            cfg_overlays_list = os.listdir(self.local_overlay_dir)
 
-        print("all_overlays_list: " + str(all_overlays_list))
+        print("cfg_overlays_list: " + str(cfg_overlays_list))
+        return cfg_overlays_list
 
-        dirs = []
-        files = []
+    def get_overlay_path(self,overlay_name):
+        return os.path.join(self.local_overlay_dir, overlay_name)
 
+    def register_local_overlays(self):
+        all_cfg_overlays_list = self.get_cfg_local_overlays()
+
+        registred_local_overlays = []
+        # prepare function overlays
         self.functionOnverlays = FunctionOverlayRegistry(self.local_overlay_dir, self.get_base_overlay_params())
 
-        for item in all_overlays_list:
+        for item in all_cfg_overlays_list:
             if isinstance(item, dict):
                 overlay_name = next(iter(item)) #return key when config is used eg. item = {"secureboot": {"config": "custom.yaml"}} -> "secureboot"
             else:
                 overlay_name = item
 
-            overlay_path = os.path.join(self.local_overlay_dir, overlay_name)
-
-            if not os.path.exists(overlay_path):
+            if not os.path.exists(self.get_overlay_path(overlay_name)):
                 print(f"Overlay {overlay_name} does not exist! Quitting!")
                 quit()
 
-            if os.path.isdir(overlay_path):
-                dirs.append(item)
-                self.functionOnverlays.register_overlay(overlay_name) #function overlays support only directories
-            elif os.path.isfile(overlay_path):
-                files.append(item)
+            registred_local_overlays.append(item)
+            self.functionOnverlays.register_overlay(overlay_name) #function overlays support only directories
 
-        overlays = {
-            "dirs": dirs,
-            "files": files,
-        }
+        print("registred local overlays:" + str(registred_local_overlays))
+        return registred_local_overlays
 
-        print("overlays:" + str(overlays))
-        return overlays
+    def install_overlays(self, overlay_list, is_last_install_step=False):
+        overlays = overlay_list
 
-    def install_overlays(self, is_last_install_step=False):
-        overlays = self.list_local_overlays()
-
-        total = sum(len(lst) for lst in overlays.values())
+        total = len(overlay_list)
         step_idx = 0
+        for overlay in overlays:
+            step_idx += 1
 
-        for file_or_dir, entries in overlays.items():
-            for overlay_entry in entries:
-                step_idx += 1
+            if isinstance(overlay, dict):
+                overlay, args = next(iter(overlay.items()))
+            else:
+                overlay = overlay
+                args = {}
 
-                if isinstance(overlay_entry, dict):
-                    overlay, args = next(iter(overlay_entry.items()))
+            print(f"[{step_idx}/{total}] installing overlay {overlay}")
+            self.prepare_status.set_processing_step(f"install_local_overlay@{overlay}")
+
+            if os.path.isdir(self.get_overlay_path(overlay)):
+                ret = self.install_overlay_dir(overlay, args)
+            else:  # file_or_dir == "files"
+                ret = self.install_overlay_file(overlay, args)
+
+            is_last = step_idx == total and is_last_install_step
+            self.prepare_status.set_status(ret, last_step=is_last)
+
+            with_error = "." if not ret else " with error!"
+            print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
+
+            if ret:
+                if os.path.isdir(self.get_overlay_path(overlay)):
+                    return 10
                 else:
-                    overlay = overlay_entry
-                    args = {}
-
-                print(f"[{step_idx}/{total}] installing overlay {overlay}")
-                self.prepare_status.set_processing_step(f"install_local_overlay@{overlay}")
-
-                if file_or_dir == "dirs":
-                    ret = self.install_overlay_dir(overlay, args)
-                else:  # file_or_dir == "files"
-                    ret = self.install_overlay_file(overlay, args)
-
-                is_last = step_idx == total and is_last_install_step
-                self.prepare_status.set_status(ret, last_step=is_last)
-
-                with_error = "." if not ret else " with error!"
-                print(f"installing overlay {overlay} finished{with_error} ret:({ret})")
-
-                if ret:
-                    if file_or_dir == "dirs":
-                        return 10
-                    else:
-                        return 11
+                    return 11
         return 0
 
 
@@ -1053,7 +1057,7 @@ class DcsDeploy:
     def run(self):
         if self.args.command == 'list':
             if self.args.local_overlays == True:
-                self.list_local_overlays()
+                self.register_local_overlays()
                 quit()
             self.list_all_versions()
             quit()
