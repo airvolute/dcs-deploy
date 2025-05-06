@@ -221,26 +221,29 @@ class ProcessingStatus:
 
 
 class OverlayFunction:
-    def __init__(self, name: str, fn_type:str, overlay: str, cmd: str, args: List[str], env:str,  options: List):
+    def __init__(self, name: str, fn_type:str, overlay_name: str, cmd: str, args: List[str], env:str,  options: List):
         self.name = name
-        self.overlay = overlay
+        self.overlay_name = overlay_name
         self.cmd = cmd
         self.args = args
         self.type = fn_type
         self.env = env
         self.options = options
+        self.app_dir=os.getcwd() # at beginning current directory is set to app
 
-    def resolve(self, keymap: Dict[str, str], general_args) -> str:
+    def resolve(self, keymap: Dict[str, str], general_args, overlay_base_dir : Path) -> str:
+        print(overlay_base_dir)
         resolved_args = []
         for arg in self.args:
             if arg.startswith("<") and arg.endswith(">"):
                 key = arg.strip("<>")
                 if key not in keymap:
-                    raise ValueError(f"[{self.name}] Missing value for key: <{key}> in overlay '{self.overlay}'")
+                    raise ValueError(f"[{self.name}] Missing value for key: <{key}> in overlay '{self.overlay_name}'")
                 resolved_args.append(keymap[key])
             else:
                 resolved_args.append(arg)
-        return f"{self.cmd} {general_args} {' '.join(resolved_args)}"
+        
+        return f"{self.app_dir}/{overlay_base_dir}/{self.overlay_name}/{self.cmd} {general_args} {' '.join(resolved_args)}"
 
 
 class FunctionOverlayRegistry:
@@ -299,15 +302,15 @@ class FunctionOverlayRegistry:
             if fn.type == "lt4-initrd-params":
                 out.append(
                     {
-                        "overlay": fn.overlay,
-                        "cmd": fn.resolve(self.keymap, self.overlay_args),
+                        "overlay": fn.overlay_name,
+                        "cmd": fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path),
                         "env":fn.env
                     })
             elif fn.type == "cmd":
                 out.append(
                     {
-                        "overlay": fn.overlay,
-                        "cmd": fn.resolve(self.keymap, self.overlay_args),
+                        "overlay": fn.overlay_name,
+                        "cmd": fn.resolve(self.keymap, self.overlay_args, self.overlays_base_path),
                     })
             elif fn.type == "option":
                 out.append(fn.options)
@@ -667,6 +670,8 @@ class DcsDeploy:
     def prepare_sources_production(self):
         is_same, status = self.prepare_status.compare_states("prepare", "install_local_overlay@", self.get_local_overlays())
         if self.prepare_status.get_status() == True and self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and is_same:
+            print("registering local overlays!")
+            self.register_local_overlays()
             print("Binaries already prepared!. Skipping!")
             return 0
         else:
@@ -1054,10 +1059,32 @@ class DcsDeploy:
             
         self.prepare_status.set_status(ret, last_step= True)
         return ret
+    
+    def exec_fn_overlay(self, fn_name):
+        overlay_fncts = self.functionOnverlays.get(fn_name)
+        ret = 0
+        # test if registred for odmfuse
+        if len(overlay_fncts) == 0:
+            return None
+        for fn in overlay_fncts:
+            ret += cmd_exec(fn["cmd"], print_command=True)
+            print(f"overlay function '{fn['overlay']}' returned:{ret}")
+            if fn_name == "flash-gen-pre-is-needed" and ret > 1:
+                raise ValueError(f"Error occured when callig overlay function '{fn['overlay']}'")
+        return ret
 
     def flash(self):
         # setup flashing
         self.setup_initrd_flashing()
+
+        # pre - flash ops eg. odmfuse
+        self.functionOnverlays.add_special_var({"BOARD_CONFIG_NAME":self.board_name})
+
+        # odmfuse-test if needed
+        ret = self.exec_fn_overlay("flash-gen-pre-is-needed")
+        if ret >= 1:
+            # fuse device with odmfuse
+            ret = self.exec_fn_overlay("flash-gen-pre")
         
         # generate images
         ret = self.generate_images()
