@@ -10,21 +10,47 @@ import time
 from urllib.parse import urlparse
 import sys as _sys
 import yaml
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union, Tuple
 from pathlib import Path
 
 dcs_deploy_version = "3.0.0"
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
-def cmd_exec(command_line:str, print_command = False) -> int:
+def cmd_exec(
+    command_line: str,
+    print_command: bool = False,
+    capture_output: bool = False
+) -> Union[int, Tuple[int, Optional[str]], Optional[str]]:
+    """
+    Executes a shell command.
+
+    Args:
+        command_line: Command to run as a string.
+        print_command: Print the command before executing.
+        capture_output: If True, captures and returns stdout.
+
+    Returns:
+        - int: exit code only, if capture_output=False
+        - tuple: (exit code, stdout output as string), if capture_output=True
+    """
     if print_command:
-        print("calling: " + command_line)
+        print("calling:", command_line)
+
     try:
-        return subprocess.call(command_line, shell=True)
+        result = subprocess.run(
+            command_line,
+            shell=True,
+            capture_output=capture_output,
+            text=True
+        )
+        if capture_output:
+            return result.returncode, result.stdout, result.stdout
+        else: # for backward compatibility use single return code
+            return result.returncode
+
     except Exception as e:
-        print("Command %s execution failed!!. Error %s" % (command_line, str(e)))
-        print("Exitting!")
+        print(f"Command '{command_line}' execution failed! Error: {e}")
         exit(5)
 
 # Usage:
