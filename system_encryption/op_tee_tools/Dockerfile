@@ -12,4 +12,4 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Set the default command to run the script
-ENTRYPOINT ["/usr/local/bin/python3", "gen_ekb.py", "-chip", "t234", "-fv", "fv_ekb_t234", "-in_sym_key", "sym_t234.key", "-in_sym_key2", "sym2_t234.key", "-out", "eks_t234.img"]
+ENTRYPOINT ["/usr/local/bin/python3", "gen_ekb.py", "-chip", "t234", "-oem_k1_key", "oem_k1.key", "-fv", "fv_ekb_t234", "-in_sym_key", "sym_t234.key", "-in_sym_key2", "sym2_t234.key", "-out", "eks_t234.img"]
