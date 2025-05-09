@@ -17,11 +17,8 @@ dcs_deploy_version = "3.0.0"
 
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
-def cmd_exec(
-    command_line: str,
-    print_command: bool = False,
-    capture_output: bool = False
-) -> Union[int, Tuple[int, Optional[str]], Optional[str]]:
+# NOTE: return value changes when capture_output is set!
+def cmd_exec(command_line: str, print_command: bool = False, capture_output: bool = False) -> Union[int, Tuple[int, Optional[str]], Optional[str]]:
     """
     Executes a shell command.
 
@@ -38,12 +35,7 @@ def cmd_exec(
         print("calling:", command_line)
 
     try:
-        result = subprocess.run(
-            command_line,
-            shell=True,
-            capture_output=capture_output,
-            text=True
-        )
+        result = subprocess.run( command_line, shell=True, capture_output=capture_output, text=True)
         if capture_output:
             return result.returncode, result.stdout, result.stdout
         else: # for backward compatibility use single return code
@@ -1095,7 +1087,7 @@ class DcsDeploy:
         for fn in overlay_fncts:
             ret += cmd_exec(fn["cmd"], print_command=True)
             print(f"overlay function '{fn['overlay']}' returned:{ret}")
-            if fn_name == "flash-gen-pre-is-needed" and ret > 1:
+            if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app
                 raise ValueError(f"Error occured when callig overlay function '{fn['overlay']}'")
         return ret
 
