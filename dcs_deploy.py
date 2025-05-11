@@ -1072,7 +1072,13 @@ class DcsDeploy:
         elif self.config['storage'] == 'nvme':
             self.rootdev = "external"
             self.external_device = "--external-device nvme0n1p1 "
-            self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, False, self.args.nvme_disk_size)
+            fn_overlay_options = self.exec_fn_overlay("get-flash-type")
+            print(f"Fn Overlay get-flash-type returned:{fn_overlay_options}")
+            rfs_enc = False
+            if "rfsenc" in fn_overlay_options:
+                print("Found rfsenc config in fn. overlay - get-flash-type")
+                rfs_enc = True
+            self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, rfs_enc, self.args.nvme_disk_size)
             print(f"Selected ext_partition_layout: {self.ext_partition_layout}")
         else:
             if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
@@ -1148,19 +1154,49 @@ class DcsDeploy:
             if not self.gen_external_only:
                 print("Generating internal memory! ...")
                 print("-"*80)
+                # get command specific options from funct overlay
+                overlay_params = self.exec_fn_overlay("flash-gen-internal")
+                print(f"Fn Overlay flash-gen-internal parameters:{overlay_params}")
+
                 self.prepare_status.set_processing_step("generate_images-internal")
                 #./${flash_script_path} -u ./rsa.pem -v ./sbk.key $uefi_keys_opt --no-flash --network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" --showlogs ${board_config_name} internal
-                ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} --no-flash {self.flashing_network} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
+                ret = cmd_exec(f"sudo {env_vars} {overlay_params['env']} ./{self.flash_script_path} --no-flash {self.flashing_network} {overlay_params['args']} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
                 self.prepare_status.set_status(ret)
+                
+                # call cleanup if necessary for function overlay
+                overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
+                if overlay_flash_cleanup_ret != None:
+                    print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
+                
                 append = "--append"
+            # get command specific options from funct overlay flash-gen-mid
+            overlay_mid_ret = self.exec_fn_overlay("flash-gen-mid")
+            print(f"Fn Overlay flash-gen-mid returned:{overlay_mid_ret}")
+            if overlay_mid_ret == None:
+                print("...skipping")
             
+            # call cleanup if necessary for function overlay
+            overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
+            if overlay_flash_cleanup_ret != None:
+                print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
+            
+
             print("-"*80)
             print("Generating external memory! ...")
+            # get command specific options from funct overlay flash-gen-external
+            overlay_params = self.exec_fn_overlay("flash-gen-external")
+            print(f"Fn Overlay flash-gen-internal parameters:{overlay_params}")
+
             self.prepare_status.set_processing_step("generate_images-external")
             #sudo ROOTFS_ENC=1 ./${flash_script_path} -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key  -i ${OUT_dir}/sym2_t234.key -S ${partition_size} --no-flash --network usb0 --showlogs
             #  --external-device ${nvme_device} -c ./tools/kernel_flash/flash_l4t_t234_nvme_rootfs_enc.xml --external-only --append  ${board_config_name} external
-            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {self.flashing_network} --showlogs " + 
+            ret = cmd_exec(f"sudo {env_vars} {overlay_params['env']} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {self.flashing_network} {overlay_params['args']} --showlogs " + 
                            f"{self.external_device} -c {self.ext_partition_layout} --external-only {append} {self.board_name} {self.rootdev}", print_command=True)
+            
+            # call cleanup if necessary for function overlay
+            overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
+            if overlay_flash_cleanup_ret != None:
+                print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
             
         self.prepare_status.set_status(ret, last_step= True)
         return ret
