@@ -272,6 +272,9 @@ class FunctionOverlayRegistry:
         self.overlays_base_path : Path = Path(overlays_base_path)
         self.register_yaml: str = "register.yaml"
         self.overlay_args = overlay_args
+        #override if needed
+        self.valid_fn_names = {'flash-gen-pre', 'flash-gen-pre-is-needed', 'flash-gen-internal', 'flash-gen-mid', 'flash-gen-external', 'flash-cleanup', 'get-flash-type'}
+
 
     def register_overlay(self, overlay_name: str):
         if overlay_name in self._fucnt_overlays:
@@ -287,10 +290,10 @@ class FunctionOverlayRegistry:
         with open(overlay_register_file_path, 'r') as f:
             data = yaml.safe_load(f)
 
-        valid_fn_names = {'flash-gen-pre', 'flash-gen-pre-is-needed', 'flash-gen-internal', 'flash-gen-mid', 'flash-gen-external', 'flash-cleanup', 'get-flash-type'}
+        #
         fn_list =  data.get('functions', {}).items()
         for fn_name, fn_data in fn_list:
-            if fn_name not in valid_fn_names:
+            if fn_name not in self.valid_fn_names:
                 raise ValueError(f"Function '{fn_name}' is not allowed")
 
             cmd = fn_data.get('cmd', "")
@@ -334,6 +337,90 @@ class FunctionOverlayRegistry:
                 out.append(fn.options)
         return out
 
+class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
+    def __init__(self, overlays_base_path, overlay_args, processing_status: ProcessingStatus):
+        super().__init__(overlays_base_path, overlay_args)
+        self.processing_status = processing_status
+        self.valid_functions["lt4_initrd_params"] = ["flash-gen-internal", "flash-gen-external"]
+        self.valid_functions["cmd"] = ["flash-cleanup", "flash-gen-mid", "flash-gen-pre-is-needed", "flash-gen-pre"]
+        self.valid_functions["option"] = ["get-flash-type"]
+        self.setup_valid_fn_names()
+
+    def setup_valid_fn_names(self):
+        self.valid_fn_names = {
+            fn_name
+            for fn_list in self.valid_functions.values()
+            for fn_name in fn_list
+        }
+
+    def _verify_overlay_fn_type(self, fn: OverlayFunction, required_fn_type: str):
+            if fn.type != required_fn_type:
+                self.processing_status.set_status(-1, last_step=True)
+                raise ValueError(f"Error occured when verifying registred overlay function - {fn.name} - overlay must be {fn.type} type only!")
+    
+    def resolve_lt4_initrd_params(self, fn_name) -> Dict:
+        fn_type = "lt4-initrd-params"
+        overlay_fncts = self._registry[fn_name]
+        # test if registred for odmfuse
+        if len(overlay_fncts) == 0:
+            return None
+        out_msg=""
+        env=""
+        for fn in overlay_fncts:
+            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
+            self._verify_overlay_fn_type(fn, fn_type)
+            multi_ret += cmd_exec(fn.cmd, capture_output=True, print_command=True)
+            print(f"overlay function '{fn.overlay_name}' returned:{multi_ret}")
+            ret, out_msg_partial, stderr_msg = multi_ret
+            if ret != 0:
+                self.processing_status.set_status(-2, last_step=True)
+                raise ValueError(f"Error occured when callig overlay function '{fn.overlay_name}' - {stderr_msg} - {ret}")
+            out_msg += f"{out_msg_partial} "
+            if fn.env != None:
+                env += f"{fn.env} "
+            self.processing_status.set_status(ret)
+        return {"args":out_msg, "env": env}
+    
+    def resolve_cmd(self, fn_name) -> Dict:
+        fn_type = "cmd"
+        overlay_fncts = self._registry[fn_name]
+        # test if registred for odmfuse
+        if len(overlay_fncts) == 0:
+            return None
+        out_ret=0
+        for fn in overlay_fncts:
+            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
+            self._verify_overlay_fn_type(fn, fn_type)
+            ret = cmd_exec(fn.cmd, print_command=True)
+            print(f"overlay function '{fn.overlay_name}' returned:{ret}")
+            if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app
+                raise ValueError(f"Error occured when callig overlay function '{fn['overlay']}'")
+            out_ret += ret
+            self.processing_status.set_status(ret)
+        return ret
+    
+    def resolve_options(self, fn_name) -> str:
+        fn_type = "option"
+        overlay_fncts = self._registry[fn_name]
+        out = []
+        for fn in overlay_fncts:
+            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
+            self._verify_overlay_fn_type(fn, fn_type)
+            out.append(fn.options)
+            self.processing_status.set_status(0)
+        return out
+    
+    def exec_function(self, fn_name:str):
+        if fn_name in  self.functions["lt4_initrd_params"]:
+            return self.functionOnverlays.resolve_lt4_initrd_params(fn_name)
+        elif fn_name in self.functions["option"]:
+            return self.functionOnverlays.resolve_options(fn_name)
+        elif fn_name in self.functions["cmd"]:
+            return self.functionOnverlays.resolve_cmd(fn_name)
+        else:
+            raise(ValueError(f"Uknown function name! ({fn_name})"))
+            
+    
 class DcsDeploy:
     def __init__(self):
         self.check_dependencies()
@@ -797,7 +884,7 @@ class DcsDeploy:
 
         registred_local_overlays = []
         # prepare function overlays
-        self.functionOnverlays = FunctionOverlayRegistry(self.local_overlay_dir, self.get_base_overlay_params())
+        self.functionOnverlays = FunctionOverlaysFlashGen(self.local_overlay_dir, self.get_base_overlay_params(), self.prepare_status)
 
         for item in all_cfg_overlays_list:
             if isinstance(item, dict):
@@ -1054,17 +1141,7 @@ class DcsDeploy:
         return ret
     
     def exec_fn_overlay(self, fn_name):
-        overlay_fncts = self.functionOnverlays.get(fn_name)
-        ret = 0
-        # test if registred for odmfuse
-        if len(overlay_fncts) == 0:
-            return None
-        for fn in overlay_fncts:
-            ret += cmd_exec(fn["cmd"], print_command=True)
-            print(f"overlay function '{fn['overlay']}' returned:{ret}")
-            if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app
-                raise ValueError(f"Error occured when callig overlay function '{fn['overlay']}'")
-        return ret
+        return self.functionOnverlays.exec_function(fn_name)
 
     def flash(self):
         # setup flashing
