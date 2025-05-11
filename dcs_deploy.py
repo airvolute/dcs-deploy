@@ -37,7 +37,7 @@ def cmd_exec(command_line: str, print_command: bool = False, capture_output: boo
     try:
         result = subprocess.run( command_line, shell=True, capture_output=capture_output, text=True)
         if capture_output:
-            return result.returncode, result.stdout, result.stdout
+            return result.returncode, result.stdout, result.stderr
         else: # for backward compatibility use single return code
             return result.returncode
 
