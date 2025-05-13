@@ -19,12 +19,12 @@ INIT_VAR_NUM=7
 # Function to validate that L4T_rootfs_path exists
 validate_L4T_rootfs_path() {
     if [ -z "$L4T_rootfs_path" ]; then
-        echo "Error: L4T_rootfs_path is not set."
+        echo "Error: L4T_rootfs_path is not set." >&2
         exit 1
     fi
 
     if [ ! -d "$L4T_rootfs_path" ]; then
-        echo "Error: L4T_rootfs_path does not exist: $L4T_rootfs_path"
+        echo "Error: L4T_rootfs_path does not exist: $L4T_rootfs_path" >&2
         exit 1
     fi
 }
@@ -33,9 +33,9 @@ validate_L4T_rootfs_path() {
 validate_initialization() {
     if [ -z "$L4T_rootfs_path" ] || [ -z "$target_device" ] || [ -z "$jetpack_version" ] ||
        [ -z "$hwrev" ] || [ -z "$board_expansion" ] || [ -z "$storage" ] || [ -z "$rootfs_type" ]; then
-        echo "Error: One or more initialization variables are not set."
-        echo "Ensure all variables are provided during initialization:"
-        echo "L4T_rootfs_path, target_device, jetpack_version, hwrev, board_expansion, storage, rootfs_type"
+        echo "Error: One or more initialization variables are not set." >&2
+        echo "Ensure all variables are provided during initialization:" >&2
+        echo "L4T_rootfs_path, target_device, jetpack_version, hwrev, board_expansion, storage, rootfs_type" >&2
         print_variables
         exit 1
     fi
@@ -43,11 +43,11 @@ validate_initialization() {
 
 # Function to display all variables
 print_variables() {
-    echo "L4T_rootfs_path: $L4T_rootfs_path"
-    echo "target_device: $target_device"
-    echo "jetpack_version: $jetpack_version"
-    echo "hwrev: $hwrev"
-    echo "board_expansion: $board_expansion"
-    echo "storage: $storage"
-    echo "rootfs_type: $rootfs_type"
+    echo "L4T_rootfs_path: $L4T_rootfs_path" >&2
+    echo "target_device: $target_device" >&2
+    echo "jetpack_version: $jetpack_version" >&2
+    echo "hwrev: $hwrev" >&2
+    echo "board_expansion: $board_expansion" >&2
+    echo "storage: $storage" >&2
+    echo "rootfs_type: $rootfs_type" >&2
 }
