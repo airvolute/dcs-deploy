@@ -346,6 +346,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         self.valid_functions["cmd"] = ["flash-cleanup", "flash-gen-mid", "flash-gen-pre-is-needed", "flash-gen-pre"]
         self.valid_functions["option"] = ["get-flash-type"]
         self.setup_valid_fn_names()
+        self.call_cnt={}
 
     def setup_valid_fn_names(self):
         self.valid_fn_names = {
@@ -358,6 +359,12 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             if fn.type != required_fn_type:
                 self.processing_status.set_status(-1, last_step=True)
                 raise ValueError(f"Error occured when verifying registred overlay function - {fn.name} - overlay must be {fn.type} type only!")
+    
+    def inc_call_cnt(self, fn_name, fn_type):
+        keyword=f"{fn_name}.{fn_type}"
+        self.call_cnt[keyword] = (self.call_cnt[keyword] +  1) if keyword in self.call_cnt else 0
+        return self.call_cnt[keyword]
+        
     
     def resolve_lt4_initrd_params(self, fn_name) -> Dict:
         fn_type = "lt4-initrd-params"
@@ -373,7 +380,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             return None
 
         for fn in overlay_fncts:
-            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
+            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             multi_ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), capture_output=True, print_command=True)
             print(f"overlay function '{fn.overlay_name}' returned:{multi_ret}")
@@ -396,7 +403,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
 
         out_ret=0
         for fn in overlay_fncts:
-            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
+            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), print_command=True)
             print(f"overlay function '{fn.overlay_name}' returned:{ret}")
@@ -416,7 +423,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         overlay_fncts = self._registry[fn_name]
         
         for fn in overlay_fncts:
-            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
+            self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             out.append(" ".join(fn.options))
             self.processing_status.set_status(0)
