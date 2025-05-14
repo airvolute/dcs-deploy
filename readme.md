@@ -136,6 +136,19 @@ As a root of this filesystem, `.dcs_deploy` folder is created inside **host pc H
 - `download` contains downloaded archives needed for flashing
 - `flash` contains extracted folders that are needed for flashing. Those are folders from `download` dir + some nvidia and airvolute scripts applied, so the flashing environment is fully ready.
 
+### Disk encryption
+The `--encryption` option enables encryption for the root filesystem (rootfs) partition. This feature is available only for devices using `nvme` storage. 
+
+- Automatically generates encryption keys (`sym2_t234.key`, `oem_k1.key`, etc.) during the flashing process.
+- Supports combinations with the `--ab_partition` option for creating multiple encrypted partitions.
+- Ensures secure storage of sensitive data on the device.
+
+- **Storage**: The device must use `nvme` as the storage medium.
+- **Dependencies**: Ensure the following tools are installed:
+  - `cryptsetup`
+  - `openssl`
+  - `docker.io`
+
 ### Local overlays
 To add features easily to the device without need of the creation of a new rootfs it is possible to utilize local overlays. These overlays are processed during the run of the `dcs_deploy`. 
 
@@ -266,3 +279,4 @@ $ sudo su
 [   0.1299 ] Sending bct_br
 [   0.1454 ] ERROR: might be timeout in USB write.
 ```
+
