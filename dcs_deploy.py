@@ -1163,18 +1163,18 @@ class DcsDeploy:
                     print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
                 
                 append = "--append"
-            # get command specific options from funct overlay flash-gen-mid
-            overlay_mid_ret = self.exec_fn_overlay("flash-gen-mid")
-            print(f"Fn Overlay flash-gen-mid returned:{overlay_mid_ret}")
-            if overlay_mid_ret == None:
-                print("...skipping")
-            
-            # call cleanup if necessary for function overlay
-            overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
-            if overlay_flash_cleanup_ret != None:
-                print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
-            
+                # get command specific options from funct overlay flash-gen-mid
+                overlay_mid_ret = self.exec_fn_overlay("flash-gen-mid")
 
+                if overlay_mid_ret != None and overlay_mid_ret != 0:
+                    print(f"ERROR! - Fn Overlay flash-gen-mid returned:{overlay_mid_ret}")
+                    exit(overlay_mid_ret)
+            
+                # call cleanup if necessary for function overlay
+                overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
+                if overlay_flash_cleanup_ret != None:
+                    print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
+            
             print("-"*80)
             print("Generating external memory! ...")
             # get command specific options from funct overlay flash-gen-external
