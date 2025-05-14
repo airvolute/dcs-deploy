@@ -341,6 +341,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
     def __init__(self, overlays_base_path, overlay_args, processing_status: ProcessingStatus):
         super().__init__(overlays_base_path, overlay_args)
         self.processing_status = processing_status
+        self.valid_functions={}
         self.valid_functions["lt4_initrd_params"] = ["flash-gen-internal", "flash-gen-external"]
         self.valid_functions["cmd"] = ["flash-cleanup", "flash-gen-mid", "flash-gen-pre-is-needed", "flash-gen-pre"]
         self.valid_functions["option"] = ["get-flash-type"]
@@ -360,16 +361,21 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
     
     def resolve_lt4_initrd_params(self, fn_name) -> Dict:
         fn_type = "lt4-initrd-params"
+        out_msg=""
+        env=""
+        if fn_name not in self._registry:
+            print(f"Calling {fn_name} not registered in function overlays!")
+            return {"args":out_msg, "env": env}
+         
         overlay_fncts = self._registry[fn_name]
         # test if registred for odmfuse
         if len(overlay_fncts) == 0:
             return None
-        out_msg=""
-        env=""
+
         for fn in overlay_fncts:
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
             self._verify_overlay_fn_type(fn, fn_type)
-            multi_ret += cmd_exec(fn.cmd, capture_output=True, print_command=True)
+            multi_ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), capture_output=True, print_command=True)
             print(f"overlay function '{fn.overlay_name}' returned:{multi_ret}")
             ret, out_msg_partial, stderr_msg = multi_ret
             if ret != 0:
@@ -383,40 +389,46 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
     
     def resolve_cmd(self, fn_name) -> Dict:
         fn_type = "cmd"
-        overlay_fncts = self._registry[fn_name]
-        # test if registred for odmfuse
-        if len(overlay_fncts) == 0:
+        if fn_name not in self._registry:
+            print(f"Calling {fn_name} not registered in function overlays!")
             return None
+        overlay_fncts = self._registry[fn_name]
+
         out_ret=0
         for fn in overlay_fncts:
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
             self._verify_overlay_fn_type(fn, fn_type)
-            ret = cmd_exec(fn.cmd, print_command=True)
+            ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), print_command=True)
             print(f"overlay function '{fn.overlay_name}' returned:{ret}")
             if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app
-                raise ValueError(f"Error occured when callig overlay function '{fn['overlay']}'")
+                raise ValueError(f"Error occured when callig overlay function '{fn.overlay_name}'. Please check previous messages.")
             out_ret += ret
             self.processing_status.set_status(ret)
         return ret
     
     def resolve_options(self, fn_name) -> str:
         fn_type = "option"
-        overlay_fncts = self._registry[fn_name]
         out = []
+        if fn_name not in self._registry:
+            print(f"Calling {fn_name} not registered in function overlays!")
+            return out
+
+        overlay_fncts = self._registry[fn_name]
+        
         for fn in overlay_fncts:
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}-{fn_type}")
             self._verify_overlay_fn_type(fn, fn_type)
-            out.append(fn.options)
+            out.append(" ".join(fn.options))
             self.processing_status.set_status(0)
         return out
     
     def exec_function(self, fn_name:str):
-        if fn_name in  self.functions["lt4_initrd_params"]:
-            return self.functionOnverlays.resolve_lt4_initrd_params(fn_name)
-        elif fn_name in self.functions["option"]:
-            return self.functionOnverlays.resolve_options(fn_name)
-        elif fn_name in self.functions["cmd"]:
-            return self.functionOnverlays.resolve_cmd(fn_name)
+        if fn_name in  self.valid_functions["lt4_initrd_params"]:
+            return self.resolve_lt4_initrd_params(fn_name)
+        elif fn_name in self.valid_functions["option"]:
+            return self.resolve_options(fn_name)
+        elif fn_name in self.valid_functions["cmd"]:
+            return self.resolve_cmd(fn_name)
         else:
             raise(ValueError(f"Uknown function name! ({fn_name})"))
             
