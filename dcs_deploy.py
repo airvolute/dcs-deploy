@@ -1155,7 +1155,7 @@ class DcsDeploy:
             env_vars = self.board_system_vars
             opt_app_size_arg = ""
             #external_only = True # flash only external device
-            external_only = False
+            #self.gen_external_only = False
             if self.args.ab_partition == True:
                 env_vars += " ROOTFS_AB=1"
                 if self.args.rootfs_type == "minimal":
