@@ -163,7 +163,16 @@ class ProcessingStatus:
             self.status = {}
         self._init_identifier()
         self._init_group_status()
+        self._init_valid_retval()
     
+    def _init_valid_retval(self):
+        
+        if "valid_retval" in self.status:
+            self.valid_retval = self.status["valid_retval"]
+        else:
+            self.valid_retval = {}
+        self.status["valid_retval"] = self.valid_retval
+
     def _init_identifier(self):
         if "identifier" in self.status:
             self.prev_identifier = self.status["identifier"]
@@ -253,11 +262,13 @@ class ProcessingStatus:
         self.status[self.group]["status"] = False
         self.save()
 
-    def set_status(self, status:int, processing_step_name:str = None, last_step = False):
+    def set_status(self, status:int, processing_step_name:str = None, last_step = False, valid_retval:List = []):
         if processing_step_name == None:
             processing_step_name = self.last_processing_step
         states = self.status[self.group]["states"]
         states[processing_step_name] = status
+        if len(valid_retval):
+            self.valid_retval[processing_step_name] = valid_retval
         if self.last_step == True or last_step == True:
             self.last_step = False
             # check all status codes
@@ -270,7 +281,8 @@ class ProcessingStatus:
         states = self.status[group]["states"]
         self.status[group]["status"] = True
         for key in states:
-            if states[key] != 0:
+            valid_retval = [0] if key not in self.valid_retval else self.valid_retval[key]
+            if states[key] not in valid_retval:
                 self.status[group]["status"] = False
                 break
     
