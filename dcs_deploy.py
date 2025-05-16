@@ -256,6 +256,7 @@ class ProcessingStatus:
         return self.last_step
     
     def set_processing_step(self, processing_step_name:str):
+        print("-"*35 + f" {self.group} - {processing_step_name} " + "-"*35)
         self.last_processing_step = processing_step_name
         self.status[self.group]["last_processing_step"] = processing_step_name
         self.status[self.group]["states"][processing_step_name] = -1
