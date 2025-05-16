@@ -1167,6 +1167,7 @@ class DcsDeploy:
         elif self.config['storage'] == 'nvme':
             self.rootdev = "external"
             self.external_device = "--external-device nvme0n1p1 "
+            self.prepare_status.set_last_step() # prepare phase
             fn_overlay_options = self.exec_fn_overlay("get-flash-type")
             print(f"Fn Overlay get-flash-type returned:{fn_overlay_options}")
             if "rfsenc" in fn_overlay_options:
