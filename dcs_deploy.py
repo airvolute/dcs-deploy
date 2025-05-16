@@ -1129,6 +1129,7 @@ class DcsDeploy:
         #set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         self.board_system_vars=""
+        self.rfs_enc = False
         
         self.gen_external_only = False
         
@@ -1168,11 +1169,10 @@ class DcsDeploy:
             self.external_device = "--external-device nvme0n1p1 "
             fn_overlay_options = self.exec_fn_overlay("get-flash-type")
             print(f"Fn Overlay get-flash-type returned:{fn_overlay_options}")
-            rfs_enc = False
             if "rfsenc" in fn_overlay_options:
                 print("Found rfsenc config in fn. overlay - get-flash-type")
-                rfs_enc = True
-            self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, rfs_enc, self.args.nvme_disk_size)
+                self.rfs_enc = True
+            self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, self.rfs_enc, self.args.nvme_disk_size)
             print(f"Selected ext_partition_layout: {self.ext_partition_layout}")
         else:
             if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
