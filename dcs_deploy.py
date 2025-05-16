@@ -437,6 +437,8 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         # test if registred for odmfuse
         if len(overlay_fncts) == 0:
             return None
+        
+        is_last_step_set = self.processing_status.get_last_step()
 
         for fn in overlay_fncts:
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
@@ -450,7 +452,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             out_msg += f"{out_msg_partial} "
             if fn.env != None:
                 env += f"{fn.env} "
-            self.processing_status.set_status(ret)
+            self.processing_status.set_status(ret, last_step = is_last_step_set)
         return {"args":out_msg, "env": env}
     
     def resolve_cmd(self, fn_name) -> Dict:
@@ -460,16 +462,19 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             return None
         overlay_fncts = self._registry[fn_name]
 
+        is_last_step_set = self.processing_status.get_last_step()
+
         out_ret=0
         for fn in overlay_fncts:
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), print_command=True)
             print(f"overlay function '{fn.overlay_name}.{fn.name}.{fn.type}' returned:{ret}")
-            if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app
+            if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app:
+                self.processing_status.set_status(ret, last_step=True, valid_retval = [0, 1])
                 raise ValueError(f"Error occured when callig overlay function '{fn.overlay_name}'. Please check previous messages.")
             out_ret += ret
-            self.processing_status.set_status(ret)
+            self.processing_status.set_status(ret, last_step = is_last_step_set, valid_retval = [0, 1] if fn_name == "flash-gen-pre-is-needed" else [])
         return ret
     
     def resolve_options(self, fn_name) -> str:
@@ -480,12 +485,14 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             return out
 
         overlay_fncts = self._registry[fn_name]
+
+        is_last_step_set = self.processing_status.get_last_step()
         
         for fn in overlay_fncts:
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             out.append(" ".join(fn.options))
-            self.processing_status.set_status(0)
+            self.processing_status.set_status(0, last_step = is_last_step_set)
         return out
     
     def exec_function(self, fn_name:str):
