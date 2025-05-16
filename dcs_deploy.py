@@ -696,11 +696,13 @@ class DcsDeploy:
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
         self.rootfs_extract_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs'))
         self.l4t_root_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra'))
+        self.op_tee_tools_path = os.path.realpath(os.path.join(self.l4t_root_dir, 'source', 'public', 'nvidia-jetson-optee-source.tbz2'))
+        self.op_tee_tools_dir = os.path.realpath(os.path.join(self.l4t_root_dir, 'source', 'public'))
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
 
         # generate download resource paths
-        resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
+        resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools", "public_sources" ]
         self.resource_paths = {}
 
         for res_name in resource_keys:
@@ -757,10 +759,12 @@ class DcsDeploy:
                      "udev", "uuid-runtime", "whois", "openssl", "cpio", "lz4"]
         l4t_other_dependencies = ["python-is-python3"]
         dcs_deploy_dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2", "jq", "coreutils", "findutils" ]
+        disk_enc_dependencies = ["cryptsetup"]
+        op_tee_dependencies = ["python3-cryptography", "python3-pycryptodome"]
         
         dependencies = l4t_tool
         # append dcs_deploy_dependencies which are unique
-        for dependency in dcs_deploy_dependencies + l4t_other_dependencies:
+        for dependency in dcs_deploy_dependencies + l4t_other_dependencies + disk_enc_dependencies + op_tee_dependencies:
             if dependency not in dependencies:
                 dependencies.append(dependency)
         
@@ -905,6 +909,11 @@ class DcsDeploy:
         if self.get_resource_url('nv_ota_tools') != None:
             print('Applying Nvidia OTA tools ...')
             ret = self.extract_resource('nv_ota_tools')
+        
+        if self.get_resource_url('public_sources') != None:
+            print(f'Extracting Nvidia OP-TEE tools to {self.op_tee_tools_dir}...')
+            ret = self.extract_resource('public_sources')
+            ret = extract(self.op_tee_tools_path, self.op_tee_tools_dir)
 
         # Regenerate ssh access in rootfs
         print("Purging ssh keys, this part needs sudo privilegies:")
