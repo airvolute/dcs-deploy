@@ -228,6 +228,13 @@ class ProcessingStatus:
         found_suffixes = [key[len(prefix):] for key in all_states if key.startswith(prefix)]
         return set(found_suffixes) == set(expected_state_list), {"new": set(expected_state_list) - set(found_suffixes), "missing": set(found_suffixes) - set(expected_state_list)}
 
+    def get_group(self, group = None):
+        if group == None:
+            return self.group
+        if not group in self.status:
+            return None
+        return group
+
     def change_group(self, group):
         self.group = group
         if not group in self.status:
