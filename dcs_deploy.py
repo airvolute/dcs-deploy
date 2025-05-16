@@ -442,7 +442,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             multi_ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), capture_output=True, print_command=True)
-            print(f"overlay function '{fn.overlay_name}' returned:{multi_ret}")
+            print(f"overlay function '{fn.overlay_name}.{fn.name}.{fn.type}' returned:{multi_ret}")
             ret, out_msg_partial, stderr_msg = multi_ret
             if ret != 0:
                 self.processing_status.set_status(-2, last_step=True)
@@ -465,7 +465,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), print_command=True)
-            print(f"overlay function '{fn.overlay_name}' returned:{ret}")
+            print(f"overlay function '{fn.overlay_name}.{fn.name}.{fn.type}' returned:{ret}")
             if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app
                 raise ValueError(f"Error occured when callig overlay function '{fn.overlay_name}'. Please check previous messages.")
             out_ret += ret
