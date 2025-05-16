@@ -1299,19 +1299,36 @@ class DcsDeploy:
     def exec_fn_overlay(self, fn_name):
         return self.functionOnverlays.exec_function(fn_name)
 
+    def flash_gen_prepare(self):
+        # used for eg. odmfuse
+        self.prepare_status.change_group("flash-gen-prepare")
+        # pre - flash ops eg. odmfuse
+        self.functionOnverlays.add_special_var({"BOARD_CONFIG_NAME":self.board_name})
+        if is_jetson_orin_or_xavier_in_rcm() == False:
+            print("Put device in recovery mode to flash odm-fuses!")
+            exit(1)
+        # odmfuse-test if needed
+        self.prepare_status.set_last_step()
+        ret = self.exec_fn_overlay("flash-gen-pre-is-needed")
+        if ret != None and ret >= 1:
+            # fuse device with odmfuse
+            print("[INFO] Device is not fused!")
+            print("#"*35 + "!! WARNING !!" + "#"*35)
+            print("Going to fuse Jetson device!!")
+            print("!! DO NOT REMOVE POWER WHILE FUSING DEVICE !!")
+            exit(0)
+            self.prepare_status.set_last_step()
+            ret = self.exec_fn_overlay("flash-gen-pre")
+            if ret == 0:
+                print("#"*35 + "!! FUSING DONE () !!" + "#"*35)
+            else:
+                print("#"*35 + f"!! FUSING WAS NOT SUCESSFULL ({ret}) !!" + "#"*35)
+                exit(1)
+
     def flash(self):
         # setup flashing
         self.setup_initrd_flashing()
-
-        # pre - flash ops eg. odmfuse
-        self.functionOnverlays.add_special_var({"BOARD_CONFIG_NAME":self.board_name})
-
-        # odmfuse-test if needed
-        ret = self.exec_fn_overlay("flash-gen-pre-is-needed")
-        if ret >= 1:
-            # fuse device with odmfuse
-            ret = self.exec_fn_overlay("flash-gen-pre")
-        
+        self.flash_gen_prepare()
         # generate images
         ret = self.generate_images()
         if ret != 0:
@@ -1323,11 +1340,11 @@ class DcsDeploy:
         print("Flash images! ...")
         self.prepare_status.change_group("flash")
         self.prepare_status.set_processing_step("flash_only")
+
         # Run sudo identification if not enterred
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.flashing_network} {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
-
 
     def airvolute_flash(self):
         if self.match_selected_config() == None:
