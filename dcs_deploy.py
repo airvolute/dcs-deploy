@@ -151,6 +151,7 @@ class ProcessingStatus:
         self.group = initial_group
         self.status_file_name = status_file_name
         self.current_identifier = default_identifier
+        self.last_step = False
         self.load()
 
         
@@ -232,6 +233,11 @@ class ProcessingStatus:
         if not group in self.status:
             self._init_group_status()
 
+    def set_last_step(self):
+        self.last_step = True
+    
+    def get_last_step(self):
+        return self.last_step
     
     def set_processing_step(self, processing_step_name:str):
         self.last_processing_step = processing_step_name
@@ -245,7 +251,8 @@ class ProcessingStatus:
             processing_step_name = self.last_processing_step
         states = self.status[self.group]["states"]
         states[processing_step_name] = status
-        if last_step == True:
+        if self.last_step == True or last_step == True:
+            self.last_step = False
             # check all status codes
             self.check_status()
         self.save()
