@@ -55,6 +55,38 @@ def call_bash_function(script_file: str, function_name: str, use_sudo: bool, *ar
     full_command = f'{sudo} bash -c "source {script_file} && {function_name} {args_joined}"'
     return cmd_exec(full_command, print_command=True)
 
+def is_jetson_orin_or_xavier_in_rcm() -> bool:
+    # USB device IDs for Jetson Xavier and Orin in RCM mode
+    # update from Linux_for_Tegra/tools/kernel_flash/l4t_initrd_flash.sh
+    known_rcm_ids = {
+        "0955:7018",  # TX2i
+        "0955:7418",  # TX2 4GB
+        "0955:7c18",  # TX2, TX2 NX
+        "0955:7019",  # AGX Xavier
+        "0955:7819",  # AGXi
+        "0955:7919",  # AGXi
+        "0955:7023",  # AGX Orin
+        "0955:7223",  # AGX Orin 32GB
+        "0955:7323",  # Orin NX 16GB (p3767-0000)
+        "0955:7423",  # Orin NX 8GB (p3767-0001)
+        "0955:7523",  # Orin Nano 8GB (p3767-0003)
+        "0955:7623",  # Orin Nano 4GB (p3767-0004)
+        "0955:7e19",  # NX
+    }
+
+    retcode, output, _ = cmd_exec("lsusb", capture_output=True)
+    if retcode != 0 or output is None:
+        print("ERROR: Could not run lsusb.")
+        return False
+
+    for line in output.strip().splitlines():
+        for dev_id in known_rcm_ids:
+            if dev_id in line:
+                print(f"Found device in RCM mode: {line.strip()}")
+                return True
+
+    print("No Jetson Xavier/Orin found in RCM mode.")
+    return False
 
 def check_and_create_symlink(link_path, target_path):
     """
