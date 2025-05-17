@@ -425,7 +425,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         return self.call_cnt[keyword]
         
     
-    def resolve_lt4_initrd_params(self, fn_name) -> Dict:
+    def resolve_lt4_initrd_params(self, fn_name, overlay_name = None) -> Dict:
         fn_type = "lt4-initrd-params"
         out_msg=""
         env=""
@@ -441,6 +441,10 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         is_last_step_set = self.processing_status.get_last_step()
 
         for fn in overlay_fncts:
+            # if specified only one function is called
+            if overlay_name != None:
+                if overlay_name != fn.overlay_name:
+                    continue
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             multi_ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), capture_output=True, print_command=True)
@@ -455,7 +459,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             self.processing_status.set_status(ret, last_step = is_last_step_set)
         return {"args":out_msg, "env": env}
     
-    def resolve_cmd(self, fn_name) -> Dict:
+    def resolve_cmd(self, fn_name, overlay_name = None) -> Dict:
         fn_type = "cmd"
         if fn_name not in self._registry:
             print(f"Calling {fn_name} not registered in function overlays!")
@@ -466,6 +470,10 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
 
         out_ret=0
         for fn in overlay_fncts:
+            # if specified only one function is called
+            if overlay_name != None:
+                if overlay_name != fn.overlay_name:
+                    continue
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), print_command=True)
@@ -477,7 +485,7 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             self.processing_status.set_status(ret, last_step = is_last_step_set, valid_retval = [0, 1] if fn_name == "flash-gen-pre-is-needed" else [])
         return ret
     
-    def resolve_options(self, fn_name) -> str:
+    def resolve_options(self, fn_name, overlay_name = None) -> str:
         fn_type = "option"
         out = []
         if fn_name not in self._registry:
@@ -489,19 +497,23 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         is_last_step_set = self.processing_status.get_last_step()
         
         for fn in overlay_fncts:
+            # if specified only one function is called
+            if overlay_name != None:
+                if overlay_name != fn.overlay_name:
+                    continue
             self.processing_status.set_processing_step(f"fn_overlay@{fn_name}.{fn_type}_{self.inc_call_cnt(fn_name, fn_type)}")
             self._verify_overlay_fn_type(fn, fn_type)
             out.append(" ".join(fn.options))
             self.processing_status.set_status(0, last_step = is_last_step_set)
         return out
     
-    def exec_function(self, fn_name:str):
+    def exec_function(self, fn_name:str, overlay_name:str):
         if fn_name in  self.valid_functions["lt4_initrd_params"]:
-            return self.resolve_lt4_initrd_params(fn_name)
+            return self.resolve_lt4_initrd_params(fn_name, overlay_name)
         elif fn_name in self.valid_functions["option"]:
-            return self.resolve_options(fn_name)
+            return self.resolve_options(fn_name, overlay_name)
         elif fn_name in self.valid_functions["cmd"]:
-            return self.resolve_cmd(fn_name)
+            return self.resolve_cmd(fn_name, overlay_name)
         else:
             raise(ValueError(f"Uknown function name! ({fn_name})"))
             
