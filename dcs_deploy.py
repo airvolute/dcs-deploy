@@ -332,7 +332,7 @@ class FunctionOverlayRegistry:
         self.register_yaml: str = "register.yaml"
         self.overlay_args = overlay_args
         #override if needed
-        self.valid_fn_names = {'flash-gen-pre', 'flash-gen-pre-is-needed', 'flash-gen-internal', 'flash-gen-mid', 'flash-gen-external', 'flash-cleanup', 'get-flash-type'}
+        self.valid_fn_names = {'flash-gen-prepare', 'flash-gen-prepare-is-needed', 'img-gen-internal', 'img-gen-internal-prepare', 'img-gen-external', 'img-gen-cleanup', 'get-img-type'}
 
 
     def register_overlay(self, overlay_name: str):
@@ -401,9 +401,9 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         super().__init__(overlays_base_path, overlay_args)
         self.processing_status = processing_status
         self.valid_functions={}
-        self.valid_functions["lt4_initrd_params"] = ["flash-gen-internal", "flash-gen-external"]
-        self.valid_functions["cmd"] = ["flash-cleanup", "flash-gen-mid", "flash-gen-pre-is-needed", "flash-gen-pre"]
-        self.valid_functions["option"] = ["get-flash-type"]
+        self.valid_functions["lt4_initrd_params"] = ["img-gen-internal", "img-gen-external"]
+        self.valid_functions["cmd"] = ["img-gen-cleanup", "img-gen-internal-prepare", "flash-gen-prepare-is-needed", "flash-gen-prepare"]
+        self.valid_functions["option"] = ["get-img-type"]
         self.setup_valid_fn_names()
         self.call_cnt={}
 
@@ -478,11 +478,11 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
             self._verify_overlay_fn_type(fn, fn_type)
             ret = cmd_exec(fn.resolve(self.keymap, self.overlay_args,  self.overlays_base_path), print_command=True)
             print(f"overlay function '{fn.overlay_name}.{fn.name}.{fn.type}' returned:{ret}")
-            if fn_name == "flash-gen-pre-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app:
+            if fn_name == "flash-gen-prepare-is-needed" and ret > 1: # just 0, or 1 are valid, others are errors, then exit app:
                 self.processing_status.set_status(ret, last_step=True, valid_retval = [0, 1])
                 raise ValueError(f"Error occured when callig overlay function '{fn.overlay_name}'. Please check previous messages.")
             out_ret += ret
-            self.processing_status.set_status(ret, last_step = is_last_step_set, valid_retval = [0, 1] if fn_name == "flash-gen-pre-is-needed" else [])
+            self.processing_status.set_status(ret, last_step = is_last_step_set, valid_retval = [0, 1] if fn_name == "flash-gen-prepare-is-needed" else [])
         return ret
     
     def resolve_options(self, fn_name, overlay_name = None) -> str:
@@ -1142,8 +1142,8 @@ class DcsDeploy:
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         self.board_system_vars=""
         self.rfs_enc = False
-        
         self.gen_external_only = False
+        self.env_vars = ""
         
         self.flashing_network=""
         if self.config['storage'] == 'nvme':
@@ -1180,13 +1180,25 @@ class DcsDeploy:
             self.rootdev = "external"
             self.external_device = "--external-device nvme0n1p1 "
             self.prepare_status.set_last_step() # prepare phase
-            fn_overlay_options = self.exec_fn_overlay("get-flash-type")
-            print(f"Fn Overlay get-flash-type returned:{fn_overlay_options}")
+            fn_overlay_options = self.exec_fn_overlay("get-img-type")
+            print(f"Fn Overlay get-img-type returned:{fn_overlay_options}")
             if "rfsenc" in fn_overlay_options:
-                print("Found rfsenc config in fn. overlay - get-flash-type")
+                print("Found rfsenc config in fn. overlay - get-img-type")
                 self.rfs_enc = True
             self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, self.rfs_enc, self.args.nvme_disk_size)
             print(f"Selected ext_partition_layout: {self.ext_partition_layout}")
+
+        if self.args.ab_partition == True:
+            self.env_vars += " ROOTFS_AB=1"
+            if self.args.rootfs_type == "minimal":
+                opt_app_size = 4
+            else:
+                opt_app_size = 8
+            self.opt_app_size_arg = f"-S {opt_app_size}GiB"
+            #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
+
+        if self.args.app_size is not None:
+            self.opt_app_size_arg = f"-S {self.args.app_size}GiB"
         else:
             print("Unknown storage [%s]! exitting" % self.config['storage'])
             exit(9)
@@ -1194,109 +1206,150 @@ class DcsDeploy:
         if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
 
-    def generate_images(self):
-        self.prepare_status.change_group("images")
+    def group_regeneration_needed(self, group = None):
         # check commandline parameter if they are same as previous and images are already generated skip generation
-        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
-            print("Images already generated! Skipping generating images!")
+        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status(group) == True:
+            print(f"Generation in group {self.prepare_status.get_group(group)} is ready!")
             return 0
+        return 1
 
-        
+    def request_recovery_mode(self,message:str=""):
+        self.prepare_status.set_processing_step("check-device-rcm-mode")
+        rcm_mode = is_jetson_orin_or_xavier_in_rcm()
+        if rcm_mode == False:
+            print( message + " Please put device into recovery mode and start script again!")
+            self.prepare_status.set_status(int(rcm_mode), valid_retval=[1], last_step= True)
+            exit(1)
+        self.prepare_status.set_status(int(rcm_mode), valid_retval=[1])
+
+    def call_fn_overlay_img_gen_interal_prepare(self):
+        # for rfs enc, eks image should be prepared before generating images
+        ret = self.exec_fn_overlay("img-gen-internal-prepare")
+
+        if ret != None and ret != 0:
+            print(f"ERROR! - Fn Overlay img-gen-internal-prepare returned:{ret}")
+            exit(ret)
+            # call cleanup if necessary for function overlay
+        ret = self.exec_fn_overlay("img-gen-cleanup")
+        if ret != None:
+            print(f"Fn Overlay img-gen-cleanup returned:{ret}")
+
+    def generate_images(self):
+        self.prepare_status.change_group("images-phase-0" if self.rfs_enc else "gen-images")
         print("-"*80)
         print("Generating images! ...")
         ret = -2
 
         # Note: --no-flash parameter allows us to only generate images which will be used for flashing new devices
         # flash internal emmc"
-        env_vars = ""
         if self.config['storage'] == 'emmc':
+            if self.group_regeneration_needed() == 0:
+                print("Images already generated in group! Skipping generating images!")
+                return 0
             self.prepare_status.set_processing_step("generate_images-emmc")
             ret = cmd_exec(f"sudo ./{self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
+            self.prepare_status.set_status(ret, last_step = True)
+            return ret
         # flash external nvme drive
-        elif self.config['storage'] == 'nvme':
-            #file to check: initrdflashparam.txt - contains last enterred parameters
-            env_vars = self.board_system_vars
-            opt_app_size_arg = ""
-            #external_only = True # flash only external device
-            #self.gen_external_only = False
-            if self.args.ab_partition == True:
-                env_vars += " ROOTFS_AB=1"
-                if self.args.rootfs_type == "minimal":
-                    opt_app_size = 4
-                else:
-                    opt_app_size = 8
-                opt_app_size_arg = f"-S {opt_app_size}GiB"
-                #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
+        if self.rfs_enc == False and self.group_regeneration_needed() == 0:
+            print("Images for internal storage already generated in group! Skipping generating images!")
+            return 0
+    
+        #file to check: initrdflashparam.txt - contains last enterred parameters
+        self.env_vars = self.board_system_vars
+        self.opt_app_size_arg = ""
+        #external_only = True # flash only external device
+        #self.gen_external_only = False
 
-            if self.args.app_size is not None:
-                opt_app_size_arg = f"-S {self.args.app_size}GiB"
-               
-            cmd_exec("pwd")
-            append=""
-            if not self.gen_external_only:
-                print("Generating internal memory! ...")
+            
+        append=""
+        if not self.gen_external_only:
+            append = "--append"
+            if self.group_regeneration_needed():
+                print("Generating internal device images! ...")
                 print("-"*80)
-                # get command specific options from funct overlay
-                overlay_params = self.exec_fn_overlay("flash-gen-internal")
-                print(f"Fn Overlay flash-gen-internal parameters:{overlay_params}")
+                # get command specific options from funct overlay img-gen-internal-prepare
+                self.call_fn_overlay_img_gen_interal_prepare()
+            
+                # get command specific options for l4t_initrd_flash from funct overlay img-gen-internal
+                overlay_params = self.exec_fn_overlay("img-gen-internal")
+                print(f"Fn Overlay img-gen-internal parameters:{overlay_params}")
 
                 self.prepare_status.set_processing_step("generate_images-internal")
                 #./${flash_script_path} -u ./rsa.pem -v ./sbk.key $uefi_keys_opt --no-flash --network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" --showlogs ${board_config_name} internal
-                ret = cmd_exec(f"sudo {env_vars} {overlay_params['env']} ./{self.flash_script_path} --no-flash {self.flashing_network} {overlay_params['args']} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
+                ret = cmd_exec(f"sudo {self.env_vars} {overlay_params['env']} ./{self.flash_script_path} --no-flash {self.flashing_network} {overlay_params['args']} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
                 self.prepare_status.set_status(ret)
                 
+                if self.rfs_enc == True:
+                    # this is last step in case we are creating encrypted image (img-gen-internal-prepare exist)
+                    self.prepare_status.set_last_step()
+                # ret = cmd_exec("sudo cp bootloader/eks_t234_sigheader.img.encrypt ./tools/kernel_flash/images/internal/")
                 # call cleanup if necessary for function overlay
-                overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
+                overlay_flash_cleanup_ret = self.exec_fn_overlay("img-gen-cleanup")
                 if overlay_flash_cleanup_ret != None:
-                    print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
-                
-                append = "--append"
-                # get command specific options from funct overlay flash-gen-mid
-                overlay_mid_ret = self.exec_fn_overlay("flash-gen-mid")
+                    print(f"Fn Overlay img-gen-cleanup returned:{overlay_flash_cleanup_ret}")
+                if ret != 0:
+                    print(f"Error occured while generating image!({ret}) Exitting!")
+                    exit(1)           
+            
+        print("-"*80)
+        print("Going to generate external device images! ...")
 
-                if overlay_mid_ret != None and overlay_mid_ret != 0:
-                    print(f"ERROR! - Fn Overlay flash-gen-mid returned:{overlay_mid_ret}")
-                    exit(overlay_mid_ret)
+        if self.rfs_enc == True:
+            # create new generation phase - for rootfs enc  - device must be connected while generating RFS image  (ECID number is necessary for generation)
+            self.prepare_status.change_group("images-phase-1")
             
-                # call cleanup if necessary for function overlay
-                overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
-                if overlay_flash_cleanup_ret != None:
-                    print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
             
-            print("-"*80)
-            print("Generating external memory! ...")
-            # get command specific options from funct overlay flash-gen-external
-            overlay_params = self.exec_fn_overlay("flash-gen-external")
-            print(f"Fn Overlay flash-gen-internal parameters:{overlay_params}")
+            self.request_recovery_mode("RFS enc mode needs regenerate image!")
+        # in non secure image generation, images can be generated once and no regeneration is needed
+        elif self.group_regeneration_needed() == 0:
+            print("Images for external storage already generated in group! Skipping generating images!")
+            return 0
 
-            self.prepare_status.set_processing_step("generate_images-external")
-            #sudo ROOTFS_ENC=1 ./${flash_script_path} -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key  -i ${OUT_dir}/sym2_t234.key -S ${partition_size} --no-flash --network usb0 --showlogs
-            #  --external-device ${nvme_device} -c ./tools/kernel_flash/flash_l4t_t234_nvme_rootfs_enc.xml --external-only --append  ${board_config_name} external
-            ret = cmd_exec(f"sudo {env_vars} {overlay_params['env']} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {self.flashing_network} {overlay_params['args']} --showlogs " + 
-                           f"{self.external_device} -c {self.ext_partition_layout} --external-only {append} {self.board_name} {self.rootdev}", print_command=True)
-            
-            # call cleanup if necessary for function overlay
-            overlay_flash_cleanup_ret = self.exec_fn_overlay("flash-cleanup")
-            if overlay_flash_cleanup_ret != None:
-                print(f"Fn Overlay flash-cleanup returned:{overlay_flash_cleanup_ret}")
-            
-        self.prepare_status.set_status(ret, last_step= True)
+        # get command specific options from funct overlay img-gen-external
+        overlay_params = self.exec_fn_overlay("img-gen-external")
+        print(f"Fn Overlay img-gen-internal parameters:{overlay_params}")
+
+        self.prepare_status.set_processing_step("generate_images-external")
+        #sudo ROOTFS_ENC=1 ./${flash_script_path} -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key  -i ${OUT_dir}/sym2_t234.key -S ${partition_size} --no-flash --network usb0 --showlogs
+        #  --external-device ${nvme_device} -c ./tools/kernel_flash/flash_l4t_t234_nvme_rootfs_enc.xml --external-only --append  ${board_config_name} external
+        ret = cmd_exec(f"sudo {self.env_vars} {overlay_params['env']} ./{self.flash_script_path} {self.opt_app_size_arg} --no-flash {self.flashing_network} {overlay_params['args']} --showlogs " + 
+                        f"{self.external_device} -c {self.ext_partition_layout} --external-only {append} {self.board_name} {self.rootdev}", print_command=True)
+        print(f"cmd_exec returned:{ret}")
+        self.prepare_status.set_status(ret, last_step = True if self.rfs_enc == False else False)
+        
+        if self.rfs_enc:
+            self.prepare_status.set_last_step()
+        # call cleanup if necessary for function overlay
+        overlay_flash_cleanup_ret = self.exec_fn_overlay("img-gen-cleanup")
+        if overlay_flash_cleanup_ret != None:
+            print(f"Fn Overlay img-gen-cleanup returned:{overlay_flash_cleanup_ret}")
+        print("*"*80)
+        if ret != 0:
+            print(f"Error occured while generating image!({ret}) Exitting!")
+            exit(1)
         return ret
     
-    def exec_fn_overlay(self, fn_name):
-        return self.functionOnverlays.exec_function(fn_name)
+    def exec_fn_overlay(self, fn_name, overlay_name=None):
+        try:
+            ret = self.functionOnverlays.exec_function(fn_name, overlay_name)
+        except Exception as e:
+            print(f"Calling overlay was not successfull: {e}")
+            print("Exitting!")
+            exit(2)
+        return ret
 
-    def flash_gen_prepare(self):
+    def flash_gen_prepare_odmfuse(self):
         # used for eg. odmfuse
-        self.prepare_status.change_group("flash-gen-prepare")
+        self.prepare_status.change_group("flash-gen-prepare-odmfuse")
         # pre - flash ops eg. odmfuse
         self.functionOnverlays.add_special_var({"BOARD_CONFIG_NAME":self.board_name})
-        if is_jetson_orin_or_xavier_in_rcm() == False:
-            print("Put device in recovery mode to flash odm-fuses!")
-            exit(1)
+        
+        self.request_recovery_mode()
+        
         # odmfuse-test if needed
         self.prepare_status.set_last_step()
-        ret = self.exec_fn_overlay("flash-gen-pre-is-needed")
+        ret = self.exec_fn_overlay("flash-gen-prepare-is-needed", "odmfuse")
         if ret != None and ret >= 1:
             # fuse device with odmfuse
             print("[INFO] Device is not fused!")
@@ -1305,7 +1358,7 @@ class DcsDeploy:
             print("!! DO NOT REMOVE POWER WHILE FUSING DEVICE !!")
             exit(0)
             self.prepare_status.set_last_step()
-            ret = self.exec_fn_overlay("flash-gen-pre")
+            ret = self.exec_fn_overlay("flash-gen-prepare", "odmfuse")
             if ret == 0:
                 print("#"*35 + "!! FUSING DONE () !!" + "#"*35)
             else:
@@ -1315,7 +1368,7 @@ class DcsDeploy:
     def flash(self):
         # setup flashing
         self.setup_initrd_flashing()
-        self.flash_gen_prepare()
+        self.flash_gen_prepare_odmfuse()
         # generate images
         ret = self.generate_images()
         if ret != 0:
@@ -1341,6 +1394,7 @@ class DcsDeploy:
 
         self.download_resources()
         self.prepare_sources_production()
+        #return #now just return
         self.flash()
         quit() 
 
