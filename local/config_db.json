@@ -66,6 +66,7 @@
     "local_overlays": ["dcs_first_boot", "hardware_support_layer", "save_version.sh"],
     "l4t": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Jetson_Linux_R35.4.1_aarch64.tbz2",
     "nv_ota_tools" : "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v4.1/release/ota_tools_r35.4.1_aarch64.tbz2",
+    "public_sources": "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v4.1/sources/public_sources.tbz2",
     "rootfs": "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v4.1/release/Tegra_Linux_Sample-Root-Filesystem_R35.4.1_aarch64.tbz2",
     "rootfs_type": "full"
   },
