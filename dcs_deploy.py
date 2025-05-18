@@ -10,8 +10,11 @@ import time
 from urllib.parse import urlparse
 import sys as _sys
 import yaml
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Union, Tuple, Callable
 from pathlib import Path
+import termios
+import tty
+import select
 
 dcs_deploy_version = "3.0.0"
 
@@ -55,7 +58,67 @@ def call_bash_function(script_file: str, function_name: str, use_sudo: bool, *ar
     full_command = f'{sudo} bash -c "source {script_file} && {function_name} {args_joined}"'
     return cmd_exec(full_command, print_command=True)
 
-def is_jetson_orin_or_xavier_in_rcm() -> bool:
+def is_key_pressed() -> Optional[str]:
+    """Non-blocking key press detection"""
+    dr, _, _ = select.select([_sys.stdin], [], [], 0)
+    if dr:
+        return _sys.stdin.read(1)
+    return None
+
+def wait_with_check(
+    wait_time: float,
+    check_func: Callable[[], int], #eg. test() -> int (0) -
+    interval: Optional[float] = 0.1,
+    esc_callback: Optional[Callable[[], None]] = lambda: exit(1),
+    valid_ret_val: Optional[List[int]] = None,
+):
+    """
+    Waits for `wait_time` seconds, checking device state every `interval`.
+    Exits if ESC is pressed, calling `esc_callback` if defined.
+    
+    Args:
+        wait_time (float): Total wait time in seconds.
+        check_func (Callable): Function called each interval; should return int.
+        interval (float): Time between checks.
+        esc_callback (Callable): Function to call if ESC is pressed.
+        valid_ret_val (int, optional): If provided, check_func return must match.
+    """
+    print(f"Waiting for up to {wait_time} seconds. Press ESC to exit.")
+    start = time.time()
+    if valid_ret_val == None:
+        valid_ret_val = [0]
+
+    # Save terminal settings
+    fd = _sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    tty.setcbreak(fd)
+    cnt = 0
+    try:
+        while (elapsed := time.time() - start) < wait_time:
+            key = is_key_pressed()
+            if key == '\x1b':  # ESC
+                print("\nESC pressed. Exiting ...")
+                if esc_callback:
+                    esc_callback()
+                return 1
+
+            ret = check_func()
+            if valid_ret_val is not None and ret in valid_ret_val:
+                print("Valid state detected ...")
+                return 0
+
+            time.sleep(interval)
+            cnt +=1
+            if (cnt %10 == 0):
+                print(".", end="",  flush=True)
+    finally:
+        # Restore terminal settings
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+    print("Waiting finished.")
+    return 2
+
+def is_jetson_orin_or_xavier_in_rcm(print_msg=False) -> bool:
     # USB device IDs for Jetson Xavier and Orin in RCM mode
     # update from Linux_for_Tegra/tools/kernel_flash/l4t_initrd_flash.sh
     known_rcm_ids = {
@@ -82,10 +145,10 @@ def is_jetson_orin_or_xavier_in_rcm() -> bool:
     for line in output.strip().splitlines():
         for dev_id in known_rcm_ids:
             if dev_id in line:
-                print(f"Found device in RCM mode: {line.strip()}")
+                if print_msg: print(f"Found device in RCM mode: {line.strip()}")
                 return True
 
-    print("No Jetson Xavier/Orin found in RCM mode.")
+    if print_msg: print("No Jetson Xavier/Orin found in RCM mode.")
     return False
 
 def check_and_create_symlink(link_path, target_path):
@@ -1239,9 +1302,13 @@ class DcsDeploy:
         return 1
 
     def request_recovery_mode(self,message:str=""):
+        print("Please put device into recovery mode")
         self.prepare_status.set_processing_step("check-device-rcm-mode")
-        rcm_mode = is_jetson_orin_or_xavier_in_rcm()
+        rcm_mode = is_jetson_orin_or_xavier_in_rcm(print_msg=True)
         if rcm_mode == False:
+            ret = wait_with_check(10, is_jetson_orin_or_xavier_in_rcm, valid_ret_val=[int(True)])
+            if ret == 0:
+                return
             print( message + " Please put device into recovery mode and start script again!")
             self.prepare_status.set_status(int(rcm_mode), valid_retval=[1], last_step= True)
             exit(1)
