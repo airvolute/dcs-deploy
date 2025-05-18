@@ -432,6 +432,11 @@ class FunctionOverlayRegistry:
         print(fn_list)
         return 0
 
+    def is_registred(self, overlay_name:str):
+        if overlay_name in self._fucnt_overlays:
+            return True
+        return False
+
     def set_special_vars(self, keymap: Dict[str, str]):
         """Set known values for placeholders like BOARD_CONFIG_NAME"""
         self.keymap = keymap
@@ -1235,7 +1240,9 @@ class DcsDeploy:
         else:
             print("Unknown device! [%s] exitting" % self.config['device'])
             exit(8)
-         
+        
+        self.functionOnverlays.add_special_var({"BOARD_CONFIG_NAME":self.board_name})
+
         if self.config['storage'] == 'emmc':
             self.rootdev = "mmcblk0p1"
             self.external_device = ""
@@ -1407,11 +1414,12 @@ class DcsDeploy:
         return ret
 
     def flash_gen_prepare_odmfuse(self):
+        if self.functionOnverlays.is_registred("odmfuse") == False:
+            return 0
         # used for eg. odmfuse
         self.prepare_status.change_group("flash-gen-prepare-odmfuse")
         # pre - flash ops eg. odmfuse
-        self.functionOnverlays.add_special_var({"BOARD_CONFIG_NAME":self.board_name})
-        
+
         self.request_recovery_mode()
         
         # odmfuse-test if needed
