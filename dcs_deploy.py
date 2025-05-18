@@ -1290,6 +1290,7 @@ class DcsDeploy:
         if rcm_mode == False:
             ret = wait_with_check(10, is_jetson_orin_or_xavier_in_rcm, valid_ret_val=[int(True)])
             if ret == 0:
+                self.prepare_status.set_status(int(rcm_mode), valid_retval=[1])
                 return
             print( message + " Please put device into recovery mode and start script again!")
             self.prepare_status.set_status(int(rcm_mode), valid_retval=[1], last_step= True)
@@ -1330,7 +1331,7 @@ class DcsDeploy:
             return 0
     
         #file to check: initrdflashparam.txt - contains last enterred parameters
-        self.env_vars = self.board_system_vars
+        self.env_vars += f" {self.board_system_vars}"
         self.opt_app_size_arg = ""
         #external_only = True # flash only external device
         #self.gen_external_only = False
@@ -1352,6 +1353,7 @@ class DcsDeploy:
                 self.prepare_status.set_processing_step("generate_images-internal")
                 #./${flash_script_path} -u ./rsa.pem -v ./sbk.key $uefi_keys_opt --no-flash --network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" --showlogs ${board_config_name} internal
                 ret = cmd_exec(f"sudo {self.env_vars} {overlay_params['env']} ./{self.flash_script_path} --no-flash {self.flashing_network} {overlay_params['args']} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
+                print(f"cmd_exec returned:{ret}")
                 self.prepare_status.set_status(ret)
                 
                 if self.rfs_enc == True:
