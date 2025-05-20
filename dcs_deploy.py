@@ -631,6 +631,9 @@ class DcsDeploy:
         ab_partition_help = 'Prepare ab partion for system update. Only available for nvme devices'
         subparser.add_argument('--ab_partition', action='store_true', help=ab_partition_help)
 
+        only_l4t_help = 'Prepare only L4T directory with applied all overlays'
+        subparser.add_argument('--only-l4t',  action='store_true', help=only_l4t_help)
+
         opt_app_size_help = 'Set APP partition size in GB. Use when you get "No space left on device" error while flashing custom rootfs'
         subparser.add_argument('--app_size', help=opt_app_size_help)
 
@@ -640,6 +643,7 @@ class DcsDeploy:
 
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
+
 
     def create_parser(self):
         """
@@ -1279,7 +1283,7 @@ class DcsDeploy:
 
     def group_regeneration_needed(self, group = None):
         # check commandline parameter if they are same as previous and images are already generated skip generation
-        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status(group) == True:
+        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force", "--only-l4t"]) and self.prepare_status.get_status(group) == True:
             print(f"Generation in group {self.prepare_status.get_group(group)} is ready!")
             return 0
         return 1
@@ -1473,6 +1477,9 @@ class DcsDeploy:
         self.download_resources()
         self.prepare_sources_production()
         #return #now just return
+        if self.args.only_l4t == True:
+            print("only-l4t parameter enterred!. Skipping generation images! Exitting!")
+            exit(0)
         self.flash()
         quit() 
 
