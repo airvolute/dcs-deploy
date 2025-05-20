@@ -1212,6 +1212,7 @@ class DcsDeploy:
         self.rfs_enc = False
         self.gen_external_only = False
         self.env_vars = ""
+        self.opt_app_size_arg = ""
         
         self.flashing_network=""
         if self.config['storage'] == 'nvme':
@@ -1332,7 +1333,7 @@ class DcsDeploy:
     
         #file to check: initrdflashparam.txt - contains last enterred parameters
         self.env_vars += f" {self.board_system_vars}"
-        self.opt_app_size_arg = ""
+        
         #external_only = True # flash only external device
         #self.gen_external_only = False
 
