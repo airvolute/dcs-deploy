@@ -1262,6 +1262,9 @@ class DcsDeploy:
                 self.rfs_enc = True
             self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, self.rfs_enc, self.args.nvme_disk_size)
             print(f"Selected ext_partition_layout: {self.ext_partition_layout}")
+        else:
+            print("Unknown storage [%s]! exitting" % self.config['storage'])
+            exit(9)
 
         if self.args.ab_partition == True:
             self.env_vars += " ROOTFS_AB=1"
@@ -1275,8 +1278,8 @@ class DcsDeploy:
         if self.args.app_size is not None:
             self.opt_app_size_arg = f"-S {self.args.app_size}GiB"
         else:
-            print("Unknown storage [%s]! exitting" % self.config['storage'])
-            exit(9)
+            print("App partition size is not specified! Setting to default value!")
+            
         # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
         if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
