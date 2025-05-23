@@ -282,13 +282,22 @@ The procedure to sucesfully downgrade is as follows:
 1. Wait until finished.
 sudo ./flash.sh -c bootloader/t186ref/cfg/flash_t234_qspi.xml airvolute-dcs2.0+p3767-0000 internal
 
+or 
+
+sudo ./flash.sh -c bootloader/t186ref/cfg/flash_t234_qspi.xml airvolute-dcs1.2+p3767-0000 internal
+
+
 2. Wait until finished (even error is ok).
 sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 nvme0n1p1
+
+or 
+
+sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml --showlogs --network usb0 airvolute-dcs1.2+p3767-0000 nvme0n1p1
 ```
 1. After the 2nd flash is finished, you might need to reflash the device with the JP 5.1.2 configuration one more time using standard `dcs-deploy` command. If were using the same configuration to downgrade to JP 5.1.2, you need to use `--regen` flag to be sure, that the images are the ones from the configuration. After this flash you can use the device and `dcs-deploy` as usual.
 
 #### Known issues:
-- IMX219 camera is the only camera supported at port A. 
+- IMX219 camera is the only camera supported at port A - only DroneCore 2.0. 
   - To use this camera configuration you need to apply it as device tree overlay using `sudo python /opt/nvidia/jetson-io/jetson-io.py` navigate in menu to Configure Jetson 24pin CSI Connector -> Configure for compatible hardware -> Camera IMX219, and select this device tree overlay. After selection you need to confirm the selection and reboot the DroneCore.
   - After the reboot for launching this cam you need to run these commands to enable and start the camera:
     - 1. `sudo gpioset gpiochip2 0=1`
