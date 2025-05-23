@@ -947,7 +947,7 @@ class DcsDeploy:
 
     def prepare_sources_production(self):
         is_same, status = self.prepare_status.compare_states("prepare", "install_local_overlay@", self.get_local_overlays())
-        if self.prepare_status.get_status() == True and self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and is_same:
+        if self.group_regeneration_needed() == False and is_same:
             print("registering local overlays!")
             self.register_local_overlays()
             print("Binaries already prepared!. Skipping!")
