@@ -1374,7 +1374,12 @@ class DcsDeploy:
                     print(f"Fn Overlay img-gen-cleanup returned:{overlay_flash_cleanup_ret}")
                 if ret != 0:
                     print(f"Error occured while generating image!({ret}) Exitting!")
-                    exit(1)           
+                    exit(1)
+                if self.rfs_enc == True and self.args.jetpack == "512":
+                    ret = cmd_exec(f"sudo cp bootloader/eks_t234_sigheader_encrypt.img.signed ./tools/kernel_flash/images/internal/")
+                    if ret != 0:
+                        print("Error when copying eks_t234_sigheader_encrypt.img.signed")
+                        exit(1)
             
         print("-"*80)
         print("Going to generate external device images! ...")
