@@ -1262,6 +1262,9 @@ class DcsDeploy:
                 self.rfs_enc = True
             self.ext_partition_layout = self.get_ext_partition_layout_file(self.args.ab_partition, self.rfs_enc, self.args.nvme_disk_size)
             print(f"Selected ext_partition_layout: {self.ext_partition_layout}")
+        else:
+            print("Unknown storage [%s]! exitting" % self.config['storage'])
+            exit(9)
 
         if self.args.ab_partition == True:
             self.env_vars += " ROOTFS_AB=1"
@@ -1275,33 +1278,8 @@ class DcsDeploy:
         if self.args.app_size is not None:
             self.opt_app_size_arg = f"-S {self.args.app_size}GiB"
         else:
-            if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
-                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
-                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            elif self.config['device'] in ['orin_nx_super', 'orin_nx_8gb_super', 'orin_nano_8gb_super', 'orin_nano_4gb_super']:
-                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000-super"
-                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            elif self.config['device'] in ['orin_nx_super_maxn', 'orin_nx_8gb_super_maxn']:
-                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000-super-maxn"
-                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            else:
-                print("Unknown device! [%s] exitting" % self.config['device'])
-                exit(8)
-
-            if self.config['storage'] == 'nvme':
-                self.rootdev = "external"
-                self.external_device = ""
-                self.external_device = "--external-device nvme0n1p1 "
-                if self.args.ab_partition == True:
-                    # setup multiple app partitions
-                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
-                else:
-                    # setup no multiple app partitions
-                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_t234_nvme.xml')
-            else:
-                print("Unknown storage [%s]! exitting" % self.config['storage'])
-                exit(9)
-
+            print("App partition size is not specified! Setting to default value!")
+            
         # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
         if self.config['device'] in ['orin_nx', 'orin_nx_super', 'orin_nx_super_maxn', 'orin_nx_8gb', 'orin_nx_8gb_super', 'orin_nx_8gb_super_maxn', 'orin_nano_8gb', 'orin_nano_8gb_super', 'orin_nano_4gb', 'orin_nano_4gb_super']:
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
