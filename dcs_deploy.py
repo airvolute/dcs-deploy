@@ -644,6 +644,10 @@ class DcsDeploy:
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
 
+        use_config_help = 'Use to select preferred config when multiple configs with same reqired parameters exist,'\
+                                ' but differs in overlays'
+        subparser.add_argument('--use-config', help=use_config_help)
+
 
     def create_parser(self):
         """
@@ -1017,6 +1021,16 @@ class DcsDeploy:
 
     def prepare_nvidia_overlay(self):
         return self.extract_resource('nvidia_overlay')
+    
+    def check_config(self, config):
+        if (self.args.target_device in self.config_db[config]['device'] and
+            self.args.jetpack == self.config_db[config]['l4t_version'] and
+            self.args.hwrev in self.config_db[config]['board'] and
+            self.args.board_expansion in self.config_db[config]['board_expansion'] and
+            self.args.storage in self.config_db[config]['storage'] and
+            self.args.rootfs_type == self.config_db[config]['rootfs_type']):
+            return config
+        return None
 
     def match_selected_config(self):
         """
@@ -1025,16 +1039,21 @@ class DcsDeploy:
         # do not search again
         if self.selected_config_name != None:
             return self.selected_config_name
-        
-        for config in self.config_db:
-            if (self.args.target_device in self.config_db[config]['device'] and
-                self.args.jetpack == self.config_db[config]['l4t_version'] and
-                self.args.hwrev in self.config_db[config]['board'] and
-                self.args.board_expansion in self.config_db[config]['board_expansion'] and
-                self.args.storage in self.config_db[config]['storage'] and
-                self.args.rootfs_type == self.config_db[config]['rootfs_type']):
+        # TODO use config
+        if self.args.use_config != None:
+            print(f"User select config: {self.args.use_config}")
+            if self.args.use_config in self.config_db:
+                config = self.check_config(self.args.use_config)
+                if config == None:
+                    print("Wrong configuration provided! Required parameters don't match!")
+                    exit(1)
+                print(f"Selecting config: {config}")
                 return config
-                
+
+        for config in self.config_db:
+            if self.check_config(config) != None:
+                print(f"Selected config: {config}")
+                return config
         return None
     
     def get_local_overlays(self, src="config"):
