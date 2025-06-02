@@ -247,7 +247,7 @@ Expected outcome:
 
 #### 3. Flashing issues
 
-##### ERROR: might be timeout in USB write.
+##### ERROR: might be timeout in USB write
 
 On new host kernels, USB flashing problems can happen eg.: `ERROR: might be timeout in USB write.` see listing 1). New kernels have enabled USB autosuspend functionality which causes flashing errors. Use following commands to stop usb autosuspend:
 ```
@@ -274,7 +274,7 @@ To make the change persistent, [edit GRUB](https://askubuntu.com/a/534464).
 
 ##### RTNETLINK answers: Operation not supported
 
-This error happens during the flasihng process. Snippet:
+This error happens during the flashing process. Snippet:
 
 ```txt
 ***************************************
@@ -305,7 +305,7 @@ RTNETLINK answers: Operation not supported
 ...RTNETLINK answers: Operation not supported
 RTNETLINK answers: Operation not supported
 .
-.
+. (message repeats multiple times)
 .
 ...Timeout
 Cleaning up...
