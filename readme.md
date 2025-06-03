@@ -297,12 +297,22 @@ sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme
 1. After the 2nd flash is finished, you might need to reflash the device with the JP 5.1.2 configuration one more time using standard `dcs-deploy` command. If were using the same configuration to downgrade to JP 5.1.2, you need to use `--regen` flag to be sure, that the images are the ones from the configuration. After this flash you can use the device and `dcs-deploy` as usual.
 
 #### Known issues:
-- IMX219 camera is the only camera supported at port A - only DroneCore 2.0. 
+- IMX219 camera is supported at port A - only DroneCore 2.0. 
   - To use this camera configuration you need to apply it as device tree overlay using `sudo python /opt/nvidia/jetson-io/jetson-io.py` navigate in menu to Configure Jetson 24pin CSI Connector -> Configure for compatible hardware -> Camera IMX219, and select this device tree overlay. After selection you need to confirm the selection and reboot the DroneCore.
   - After the reboot for launching this cam you need to run these commands to enable and start the camera:
     - 1. `sudo gpioset gpiochip2 0=1`
-      2. `sudo rmmod nv_imx219`
-      3. `sudo modprobe nv_imx219`
+      1. `sudo rmmod nv_imx219`
+      2. `sudo modprobe nv_imx219`
+  
+- Airvolute Hadron Expander at port CAM 2/3 - only DroneCore 2.0. 
+  - To use this camera configuration you need to apply it as device tree overlay using `sudo python /opt/nvidia/jetson-io/jetson-io.py` navigate in menu to Configure Jetson 24pin CSI Connector -> Configure for compatible hardware -> Camera OV64B40 Airvolute Hadron Expander CAM23 DCS20, and select this device tree overlay. After selection you need to confirm the selection and reboot the DroneCore.
+
+- Warning: There is a known issue with the Hadron Expander. 
+  - In the beta release of JetPack 6.2 you need to reload the driver after each boot. This is done by running the following commands:
+    - `sudo rmmod av_ov64b40`
+    - `sudo modprobe av_ov64b40`
+ - The issue by the fact, that the board is currently not being properly restarted due to GPIO control. This issue will be fixed by software update in the next releases.
+
 
 Other cameras support and configuration will be added as soon as possible. 
 
