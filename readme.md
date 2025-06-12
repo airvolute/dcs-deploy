@@ -161,6 +161,106 @@ The `local_overlays` example:
 
 Third party overlays can be created and can be added to the `local/overlays` directory and added to the `config_db.json`. This is the easiest way to add new features to the device without the need to create a new rootfs. This is especially useful for the development of new features or for the testing of new features.
 
+#### Functional overlays
+**Functional** overlays are special type of overlay which registers also pre-defined **funcions** in `dcs_deploy.py` script. They are developed mostly for support *secure-boot*, *odm-fuse*, and *rootfs encryption*.
+##### Working with Functional overlays
+
+- create new overlay directory and create `register.yaml` file. Content of lile can be as follows:
+```
+---
+functions:
+    img-gen-internal:
+        type: "lt4-initrd-params" # returns -u ${dir}/rsa.pem -v ${dir}/sbk.key $uefi_keys_opt
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args:
+            - "--get-internal-params"
+    img-gen-internal-prepare:
+        type: "cmd"
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args:
+            - "--gen-and-copy-eks-image"
+    img-gen-external:
+        type: "lt4-initrd-params" 
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args: 
+            - "--get-ext-params"   # -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key
+        get-env: "ROOTFS_ENC=1" # add env var for lt4-initrd-params
+        
+    img-gen-cleanup:
+        type: "cmd"
+        cmd: "apply_sec_boot_rfs_enc.sh"
+        args: 
+            - "--cleanup"
+    get-img-type:
+        type: "option"
+        options:
+            - "rfsenc" #specify type of partition to be used. rfsenc -> enable variable encryption
+```
+function descrition:
+    - `img-gen-internal` - called to get optional argumets for Jetson **internal** memory generation. Type of function is `lt4-initrd-params` which means, it returns only `lt4-initrd` parameters
+    - `img-gen-internal-prepare` - do some preparation steps needed to prepare all necessary steps for `lt4-initrd` internal memory generation. Type of funcion is `cmd`, which means it just calls some bash commands
+    - `img-gen-external` - called to get optional argumets for Jetson **external** memory generation. Type of function is `lt4-initrd-params` which means, it returns only `lt4-initrd` parameters
+    - `img-gen-cleanup`  - called after image generation is done
+    - `get-img-type`     - return type of image - if image will be encrypted, specify option `rfsenc`. In this case, proper partition layout is setup for generating image
+
+
+Next functions are called before image generation. Mostly they are used for odm-fuse flashing
+```
+    flash-gen-prepare-is-needed:
+        type: "cmd"
+        cmd: "apply_odmfuse.sh"
+        args:
+            - "--is-fused"
+            - "<BOARD_CONFIG_NAME>"
+
+    flash-gen-prepare:
+        type: "cmd"
+        cmd: "apply_odmfuse.sh"
+        args:
+            - "--fuse"
+            - "<BOARD_CONFIG_NAME>"
+```
+function descrition:
+- `flash-gen-prepare-is-needed` - 0 - no needed; 1 - prepare needed
+- `flash-gen-prepare` - call command for preparation before image generation
+
+Optional argument `<BOARD_CONFIG_NAME>` is expanded from `dcs_deploy.py` script to proper board configuration name eg. `airvolute-dcs1.2+p3767-0004`.
+
+Notes:
+- For odm-fuse usage, set name for overlay to `odmfuse` (`apply_odmfuse.sh`)
+- Functions not needed can be ommited
+
+2) create `apply_<name_of_overlay>.sh` file which can contain own optional argumets (like `--get-internal-params`, `--get-ext-params"`)
+Example:
+```
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source ${SCRIPT_DIR}/../lib/arg_parser.sh
+
+init_variables $@
+shift $INIT_VAR_NUM
+print_variables
+L4T_dir="${L4T_rootfs_path%/}/.."
+...
+while(($#)) ; do
+  #echo "par $1"
+  case $1 in
+      "--get-internal-params")
+      echo "-u file -v fileb"
+      ;;
+      "--get-ext-params")
+      echo "-u file -v fileb"
+    ;;
+    *)
+      echo "incorrect parameter! Exitting!"
+      exit 1
+      ;;
+  esac
+  shift
+done
+```
+
+Note:
+
 ##### Arguments
 The overlays are called with the same positional arguments as the `dcs_deploy` script. Additionally, user can pass custom named arguments to the local overlay. To pass the custom arguments you need to adhere to this syntax and update the `config_db.json` file like this:
 
