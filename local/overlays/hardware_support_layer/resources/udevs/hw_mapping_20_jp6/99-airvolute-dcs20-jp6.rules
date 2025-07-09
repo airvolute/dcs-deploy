@@ -5,13 +5,13 @@ ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev0.0", SYMLINK+="airvolute/spi
 ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev0.1", SYMLINK+="airvolute/spi0.1-spi-jet"
 
 # SPI-JET SPI2.0
-ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev2.0", SYMLINK+="airvolute/spi2.0-imu-acc"
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.0", SYMLINK+="airvolute/spi1.0-imu-acc"
 
 # SPI-JET SPI2.1
-ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev2.1", SYMLINK+="airvolute/spi2.1-imu-gyr"
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.1", SYMLINK+="airvolute/spi1.1-imu-gyr"
 
 # SPI-JET SPI2.2
-ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev2.2", SYMLINK+="airvolute/spi2.2-baro"
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.2", SYMLINK+="airvolute/spi1.2-baro"
 
 # GPS-JET
 ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyTHS1", SYMLINK+="airvolute/ttyTHS1-gps-jet"
@@ -25,16 +25,16 @@ ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyACM0", ATTRS{idVendor}=="1209", ATT
 # CUBE USB 
 ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyACM0", ATTRS{idVendor}=="2dae", ATTRS{idProduct}=="1058", SYMLINK+="airvolute/ttyACM0-cube-autopilot"
 
-# I2C 1
+# I2C 1 CSI1 B
 ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-cam1"
 ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-gps-jet"
 ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-temp-sens"
 
-# I2C 7 - Power Board 
+# I2C 7 - Power Board CSI2/3 C
 ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-7", SYMLINK+="airvolute/i2c-7-cam23"
 ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-7", SYMLINK+="airvolute/i2c-7-power-board"
 
-# I2C 2
+# I2C 2 CSI0 A
 ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-2", SYMLINK+="airvolute/i2c-2-cam0"
 
 # I2C 0

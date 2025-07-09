@@ -12,10 +12,28 @@ CON_STR = 'sudo nmcli con'
 CON_ARRAY = ['sudo', 'nmcli', 'con']
 DEVNULL = open(os.devnull, 'w')
 
+def get_wifi_interfaces():
+    try:
+        result = subprocess.run(
+            ['iw', 'dev'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        interfaces = []
+        for line in result.stdout.splitlines():
+            if "Interface" in line:
+                interfaces.append(line.split()[1])
+        return interfaces
+    except subprocess.CalledProcessError as e:
+        print("Failed to get Wi-Fi interfaces:", e)
+        return []
+
 def config_wifi(ap, args):
     freq = ('bg', 'a')[args.five_ghz]
+    wifi = get_wifi_interfaces()[0] if get_wifi_interfaces() else "wlan1"
     cmds = [
-        CON_ARRAY + ['add', 'type', 'wifi', 'ifname', 'wlan1', 'mode', 'ap', 'con-name', ap, 'ssid', args.ssid],
+        CON_ARRAY + ['add', 'type', 'wifi', 'ifname', wifi, 'mode', 'ap', 'con-name', ap, 'ssid', args.ssid],
         CON_ARRAY + ['modify', ap, '802-11-wireless.band', freq],
         CON_ARRAY + ['modify', ap, '802-11-wireless.channel', str(args.channel)],
         CON_ARRAY + ['modify', ap, '802-11-wireless-security.key-mgmt', 'wpa-psk'],
