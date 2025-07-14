@@ -27,11 +27,11 @@ def reset_usb():
 
 def enable_device(device):
     if device == 'fmu':
-        # Set GPIO4=1
-        run_command('sudo gpioset gpiochip2 4=1')
+        # Set GPIO6=1
+        run_command('sudo gpioset gpiochip2 6=1')
     elif device == 'cube':
-        # Set GPIO4=0
-        run_command('sudo gpioset gpiochip2 4=0')
+        # Set GPIO6=0
+        run_command('sudo gpioset gpiochip2 6=0')
     else:
         raise ValueError("Invalid device selection. Choose 'fmu' or 'cube'.")
 
