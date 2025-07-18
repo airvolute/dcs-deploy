@@ -314,10 +314,10 @@ Confirm your selection and reboot for the changes to take effect.
 
 #### I2C & SPI devices
 ##### TC74 Temperature sensor
-On both DCS1.2 and DCS2.0 boards is a temperature sensor connected on I2C-1 bus. The temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
+On both DCS1.2 and DCS2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
 
 
-##### BMI088 IMU (Accelerometer & gyroscope)
+##### BMI088 IMU (Accelerometer & Gyroscope)
 
 The DCS2.0 board includes a BMI088 IMU, which combines a 3-axis accelerometer and a 3-axis gyroscope.
 These sensors can be accessed via the Industrial I/O (IIO) subsystem under the following paths:
@@ -330,10 +330,6 @@ The max sampling rate are:
 - Gyroscope: up to 2000 Hz
 
 #### Known issues:
-
-- SPI is currently not fully supported.
-
-This will be addressed in the next release.
 
 - Super modes are currently not supported out of the box. The main limitation for Orin NX and DCS 2.0 or DCS 1.2 lies in the power board adapter not able to consitently provide the power needed which may result in overheating and shutting down the device.
   - If you want to use super modes, please contact Airvolute support for more information.
