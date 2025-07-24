@@ -104,7 +104,7 @@ Keep in mind, that we tried to make this tool as much effective as possible. So,
 - When you use different rootfs paths each time, the whole flash config folder is re-initialized. That means extracting downloaded resources and generating flash images from scratch. This adds up some time to the process, but it does not break anything.
 
 ## Purging SSH keys
-If you accidentally (or intentionally) left public keys in the rootfs, those are automatically purged. Otherwise each device you flash would be accessible from your host PC which we find harmful. If you feel you want to do this, please find it inside `dcs-deploy.py` file and comment it out.
+If you accidentally (or intentionally) left public keys in the rootfs, those are automatically purged. Otherwise each device you flash would be accessible from your host PC which we find harmful. If you feel you want to do this, please find it inside `dcs_deploy.py` file and comment it out.
 
 ## Basic first boot settings
 There were some issues specific to our platform and to the Jetsons in general, so we decided to fix them after the flashing or to be more specific - after the first boot. The `resources/dcs_first_boot.service` file is a service that is run at only at the first boot. It runs never again. The service runs `resources/dcs_first_boot.sh` script on the Jetson device and does following:
@@ -115,7 +115,7 @@ There were some issues specific to our platform and to the Jetsons in general, s
 
 # Principles
 ### Basics
-The `dcs-deploy.py` script can be used instead of Nvidia SDK manager regarding Airvolute hardware. The main advantages are that this package is lightweight and can be used across different Linux distros or Ubuntu versions (SDK manager is strictly tied between Ubuntu and JetPack version). The script does 3 steps in general:
+The `dcs_deploy.py` script can be used instead of Nvidia SDK manager regarding Airvolute hardware. The main advantages are that this package is lightweight and can be used across different Linux distros or Ubuntu versions (SDK manager is strictly tied between Ubuntu and JetPack version). The script does 3 steps in general:
 1. Download Nvidia and custom Airvolute files.
 2. Prepare filesystem, which is ready for flashing.
 3. Flash the device supporting Airvolute boards.
