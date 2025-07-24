@@ -1,0 +1,10 @@
+[
+    {
+      "device": ["orin_nx", "orin_nx_8gb", "orin_nano_8gb", "orin_nano_4gb"],
+      "storage": ["nvme", "emmc"],
+      "board": ["2.0"],
+      "board_expansion" : ["default"],
+      "l4t_version": ["62"],
+      "rootfs_type": [""]
+    }
+  ]

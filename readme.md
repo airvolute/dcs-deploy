@@ -296,29 +296,40 @@ sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme
 ```
 1. After the 2nd flash is finished, you might need to reflash the device with the JP 5.1.2 configuration one more time using standard `dcs-deploy` command. If were using the same configuration to downgrade to JP 5.1.2, you need to use `--regen` flag to be sure, that the images are the ones from the configuration. After this flash you can use the device and `dcs-deploy` as usual.
 
+#### CSI interface
+The following cameras are currently supported:
+- IMX219 (CSI0)
+- IMX477 (CSI0)
+- OV9281 (CSI0)
+- OV64B40 Airvolute Hadron Expander (CSI2/3)
+- TC358743 HDMI capture chip (CSI2/3)
+
+To use any of these cameras, you must apply the corresponding Device Tree Overlay by running `sudo python /opt/nvidia/jetson-io/jetson-io.py`.
+
+In the menu, navigate to: **Configure Airvolute DCS2 Adapter Board → Configure for Compatible Hardware**
+
+From the list, select the camera you wish to use.
+
+Confirm your selection and reboot for the changes to take effect.
+
+#### I2C & SPI devices
+##### TC74 Temperature sensor
+On both DCS1.2 and DCS2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
+
+
+##### BMI088 IMU (Accelerometer & Gyroscope)
+
+The DCS2.0 board includes a BMI088 IMU, which combines a 3-axis accelerometer and a 3-axis gyroscope.
+These sensors can be accessed via the Industrial I/O (IIO) subsystem under the following paths:
+
+- Accelerometer: `/sys/bus/iio/devices/iio:device0`
+- Gyroscope: `/sys/bus/iio/devices/iio:device1`
+
+The max sampling rate are:
+- Accelerometer: up to 1600 Hz
+- Gyroscope: up to 2000 Hz
+
 #### Known issues:
-- IMX219 camera is supported at port A - only DroneCore 2.0. 
-  - To use this camera configuration you need to apply it as device tree overlay using `sudo python /opt/nvidia/jetson-io/jetson-io.py` navigate in menu to Configure Jetson 24pin CSI Connector -> Configure for compatible hardware -> Camera IMX219, and select this device tree overlay. After selection you need to confirm the selection and reboot the DroneCore.
-  - After the reboot for launching this cam you need to run these commands to enable and start the camera:
-    - 1. `sudo gpioset gpiochip2 0=1`
-      1. `sudo rmmod nv_imx219`
-      2. `sudo modprobe nv_imx219`
-  
-- Airvolute Hadron Expander at port CAM 2/3 - only DroneCore 2.0. 
-  - To use this camera configuration you need to apply it as device tree overlay using `sudo python /opt/nvidia/jetson-io/jetson-io.py` navigate in menu to Configure Jetson 24pin CSI Connector -> Configure for compatible hardware -> Camera OV64B40 Airvolute Hadron Expander CAM23 DCS20, and select this device tree overlay. After selection you need to confirm the selection and reboot the DroneCore.
-
-- Warning: There is a known issue with the Hadron Expander. 
-  - In the beta release of JetPack 6.2 you need to reload the driver after each boot. This is done by running the following commands:
-    - `sudo rmmod av_ov64b40`
-    - `sudo modprobe av_ov64b40`
- - The issue by the fact, that the board is currently not being properly restarted due to GPIO control. This issue will be fixed by software update in the next releases.
-
-
-Other cameras support and configuration will be added as soon as possible. 
-
-- SPI is currently not fully supported.
-
-This will be addressed in the next release.
 
 - Super modes are currently not supported out of the box. The main limitation for Orin NX and DCS 2.0 or DCS 1.2 lies in the power board adapter not able to consitently provide the power needed which may result in overheating and shutting down the device.
   - If you want to use super modes, please contact Airvolute support for more information.
