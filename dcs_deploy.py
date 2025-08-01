@@ -10,8 +10,9 @@ import time
 from urllib.parse import urlparse
 import sys as _sys
 
-dcs_deploy_version = "3.0.0"
+dcs_deploy_version = "3.0.1"
 
+IDENTIFIER_REMOVE_LIST = ["--regen", "--force", ("--usb_instance", 2), ("-i", 2)]
 
 # example: retcode = cmd_exec("sudo tar xpf %s --directory %s" % (self.rootfs_file_path, self.rootfs_extract_dir))
 def cmd_exec(command_line:str, print_command = False) -> int:
@@ -135,15 +136,22 @@ class ProcessingStatus:
         return self.status["identifier"]
     
     def _remove_identifier(self, identifier, remove_list):
-        #print("input from removing identifier:", identifier)
+        # print("input from removing identifier:", identifier)
         if remove_list == []:
             return identifier
         # remove not matching identifiers
         cleaned_identifier = identifier[:] # copy identifiers into new list
         for remove in remove_list:
-            if remove in cleaned_identifier:
-                cleaned_identifier.remove(remove)
-        #print("output from removing identifier:", cleaned_identifier)
+            if type(remove) is tuple and len(remove) == 2:
+                try:
+                    idx = cleaned_identifier.index(remove[0])
+                    del cleaned_identifier[idx:idx + remove[1]]
+                except ValueError:
+                    pass
+            else:
+                if remove in cleaned_identifier:
+                    cleaned_identifier.remove(remove)
+        # print("output from removing identifier:", cleaned_identifier)
         return cleaned_identifier
 
 
@@ -208,7 +216,7 @@ class DcsDeploy:
         self.sanitize_args()
         self.selected_config_name = None
         self.load_db()
-        self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
+        self.local_overlay_dir = os.path.join(os.path.dirname(__file__), 'local', 'overlays')
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
@@ -248,6 +256,9 @@ class DcsDeploy:
 
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
+
+        usb_instance = 'USB interface to use for flashing (eg: 3-14.4). If not specified, the first available USB interface will be used.'
+        subparser.add_argument('-i', '--usb_instance', help=usb_instance)
 
     def create_parser(self):
         """
@@ -296,7 +307,7 @@ class DcsDeploy:
         if self.args.command is None:
             print("No command specified!")
             self.parser.print_usage()
-            quit()
+            quit(1)
 
     def load_db(self):
         """ 
@@ -304,7 +315,8 @@ class DcsDeploy:
         Warning! currently it is local file!
         """
         try:
-            db_file = open('local/config_db.json')
+            config_db_path = os.path.join(os.path.dirname(__file__), 'local', 'config_db.json')
+            db_file = open(config_db_path)
         except Exception as e:
             print("could not open local/config_db.json!" + str(e))
             print("exitting!")
@@ -546,7 +558,7 @@ class DcsDeploy:
         
 
     def prepare_sources_production(self):
-        if self.prepare_status.get_status() == True and self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]):
+        if self.prepare_status.get_status() == True and self.prepare_status.is_identifier_same_as_prev(IDENTIFIER_REMOVE_LIST):
             print("Binaries already prepared!. Skipping!")
             return 0
         else:
@@ -648,7 +660,7 @@ class DcsDeploy:
 
             if not os.path.exists(overlay_path):
                 print(f"Overlay {overlay_name} does not exist! Quitting!")
-                quit()
+                quit(1)
 
             if os.path.isdir(overlay_path):
                 dirs.append(item)
@@ -821,10 +833,14 @@ class DcsDeploy:
         if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
 
+        if self.args.usb_instance is not None:
+            # set USB interface to use for flashing
+            self.orin_options += f" --usb-instance {self.args.usb_instance}"
+
     def generate_images(self):
         self.prepare_status.change_group("images")
         # check commandline parameter if they are same as previous and images are already generated skip generation
-        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
+        if self.prepare_status.is_identifier_same_as_prev(IDENTIFIER_REMOVE_LIST) and self.prepare_status.get_status() == True:
             print("Images already generated! Skipping generating images!")
             return 0
 
@@ -896,19 +912,19 @@ class DcsDeploy:
         self.download_resources()
         self.prepare_sources_production()
         self.flash()
-        quit() 
+        quit(0) 
 
     def run(self):
         if self.args.command == 'list':
             if self.args.local_overlays == True:
                 self.list_local_overlays()
-                quit()
+                quit(0)
             self.list_all_versions()
-            quit()
+            quit(0)
 
         if self.args.command == 'flash':
             self.airvolute_flash()
-            quit()
+            quit(0)
 
 
 if __name__ == "__main__":
