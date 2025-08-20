@@ -246,11 +246,16 @@ Expected outcome:
 
 
 #### 3. Flashing issues
+
+##### ERROR: might be timeout in USB write
+
 On new host kernels, USB flashing problems can happen eg.: `ERROR: might be timeout in USB write.` see listing 1). New kernels have enabled USB autosuspend functionality which causes flashing errors. Use following commands to stop usb autosuspend:
 ```
 $ sudo su
 # echo -1 > /sys/module/usbcore/parameters/autosuspend
 ```
+
+To make the change persistent, [edit GRUB](https://askubuntu.com/a/534464).
 
 - Listing 1)
 ```
@@ -266,3 +271,63 @@ $ sudo su
 [   0.1299 ] Sending bct_br
 [   0.1454 ] ERROR: might be timeout in USB write.
 ```
+
+##### RTNETLINK answers: Operation not supported
+
+This error happens during the flashing process. Snippet:
+
+```txt
+***************************************
+*                                     *
+*  Step 3: Start the flashing process *
+*                                     *
+***************************************
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for target to boot-up...
+Waiting for device to expose ssh ...RTNETLINK answers: Operation not supported
+RTNETLINK answers: Operation not supported
+...RTNETLINK answers: Operation not supported
+RTNETLINK answers: Operation not supported
+.
+. (message repeats multiple times)
+.
+...Timeout
+Cleaning up...
+```
+
+To resolve it, make sure IPv6 is enabled. The output of:
+
+```sh
+sudo sysctl net.ipv6.conf.all.disable_ipv6
+```
+
+Must be:
+
+```sh
+net.ipv6.conf.all.disable_ipv6 = 0
+```
+
+You can set the parameter with:
+
+```sh
+sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0
+```
+
+
+
