@@ -788,23 +788,14 @@ class DcsDeploy:
 
         # setup for JP 62
         else:
-            if self.config['device'] == 'orin_nx':
+            if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
                 self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            elif self.config['device'] == 'orin_nx-super':
+            elif self.config['device'] == ['orin_nx_super', 'orin_nx_8gb_super', 'orin_nano_8gb_super', 'orin_nano_4gb_super']:
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000-super"
                 self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            elif self.config['device'] == 'orin_nx-super-maxn':
+            elif self.config['device'] == ['orin_nx_super_maxn', 'orin_nx_8gb_super_maxn', 'orin_nano_8gb_super_maxn', 'orin_nano_4gb_super_maxn']:
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000-super-maxn"
-                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            elif self.config['device'] == 'orin_nx_8gb':
-                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0001"
-                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            elif self.config['device'] == 'orin_nano_8gb':
-                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0003"
-                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
-            elif self.config['device'] == 'orin_nano_4gb':
-                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0004"
                 self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
             else:
                 print("Unknown device! [%s] exitting" % self.config['device'])
@@ -825,7 +816,7 @@ class DcsDeploy:
                 exit(9)
 
         # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
-        if self.config['device'] in ['orin_nx', 'orin_nx-super', 'orin_nx-super-maxn', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
+        if self.config['device'] in ['orin_nx', 'orin_nx_super', 'orin_nx_super_maxn', 'orin_nx_8gb', 'orin_nx_8gb_super', 'orin_nx_8gb_super_maxn', 'orin_nano_8gb', 'orin_nano_8gb_super', 'orin_nano_8gb_super_maxn', 'orin_nano_4gb', 'orin_nano_4gb_super', 'orin_nano_4gb_super_maxn']:
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
 
     def generate_images(self):
@@ -864,7 +855,7 @@ class DcsDeploy:
             if self.args.app_size is not None:
                 opt_app_size_arg = f"-S {self.args.app_size}GiB"
 
-            if self.config['device'] in ['orin_nx', 'orin_nx-super', 'orin_nx-super-maxn' ,'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
+            if self.config['device'] in ['orin_nx', 'orin_nx_super', 'orin_nx_super_maxn', 'orin_nx_8gb', 'orin_nx_8gb_super', 'orin_nx_8gb_super_maxn', 'orin_nano_8gb', 'orin_nano_8gb_super', 'orin_nano_8gb_super_maxn', 'orin_nano_4gb', 'orin_nano_4gb_super', 'orin_nano_4gb_super_maxn']:
                 external_only = "" # don't flash only external device
                 
             cmd_exec("pwd")
