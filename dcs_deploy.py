@@ -1327,14 +1327,19 @@ class DcsDeploy:
     def call_fn_overlay_img_gen_interal_prepare(self):
         # for rfs enc, eks image should be prepared before generating images
         ret = self.exec_fn_overlay("img-gen-internal-prepare")
+        if ret == None:
+            print("fn overlay 'img-gen-internal-prepare' not registred! Skipping")
+            return
 
-        if ret != None and ret != 0:
+        if ret != 0:
             print(f"ERROR! - Fn Overlay img-gen-internal-prepare returned:{ret}")
             exit(ret)
-            # call cleanup if necessary for function overlay
+        
+        # call cleanup if necessary for function overlay
         ret = self.exec_fn_overlay("img-gen-cleanup")
-        if ret != None:
-            print(f"Fn Overlay img-gen-cleanup returned:{ret}")
+        print(f"Fn Overlay img-gen-cleanup returned:{ret}")
+        
+
 
     def generate_images(self):
         self.prepare_status.change_group("images-phase-0" if self.rfs_enc else "gen-images")
