@@ -239,8 +239,15 @@ for patch_dir in $patches_dirs; do
 
                 service_name=$(basename "$patch_dir")".service"
                 service_path="$patch_dir/$service_name"
-                binary_name=$(basename "$patch_dir")".sh"
-                binary_path="$patch_dir/$binary_name"
+
+                binary_name=$(basename "$patch_dir")       
+                if [[ -f "$patch_dir/$binary_name.sh" ]]; then
+                    binary_file="$patch_dir/$binary_name.sh"
+                elif [[ -f "$patch_dir/$binary_name.py" ]]; then
+                    binary_file="$patch_dir/$binary_name.py"
+                else
+                    echo "No .sh or .py file found for $binary_name"
+                fi
 
                 if [[ -f $service_path ]] && [[ -f $binary_path ]]; then
                     add_service "$service_name" "$service_path" "$binary_name" "$patch_dir"
