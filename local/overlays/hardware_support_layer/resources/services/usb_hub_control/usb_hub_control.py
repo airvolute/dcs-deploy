@@ -166,23 +166,38 @@ dev_addr = 0x2d
 dev_addr_run = 0x2c
 
 print("Reseting USB HUB...")
-# Export RST and VBUSDET GPIOS
-export_gpio(usb_hub_nrst)
-export_gpio(usb_hub_vbusdet)
-set_direction(usb_hub_nrst, 'out')
-set_direction(usb_hub_vbusdet, 'out')
+kernel_version = os.popen("uname -r").read().strip()
 
-# reset switch
-write_gpio(usb_hub_vbusdet, 0)
-time.sleep(0.5)
-write_gpio(usb_hub_nrst, 0)
+# Convert to tuple of integers
+version_tuple = tuple(map(int, kernel_version.split('-')[0].split('.')))
 
-time.sleep(1)
+# Compare
+if version_tuple > (5, 10, 120):
+    #gpioset 0 106=0
+    time.sleep(0.5)
+    #gpioset 1 106=0
+    time.sleep(1)
+    #gpioset 0 106=1
+    #gpioset 1 106=1
+else:
+    # Export RST and VBUSDET GPIOS
+    export_gpio(usb_hub_nrst)
+    export_gpio(usb_hub_vbusdet)
+    set_direction(usb_hub_nrst, 'out')
+    set_direction(usb_hub_vbusdet, 'out')
+    
+    # reset switch
+    write_gpio(usb_hub_vbusdet, 0)
+    time.sleep(0.5)
+    write_gpio(usb_hub_nrst, 0)
+    
+    time.sleep(1)
+    
+    write_gpio(usb_hub_vbusdet, 1)
+    write_gpio(usb_hub_nrst, 1)
+    unexport_gpio(usb_hub_nrst)
+    unexport_gpio(usb_hub_vbusdet)
 
-write_gpio(usb_hub_vbusdet, 1)
-write_gpio(usb_hub_nrst, 1)
-unexport_gpio(usb_hub_nrst)
-unexport_gpio(usb_hub_vbusdet)
 
 print("Setting up USB HUB through I2C...")
 
@@ -192,6 +207,19 @@ read_reg = 0x00
 #Time delay >300ms has to be there after reseting the HUB !!!
 time.sleep(0.4)
 
+
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3006)
+print("Read 0x3006 register value:", hex(read_reg))
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3007)
+print("Read 0x3007 register value:", hex(read_reg))
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3008)
+print("Read 0x3008 register value:", hex(read_reg))
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3009)
+print("Read 0x3009 register value:", hex(read_reg))
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3104)
+print("Read 0x3104 register value:", hex(read_reg))
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3C0C)
+print("Read 0x3C0C register value:", hex(read_reg))
 
 #HUB_CFG1 (Default = 0x9B)
 usb2534_write_cfg_register(bus_number, dev_addr, 0x3006, 0x9B)
@@ -229,17 +257,17 @@ usb2534_write_cfg_register(bus_number, dev_addr, 0x4130, 0x01)
 
 
 
-read_reg= usb2534_read_cfg_register(bus_number, dev_addr, 0x3006)
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3006)
 print("Read 0x3006 register value:", hex(read_reg))
-read_reg= usb2534_read_cfg_register(bus_number, dev_addr, 0x3007)
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3007)
 print("Read 0x3007 register value:", hex(read_reg))
-read_reg= usb2534_read_cfg_register(bus_number, dev_addr, 0x3008)
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3008)
 print("Read 0x3008 register value:", hex(read_reg))
-read_reg= usb2534_read_cfg_register(bus_number, dev_addr, 0x3009)
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3009)
 print("Read 0x3009 register value:", hex(read_reg))
-read_reg= usb2534_read_cfg_register(bus_number, dev_addr, 0x3104)
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3104)
 print("Read 0x3104 register value:", hex(read_reg))
-read_reg= usb2534_read_cfg_register(bus_number, dev_addr, 0x3C0C)
+read_reg = usb2534_read_cfg_register(bus_number, dev_addr, 0x3C0C)
 print("Read 0x3C0C register value:", hex(read_reg))
 
 #Start USB HUB by command

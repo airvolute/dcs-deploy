@@ -166,7 +166,7 @@ add_service() {
     sudo cp $service_path ${service_destination}/
     add_service_to_json "/etc/systemd/system/${service_name}"
 
-    sudo cp $service_bin_path"/"$service_bin_name ${bin_destination}/
+    sudo cp $service_bin_path/$service_bin_name ${bin_destination}/
     sudo chmod +x ${bin_destination}/${service_bin_name}
     add_binary_to_json "/usr/local/bin/${service_bin_name}"
 
@@ -239,16 +239,19 @@ for patch_dir in $patches_dirs; do
 
                 service_name=$(basename "$patch_dir")".service"
                 service_path="$patch_dir/$service_name"
-
-                binary_name=$(basename "$patch_dir")       
-                if [[ -f "$patch_dir/$binary_name.sh" ]]; then
-                    binary_file="$patch_dir/$binary_name.sh"
-                elif [[ -f "$patch_dir/$binary_name.py" ]]; then
-                    binary_file="$patch_dir/$binary_name.py"
+                
+                base_name=$(basename "$patch_dir")
+                if [ -f "$patch_dir/$base_name.py" ]; then
+                    binary_name="$base_name.py"
+                    binary_path="$patch_dir/$binary_name"
+                elif [ -f "$patch_dir/$base_name.sh" ]; then
+                    binary_name="$base_name.sh"
+                    binary_path="$patch_dir/$binary_name"
                 else
-                    echo "No .sh or .py file found for $binary_name"
+                    echo "Error: No .sh or .py file found for $base_name in $patch_dir"
+                    exit 1
                 fi
-
+                
                 if [[ -f $service_path ]] && [[ -f $binary_path ]]; then
                     add_service "$service_name" "$service_path" "$binary_name" "$patch_dir"
                 else
