@@ -1,13 +1,14 @@
 [Unit]
-Description=Ethernet switch control
+Description=Ethernet switch reset
 After=remote-fs.target
 After=syslog.target
 After=multi-user.target
+After=ethernet_switch_reset.service
 Requires=multi-user.target
 
 [Service]
 ExecStartPre=/bin/sleep 2
-ExecStart=/usr/bin/python3 /usr/local/bin/ethernet_switch_control.py
+ExecStart=/usr/local/bin/ethernet_switch_reset.sh
 
 [Install]
 WantedBy=multi-user.target
