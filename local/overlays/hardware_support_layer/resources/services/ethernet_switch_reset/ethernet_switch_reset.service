@@ -3,7 +3,6 @@ Description=Ethernet switch reset
 After=remote-fs.target
 After=syslog.target
 After=multi-user.target
-After=ethernet_switch_reset.service
 Requires=multi-user.target
 
 [Service]
