@@ -166,9 +166,6 @@ def usb2534_start_hub(i2c_bus, device_address):
         print(f"Error write cfg register: {e}")
         bus.close()
 
-
-############# --------------------------------------------------------- TEST App start ----------------------------------------------------------
-
 bus_number = 0
 dev_addr = 0x2d
 dev_addr_run = 0x2c
@@ -176,10 +173,8 @@ dev_addr_run = 0x2c
 print("Reseting USB HUB...")
 kernel_version = os.popen("uname -r").read().strip()
 
-# Convert to tuple of integers
 version_tuple = tuple(map(int, kernel_version.split('-')[0].split('.')))
 
-# Compare
 if version_tuple > (5, 10, 120):
     try:
         import gpiod
@@ -195,13 +190,12 @@ if version_tuple > (5, 10, 120):
     set_gpiod("gpiochip0", 106, 1)
     set_gpiod("gpiochip1", 25, 1)
 else:
-    # Export RST and VBUSDET GPIOS
     export_gpio(usb_hub_nrst)
     export_gpio(usb_hub_vbusdet)
     set_direction(usb_hub_nrst, 'out')
     set_direction(usb_hub_vbusdet, 'out')
     
-    # reset switch
+    # reset hub
     write_gpio(usb_hub_vbusdet, 0)
     time.sleep(0.5)
     write_gpio(usb_hub_nrst, 0)
@@ -219,7 +213,7 @@ print("Setting up USB HUB through I2C...")
 ################################################I2C TESTING ################################
 read_reg = 0x00
 
-#Time delay >300ms has to be there after reseting the HUB !!!
+#Time delay > 300ms has to be there after reseting the HUB !!!
 time.sleep(0.4)
 
 #HUB_CFG1 (Default = 0x9B)
@@ -228,7 +222,7 @@ usb2534_write_cfg_register(bus_number, dev_addr, 0x3006, 0x9B)
 #HUB_CFG2 (Default = 0x20 | 0x28 - COMPOUND enabled)
 usb2534_write_cfg_register(bus_number, dev_addr, 0x3007, 0x28)
 
-#HUB_CFG3 (Default = 0x08 | PRTMAP_EN =0, STRING_EN =1 : 0x01)
+#HUB_CFG3 (Default = 0x08 | PRTMAP_EN = 0, STRING_EN = 1 : 0x01)
 usb2534_write_cfg_register(bus_number, dev_addr, 0x3008, 0x01)
 
 #NON-REMOVABLE DEVICE (default = 0x06 | PORT 4 non-removable : 0x10)
@@ -237,22 +231,22 @@ usb2534_write_cfg_register(bus_number, dev_addr, 0x3009, 0x10)
 #USB2_HUB_CTL (default = 0x00 | LPM_DISABLE = 1 : 0x02 )
 usb2534_write_cfg_register(bus_number, dev_addr, 0x3104, 0x02)
 
-#INTERNAL_PORT (Allow enumeration of 5.th internal port - solves issue with other device enumeration :D )
+#INTERNAL_PORT (Allow enumeration of 5.th internal port - solves issue with other device enumeration)
 usb2534_write_cfg_register(bus_number, dev_addr, 0x4130, 0x01)
 
 
 #----PORT 1 SETUP----
-#HSIC_P1_CFG (default 0x00, Power mode =1 : 0x01)
+#HSIC_P1_CFG (default 0x00, Power mode = 1 : 0x01)
 #usb2534_write_cfg_register(bus_number, dev_addr, 0x6643, 0x01)
 
-#PORT_CFG_SEL_1 (default = 0x01 | PERMANENT =1 : 0x10 )
+#PORT_CFG_SEL_1 (default = 0x01 | PERMANENT = 1 : 0x10 )
 #usb2534_write_cfg_register(bus_number, dev_addr, 0x3C00, 0x10)
 
 #--PORT 4 SETUP---
-#HSIC_P4_CFG (default 0x00, Power mode =1 : 0x01)
+#HSIC_P4_CFG (default 0x00, Power mode = 1 : 0x01)
 #usb2534_write_cfg_register(bus_number, dev_addr, 0x7243, 0x01)
 
-#PORT_CFG_SEL_4 (default = 0x01 | PERMANENT =1 : 0x10 )
+#PORT_CFG_SEL_4 (default = 0x01 | PERMANENT = 1 : 0x10 )
 #usb2534_write_cfg_register(bus_number, dev_addr, 0x3C0C, 0x10)
 
 
