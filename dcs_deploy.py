@@ -581,7 +581,10 @@ class FunctionOverlaysFlashGen(FunctionOverlayRegistry):
         elif fn_name in self.valid_functions["option"]:
             return self.resolve_options(fn_name, overlay_name)
         elif fn_name in self.valid_functions["cmd"]:
-            return self.resolve_cmd(fn_name, overlay_name)
+            ret = self.resolve_cmd(fn_name, overlay_name)
+            if ret == None:
+                print(f"overlay fn. {fn_name} is not registred!")
+            return ret
         else:
             raise(ValueError(f"Uknown function name! ({fn_name})"))
             
@@ -1328,7 +1331,7 @@ class DcsDeploy:
         # for rfs enc, eks image should be prepared before generating images
         ret = self.exec_fn_overlay("img-gen-internal-prepare")
         if ret == None:
-            print("fn overlay 'img-gen-internal-prepare' not registred! Skipping")
+            print("Skipping fn overlay call 'img-gen-internal-prepare'!")
             return
 
         if ret != 0:
@@ -1337,7 +1340,10 @@ class DcsDeploy:
         
         # call cleanup if necessary for function overlay
         ret = self.exec_fn_overlay("img-gen-cleanup")
-        print(f"Fn Overlay img-gen-cleanup returned:{ret}")
+        if ret != None:
+            print(f"Fn Overlay img-gen-cleanup returned:{ret}")
+        else:
+            print("Skipping fn overlay call 'img-gen-cleanup'")
         
 
 
@@ -1396,9 +1402,11 @@ class DcsDeploy:
                 overlay_flash_cleanup_ret = self.exec_fn_overlay("img-gen-cleanup")
                 if overlay_flash_cleanup_ret != None:
                     print(f"Fn Overlay img-gen-cleanup returned:{overlay_flash_cleanup_ret}")
-                if ret != 0:
-                    print(f"Error occured while generating image!({ret}) Exitting!")
-                    exit(1)
+                    if ret != 0:
+                        print(f"Error occured while generating image!({ret}) Exitting!")
+                        exit(1)
+                else:
+                    print("Skipping fn.overlay call 'img-gen-cleanup'")
                 if self.rfs_enc == True and self.args.jetpack == "512":
                     ret = cmd_exec(f"sudo cp bootloader/eks_t234_sigheader_encrypt.img.signed ./tools/kernel_flash/images/internal/")
                     if ret != 0:
@@ -1437,6 +1445,8 @@ class DcsDeploy:
         overlay_flash_cleanup_ret = self.exec_fn_overlay("img-gen-cleanup")
         if overlay_flash_cleanup_ret != None:
             print(f"Fn Overlay img-gen-cleanup returned:{overlay_flash_cleanup_ret}")
+        else:
+            print(f"Skipping fn. Overlay img-gen-cleanup")
         print("*"*80)
         if ret != 0:
             print(f"Error occured while generating image!({ret}) Exitting!")
