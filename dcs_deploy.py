@@ -898,7 +898,7 @@ class DcsDeploy:
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_enc.xml')
                 else:
                     # setup no multiple app partitions
-                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external_custom.xml')
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_t234_nvme.xml')
             else:
                 print("Unknown storage [%s]! exitting" % self.config['storage'])
                 exit(9)
