@@ -87,6 +87,9 @@ Then you can copy `rootfs_merged.tar.bz2` to your host pc and use point to it wi
 ## Flashing to specific UUID, multiple nvme drives
 If you want to use multiple nvme drives, this is not an issue. Just make sure **you plug out secondary NVME during flashing process.** After the flashing is successful, you can plug in the secondary NVME. The device will then always boot from the primary NVME (the one that was plugged in during the flashing process).
 
+## Flashing to specific usb-instance
+When multiple devices are connected and are in recovery mode, parameter `--usb_instance` allows to specify which one should be flashed. [How to find usb-instance.](https://docs.nvidia.com/jetson/archives/r35.4.1/DeveloperGuide/text/SD/FlashingSupport.html#how-to-find-usb-instance)
+
 ## Effectiveness
 Keep in mind, that we tried to make this tool as much effective as possible. So, following rules apply:
 - When flashing process is ran with the same parameters, the script will not re-generate the images and will not extract downloaded resources again. This is generally ok, but keep in mind that if you alter any files in flash config folder, these changes won't transfer into the next flashing process. If you want to alter anything in the rootfs, you need to alter these files in the rootfs archive and then save it under different name in your PC.
