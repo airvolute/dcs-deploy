@@ -1,0 +1,11 @@
+[
+    {
+      "device": ["orin_nx", "orin_nx_super", "orin_nx_super_maxn", "orin_nx_8gb", "orin_nx_8gb_super", "orin_nx_8gb_super_maxn", "orin_nano_8gb", "orin_nano_8gb_super", "orin_nano_4gb", "orin_nano_4gb_super", "xavier_nx"],
+      "storage": ["nvme"],
+      "board": ["2.0"],
+      "board_expansion" : [""],
+      "l4t_version": ["512", "512_avt", "51", "62"],
+      "rootfs_type": [""]
+    }
+  ]
+  

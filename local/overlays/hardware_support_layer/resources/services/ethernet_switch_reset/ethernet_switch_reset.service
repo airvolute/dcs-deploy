@@ -1,5 +1,5 @@
 [Unit]
-Description=Ethernet switch control
+Description=Ethernet switch reset
 After=remote-fs.target
 After=syslog.target
 After=multi-user.target
@@ -7,7 +7,7 @@ Requires=multi-user.target
 
 [Service]
 ExecStartPre=/bin/sleep 2
-ExecStart=/usr/local/bin/ethernet_switch_control.sh
+ExecStart=/usr/local/bin/ethernet_switch_reset.sh
 
 [Install]
 WantedBy=multi-user.target
