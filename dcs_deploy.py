@@ -850,6 +850,7 @@ class DcsDeploy:
                      "udev", "uuid-runtime", "whois", "openssl", "cpio", "lz4"]
         l4t_other_dependencies = ["python-is-python3"]
         dcs_deploy_dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2", "jq", "coreutils", "findutils" ]
+        dcs_deploy_dependencies += ["xmlstarlet"] # JP 6.2
         disk_enc_dependencies = ["cryptsetup"]
         op_tee_dependencies = ["python3-cryptography", "python3-pycryptodome"]
         
