@@ -2,7 +2,9 @@
 part_xml_update_num_sectors() {
     local input_file="$1"
     local new_sectors="$2"
-    local output_file="$3"
+    local -i l4t_version="$3"
+    local output_file="$4"
+    
 
     if [[ ! -f "$input_file" ]]; then
         echo "Error: Input file '$input_file' not found."
@@ -20,9 +22,14 @@ part_xml_update_num_sectors() {
         local filename_base="${input_file%.*}"
         output_file="${filename_base}_custom.${filename_ext}"
     fi
-
+    
+    replace_text=NUM_SECTORS
+    
+    if (( ${l4t_version} >= 62 )); then 
+        replace_text=EXT_NUM_SECTORS
+    fi
     # Replace NUM_SECTORS pattern and save to output
-    sed "s/NUM_SECTORS/${new_sectors}/g" "$input_file" > "$output_file"
+    sed "s/${replace_text}/${new_sectors}/g" "$input_file" > "$output_file"
 
     echo "Updated file saved to: $output_file"
 }
