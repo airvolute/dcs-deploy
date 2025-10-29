@@ -1246,15 +1246,34 @@ class DcsDeploy:
             self.flashing_network = "--network usb0"
 
         self.internal_flash_options = ""
-        if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
+        if "orin" in self.config['device']:
             # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
             # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
-            self.internal_flash_options = f'-p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+            self.bootloader_path = "bootloader/t186ref/cfg/flash_t234_qspi.xml"
+            if int(self.config['l4t_version']) >= 62:
+               self.bootloader_path = "bootloader/generic/cfg/flash_t234_qspi.xml"
+            self.internal_flash_options = f'-p "-c {self.bootloader_path} --no-systemimg"'
         # TODO test flashing XAVIER NX with emmc and nvme separately - maybe this part is not necessary!!!
-        #elif self.config['device'] == "xavier_nx":
-        #    self.internal_flash_options = f'-p "-c bootloader/t186ref/cfg/flash_t194_uefi_qspi_p3668.xml"'
+        elif self.config['device'] == "xavier_nx":
+            if int(self.config['l4t_version']) >= 62:
+                print(f"NOT SUPPORTED in new JP! {self.config['l4t_version']}")
+                exit(1)
+            self.internal_flash_options = f'-p "-c bootloader/t186ref/cfg/flash_t194_uefi_qspi_p3668.xml"'
+        else:
+            print(f"Device {self.config['device']} not supported!")
+            exit(1)
 
-        if self.config['device'] == 'xavier_nx':
+        if int(self.config['l4t_version']) >= 62:
+            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+            if "orin" not in self.config['device']:
+                print(f"Device {self.config['device']} is not supported in new JP {self.config['l4t_version']}")
+                exit(1)
+            elif "super-maxn" in self.config['device']:
+                self.board_name += "-super-maxn"
+            elif "super" in self.config['device']:
+                self.board_name += "-super"
+
+        elif self.config['device'] == 'xavier_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
         elif self.config['device'] == 'orin_nx':
             self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
