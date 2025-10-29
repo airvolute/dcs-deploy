@@ -950,6 +950,7 @@ class DcsDeploy:
         stop_event.clear()
         l4t_animation_thread = self.run_loading_animation(stop_event)
         ret = extract(self.resource_paths[resource], extract_path)
+        if ret != 0: print(f"Error while extracting resource {resource}. ret: {ret}")
         self.prepare_status.set_status(ret)
         stop_event.set()
         l4t_animation_thread.join()
