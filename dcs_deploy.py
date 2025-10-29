@@ -787,8 +787,11 @@ class DcsDeploy:
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
         self.rootfs_extract_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs'))
         self.l4t_root_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra'))
-        self.op_tee_tools_path = os.path.realpath(os.path.join(self.l4t_root_dir, 'source', 'public', 'nvidia-jetson-optee-source.tbz2'))
-        self.op_tee_tools_dir = os.path.realpath(os.path.join(self.l4t_root_dir, 'source', 'public'))
+        self.l4t_sources_dir = os.path.join(self.l4t_root_dir, 'source', 'public')
+        if int(self.config['l4t_version']) >= 62:
+            self.l4t_sources_dir = os.path.join(self.l4t_root_dir, 'source')
+        self.op_tee_tools_path = os.path.realpath(os.path.join(self.l4t_sources_dir, 'nvidia-jetson-optee-source.tbz2'))
+        self.op_tee_tools_dir = os.path.realpath(self.l4t_sources_dir)
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
 
@@ -985,39 +988,50 @@ class DcsDeploy:
         self.prepare_status.set_processing_step("apply_binaries")
         ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path)
         self.prepare_status.set_status(ret)
-
+        ret_all = ret
         print('Applying Airvolute overlay ...')
         self.prepare_airvolute_overlay()
         
         self.prepare_status.set_processing_step("apply_binaries_t")
         ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
         self.prepare_status.set_status(ret)
+        ret_all += ret
 
         print('Creating default user ...')
         self.prepare_status.set_processing_step("creating_default_user")
         ret = cmd_exec("sudo " + self.create_user_script_path + " -u dcs_user -p dronecore -n dcs --accept-license")
         self.prepare_status.set_status(ret)
+        ret_all += ret
 
         if self.get_resource_url('nv_ota_tools') != None:
             print('Applying Nvidia OTA tools ...')
             ret = self.extract_resource('nv_ota_tools')
+            ret_all += ret
         
         if self.get_resource_url('public_sources') != None:
-            print(f'Extracting Nvidia OP-TEE tools to {self.op_tee_tools_dir}...')
+            print(f'Extracting public sources to {self.op_tee_tools_dir}...')
             ret = self.extract_resource('public_sources')
+            ret_all += ret
+            print("Extract op-tee tools from public_sources")
+            self.prepare_status.set_processing_step("extract_op_tee_tools")
             ret = extract(self.op_tee_tools_path, self.op_tee_tools_dir)
+            self.prepare_status.set_status(ret)
+            ret_all += ret
 
         # Regenerate ssh access in rootfs
         print("Purging ssh keys, this part needs sudo privilegies:")
+        self.prepare_status.set_processing_step("purging_ssh_keys")
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
-        ret += cmd_exec("sudo resources/purge_ssh_keys.sh " + 
+        ret = cmd_exec("sudo resources/purge_ssh_keys.sh " + 
                  os.path.join(self.rootfs_extract_dir, 'home', 'dcs_user','.ssh'))
-
+        self.prepare_status.set_status(ret)
+        ret_all += ret
 
         print('Installing overlays ...')
-        ret += self.install_overlays(self.register_local_overlays(), is_last_install_step = True)
-        if(ret):
-            print(f"Errors were found when callling prepare_sources_production - {ret}")
+        ret = self.install_overlays(self.register_local_overlays(), is_last_install_step = True)
+        ret_all += ret
+        if(ret_all):
+            print(f"Errors were found when callling prepare_sources_production - {ret_all}")
             exit(1)
 
     def prepare_airvolute_overlay(self):
