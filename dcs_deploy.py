@@ -15,6 +15,7 @@ from pathlib import Path
 import termios
 import tty
 import select
+import xml.etree.ElementTree as ET
 
 dcs_deploy_version = "3.0.0"
 
@@ -1226,6 +1227,37 @@ class DcsDeploy:
         self.config['storage'] = self.args.storage
 
         self.selected_config_name = config
+
+
+    def update_xml_sectors(self, xml_file_path, out_file_path, sectors):
+        try:
+            tree = ET.parse(xml_file_path)
+        except ET.ParseError as e:
+            print(f"ERROR: XML parse failed for {xml_file_path}: {e}")
+            exit(2)
+
+        root = tree.getroot()
+        changed = 0
+
+        TOKENS = {"EXT_NUM_SECTORS", "NUM_SECTORS"}
+
+        # Look for any element with attribute num_sectors equal to a known token.
+        for elem in root.iter():
+            if "num_sectors" in elem.attrib and elem.attrib["num_sectors"] in TOKENS:
+                elem.set("num_sectors", str(sectors))
+                changed += 1
+                break
+
+        if changed == 0:
+            print("No placeholders found in {xml_file_path} (looked for num_sectors= {TOKENS}).")
+            return 1
+        else:
+            print(f"Replaced {changed} occurrence(s) of num_sectors placeholders with {sectors}.")
+        
+        tree.write(out_file_path, encoding="utf-8", xml_declaration=True)
+        print(f"Wrote updated XML to: {out_file_path}")
+        return 0
+
     
     # default size 128GiB
     def get_ext_partition_layout_file(self, ab_partition, rfs_enc, nvme_disk_size_B=128035676160):
@@ -1240,7 +1272,8 @@ class DcsDeploy:
         out_part_layout_file_name=f"{src_part_layout_file_base_name}_custom.xml"
         print(f"selecting source partition file: {src_part_layout_file_name}")
         # update partition number of sectors and generate new xml <file>_custom.xml
-        ret = call_bash_function(f"{self.dsc_deploy_app_dir}/scripts/common.func", "part_xml_update_num_sectors", True, src_part_layout_file_name, str(nvme_disk_size_B//512), self.config['l4t_version'])
+        ret = self.update_xml_sectors(src_part_layout_file_name, out_part_layout_file_name, nvme_disk_size_B//512)
+        #ret = call_bash_function(f"{self.dsc_deploy_app_dir}/scripts/common.func", "part_xml_update_num_sectors", True, src_part_layout_file_name, str(nvme_disk_size_B//512), self.config['l4t_version'])
         if ret != 0:
             raise  Exception(f'part_xml_update_num_sectors returned {ret}')
         return os.path.relpath(out_part_layout_file_name)
