@@ -606,7 +606,7 @@ class DcsDeploy:
 
     def match_selected_config(self):
         """
-        Get selected config based on loaded database from console arguments enterred by user
+        Get selected config based on loaded database from console arguments entered by user
         """
         # do not search again
         if self.selected_config_name != None:
@@ -781,44 +781,75 @@ class DcsDeploy:
         #set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         
-        if self.config['device'] == 'xavier_nx':
-            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
-            self.orin_options = ""
-        elif self.config['device'] == 'orin_nx':
-            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
-            # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
-            # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
-        elif self.config['device'] == 'orin_nx_8gb':
-            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0001"
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
-        elif self.config['device'] == 'orin_nano_8gb':
-            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0003"
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
-        elif self.config['device'] == 'orin_nano_4gb':
-            self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0004"
-            self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
-        else:
-            print("Unknown device! [%s] exitting" % self.config['device'])
-            exit(8)
-         
-        if self.config['storage'] == 'emmc':
-            self.rootdev = "mmcblk0p1"
-            self.external_device = ""
-        elif self.config['storage'] == 'nvme':
-            self.rootdev = "external"
-            self.external_device = "--external-device nvme0n1p1 "
-            if self.args.ab_partition == True:
-                # setup multiple app partitions
-                self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+        if self.config['l4t_version'] != '62':
+            if self.config['device'] == 'xavier_nx':
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
+                self.orin_options = ""
+            elif self.config['device'] == 'orin_nx':
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+                # based on docu from tools/kerenel_flash/README_initrd_flash.txt and note for Orin (Workflow 4)
+                # sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" --network usb0      <board> external
+                self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+            elif self.config['device'] == 'orin_nx_8gb':
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0001"
+                self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+            elif self.config['device'] == 'orin_nano_8gb':
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0003"
+                self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
+            elif self.config['device'] == 'orin_nano_4gb':
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0004"
+                self.orin_options = '--network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg"'
             else:
-                # setup no multiple app partitions
-                self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external_custom.xml')
+                print("Unknown device! [%s] exitting" % self.config['device'])
+                exit(8)
+
+            if self.config['storage'] == 'emmc':
+                self.rootdev = "mmcblk0p1"
+                self.external_device = ""
+            elif self.config['storage'] == 'nvme':
+                self.rootdev = "external"
+                self.external_device = "--external-device nvme0n1p1 "
+                if self.args.ab_partition == True:
+                    # setup multiple app partitions
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+                else:
+                    # setup no multiple app partitions
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external_custom.xml')
+            else:
+                print("Unknown storage [%s]! exitting" % self.config['storage'])
+                exit(9)
+
+        # setup for JP 62
         else:
-            print("Unknown storage [%s]! exitting" % self.config['storage'])
-            exit(9)
+            if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
+                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
+            elif self.config['device'] in ['orin_nx_super', 'orin_nx_8gb_super', 'orin_nano_8gb_super', 'orin_nano_4gb_super']:
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000-super"
+                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
+            elif self.config['device'] in ['orin_nx_super_maxn', 'orin_nx_8gb_super_maxn']:
+                self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000-super-maxn"
+                self.orin_options = '--network usb0 -p "-c bootloader/generic/cfg/flash_t234_qspi.xml --no-systemimg"'
+            else:
+                print("Unknown device! [%s] exitting" % self.config['device'])
+                exit(8)
+
+            if self.config['storage'] == 'nvme':
+                self.rootdev = "external"
+                self.external_device = ""
+                self.external_device = "--external-device nvme0n1p1 "
+                if self.args.ab_partition == True:
+                    # setup multiple app partitions
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+                else:
+                    # setup no multiple app partitions
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_t234_nvme.xml')
+            else:
+                print("Unknown storage [%s]! exitting" % self.config['storage'])
+                exit(9)
+
         # fix default rootdev to external  (or internal) for orin. There is NFS used to flash
-        if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
+        if self.config['device'] in ['orin_nx', 'orin_nx_super', 'orin_nx_super_maxn', 'orin_nx_8gb', 'orin_nx_8gb_super', 'orin_nx_8gb_super_maxn', 'orin_nano_8gb', 'orin_nano_8gb_super', 'orin_nano_4gb', 'orin_nano_4gb_super']:
             self.rootdev = "external" #specify "internal" - boot from  on-board device (eMMC/SDCARD), "external" - boot from external device. For more see flash.sh examples
 
     def generate_images(self):
@@ -857,7 +888,7 @@ class DcsDeploy:
             if self.args.app_size is not None:
                 opt_app_size_arg = f"-S {self.args.app_size}GiB"
 
-            if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
+            if self.config['device'] in ['orin_nx', 'orin_nx_super', 'orin_nx_super_maxn', 'orin_nx_8gb', 'orin_nx_8gb_super', 'orin_nx_8gb_super_maxn', 'orin_nano_8gb', 'orin_nano_8gb_super', 'orin_nano_4gb', 'orin_nano_4gb_super']:
                 external_only = "" # don't flash only external device
                 
             cmd_exec("pwd")
