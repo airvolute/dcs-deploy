@@ -214,7 +214,6 @@ class DcsDeploy:
             self.init_filesystem()
             self.check_optional_arguments()
 
-
     def add_common_parser(self, subparser):
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [orin_nx, xavier_nx]'
         subparser.add_argument('target_device', help=target_device_help)
@@ -248,6 +247,10 @@ class DcsDeploy:
 
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
+        
+        massflash_devices_help = 'Massflash package generation. Specify number of devices (2-50). ' \
+        'If this option is used, no flashing will be done.Instead, a package for mass flashing will be created. '
+        subparser.add_argument('--massflash_devices', type=int, choices=range(2, 50), metavar='[2-50]', help=massflash_devices_help)
 
     def create_parser(self):
         """
@@ -896,10 +899,74 @@ class DcsDeploy:
                            f"-c {self.ext_partition_layout} {self.orin_options} --showlogs {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
+    
+    def generate_massflash(self):
+        self.prepare_status.change_group("massflash")
+
+        print("-" * 80)
+        print("Generating MassFlash package...")
+
+        # Massflash is supported for now only for orin series
+        if not self.config['device'].startswith('orin'):
+            print("MassFlash is supported only for Orin series devices!")
+            return -1
+
+        # Avoid regenerating unnecessarily
+        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
+            print("MassFlash package already generated! Skipping.")
+            return 0
+
+        self.prepare_status.set_processing_step("generate_massflash")
+
+        # Optional: rootfs size argument
+        opt_app_size_arg = ""
+        if self.args.app_size:
+            opt_app_size_arg = f"-S {self.args.app_size}GiB"
+
+        # For now empty values are used for env vars it is a placeholder for future use
+        env_vars = ""
+
+        massflash_count = self.args.massflash_devices
+
+        # Build massflash command
+        cmd = (
+            f"sudo {env_vars} ./{self.flash_script_path} --no-flash "
+            f"{opt_app_size_arg} "
+            f"{self.external_device} "
+            f"-c {self.ext_partition_layout} "
+            f"{self.orin_options} "
+            f"--massflash {massflash_count} "
+            f"--showlogs "
+            f"{self.board_name} {self.rootdev}"
+        )
+
+        # Debug / print command executed
+        ret = cmd_exec(cmd, print_command=True)
+
+        self.prepare_status.set_status(ret, last_step=True)
+
+        # Print infomation about generated package
+        if ret == 0:
+            massflash_dir = os.path.join(self.l4t_root_dir, "massflash_package")
+            print(f"MassFlash package generated successfully at: {massflash_dir}")
+            print(f"Number of devices in package: {massflash_count}")
+            print(f"To use the package, follow the instructions in readme.md")
+
+        return ret
 
     def flash(self):
         # setup flashing
         self.setup_initrd_flashing()
+
+        if  self.args.massflash_devices is not None:
+            # generate massflash package
+            ret = self.generate_massflash()
+            if ret != 0:
+                print("Generating MassFlash package was not sucessfull! ret = %d" % (ret))
+                print("Exitting!")
+                exit(8)
+            print("MassFlash package generation completed successfully.")
+            exit(0)
         
         # generate images
         ret = self.generate_images()
@@ -916,7 +983,6 @@ class DcsDeploy:
         cmd_exec("/usr/bin/sudo /usr/bin/id > /dev/null")
         ret = cmd_exec(f"sudo {self.flash_script_path} --flash-only {self.external_device} {self.orin_options} {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
-
 
     def airvolute_flash(self):
         if self.match_selected_config() == None:
