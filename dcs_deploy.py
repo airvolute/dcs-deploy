@@ -823,6 +823,7 @@ class DcsDeploy:
         os.chdir(self.l4t_root_dir)
         #set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
+        self.tegrarcm_v2_path = os.path.relpath('bootloader/tegrarcm_v2')   
         
         if self.config['l4t_version'] != '62':
             if self.config['device'] == 'xavier_nx':
@@ -954,6 +955,7 @@ class DcsDeploy:
             env_vars_str = " ".join(env_vars)
             if self.args.encryption == True:
                 self.generate_encryption_key()
+                ret = cmd_exec(f"sudo ./{self.tegrarcm_v2_path} --new_session --chip 0x23 --uid | sudo tee ECID.key > /dev/null", print_command=True)
                 ret = cmd_exec(f"sudo ./{self.flash_script_path} --showlogs {self.orin_options} -i {self.enc_key_path} --no-flash  {self.board_name} {self.rootdev}", print_command=True)
                 ret = cmd_exec(f"sudo {env_vars_str} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} -i {self.enc_key_path} " +
                             f"-c {self.ext_partition_layout} --showlogs --external-only --append --network usb0 {self.board_name} {self.rootdev}", print_command=True)
