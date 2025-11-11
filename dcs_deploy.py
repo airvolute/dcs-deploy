@@ -947,8 +947,7 @@ class DcsDeploy:
 
         # Print infomation about generated package
         if ret == 0:
-            massflash_dir = os.path.join(self.l4t_root_dir, "massflash_package")
-            print(f"MassFlash package generated successfully at: {massflash_dir}")
+            print(f"MassFlash package generated successfully at: {self.l4t_root_dir}")
             print(f"Number of devices in package: {massflash_count}")
             print(f"To use the package, follow the instructions in readme.md")
 
