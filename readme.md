@@ -211,47 +211,11 @@ Address = 192.168.55.100
 Port = 14550
 ``` 
 
-
-### CSI interface - JP 62 support
- Airvolute DCS 1.2 and DCS 2.0 boards support multiple cameras via CSI interface.
-The following cameras are currently supported:
-- IMX219 (CSI0)
-- IMX477 (CSI0)
-- OV9281 (CSI0)
-- OV64B40 Airvolute Hadron Expander (CSI2/3)
-- TC358743 HDMI capture chip (CSI2/3)
-
-To use any of these cameras, you must apply the corresponding Device Tree Overlay by running `sudo python /opt/nvidia/jetson-io/jetson-io.py`.
-
-In the menu, navigate to: **Configure Airvolute DCS2 Adapter Board → Configure for Compatible Hardware**
-
-From the list, select the camera you wish to use.
-
-Confirm your selection and reboot for the changes to take effect.
-
-### I2C & SPI devices
-#### TC74 Temperature sensor
-On both DCS1.2 and DCS2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
-
-
-#### BMI088 IMU (Accelerometer & Gyroscope)
-
-The DCS2.0 board includes a BMI088 IMU, which combines a 3-axis accelerometer and a 3-axis gyroscope.
-These sensors can be accessed via the Industrial I/O (IIO) subsystem under the following paths:
-
-- Accelerometer: `/sys/bus/iio/devices/iio:device0`
-- Gyroscope: `/sys/bus/iio/devices/iio:device1`
-
-The max sampling rate are:
-- Accelerometer: up to 1600 Hz
-- Gyroscope: up to 2000 Hz
-
 ### Known limitations
 - When the script is re-ran, flash config folder is deleted and the files are extracted again.
 - The database of configs is held inside this repository, which is not ideal.
 - Download folder is not checked, only `downloaded_versions.json` file is, so if the download folder has been altered script will throw an error.
 - Errors that might occur during deployment process are not handled very well at the moment. 
-
 
 ### Troubleshooting
 #### 1. Verifying 1st boot configuration
@@ -302,10 +266,12 @@ $ sudo su
 [   0.1454 ] ERROR: might be timeout in USB write.
 ```
 
-### Known limitations - JetPack 6.2
+### Known limitation - JetPack 6.2 - beta
+Airvolute BSP for JetPack 6.2 is currently in beta. The flashing process is not fully tested and some features may not work as expected. Please report any issues to Airvolute support or open issues. Regardless of this beta release can be used to asses the new features of JetPack 6.2 and prepare their applications for the new JetPack version.
 
+User can always downgrade to stable JetPack 5.1.2 version by flashing the device with appropriate configuration. Beware the downgrading takes just under 60 minutes.
 #### Downgrade procedure from JP 6.2 to JP 5.1.2
-At the moment it is not possible to downgrade directly from JP 6.2 to JP 5.1.2, because all the UEFI, QSPI and rootfs must be compatible and there seems to be some leftovers from JP 6.2 flash.
+At the moment it is not possible to downgrade direcrly from JP 6.2 to JP 5.1.2, because all the UEFI, QSPI and rootfs must be compatible and there seems to be some leftovers from JP 6.2 flash.
 
 The procedure to sucesfully downgrade is as follows:
 1. Start flash with JP 5.1.2 configuration.
@@ -330,7 +296,42 @@ sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme
 ```
 1. After the 2nd flash is finished, you might need to reflash the device with the JP 5.1.2 configuration one more time using standard `dcs-deploy` command. If were using the same configuration to downgrade to JP 5.1.2, you need to use `--regen` flag to be sure, that the images are the ones from the configuration. After this flash you can use the device and `dcs-deploy` as usual.
 
+#### CSI interface
+The following cameras are currently supported:
+- IMX219 (CSI0)
+- IMX477 (CSI0)
+- OV9281 (CSI0)
+- OV64B40 Airvolute Hadron Expander (CSI2/3)
+- TC358743 HDMI capture chip (CSI2/3)
 
-#### Super modes
-- Super modes are currently not supported out of the box. The main limitation for Orin NX and DCS 2.0 or DCS 1.2 lies in the power board adapter not able to consitently provide the power needed which may result in overheating and shutting down the device. While it is technically possible to flash super modes using p;der revision of the boards, it is not recommended at this time.
-  - If you want to use super modes, make sure that you have the new [Default Expansion Board for DCS 2.0](https://docs.airvolute.com/autopilots/dcs2/.default-expansion-board) (side plated) or [Copter](https://airvolute.com/shop-prod/uav-autopilots/dcs-2-copter-kit/)/[VTOL](https://airvolute.com/shop-prod/uav-autopilots/dcs-2-vtol/) expansion.
+To use any of these cameras, you must apply the corresponding Device Tree Overlay by running `sudo python /opt/nvidia/jetson-io/jetson-io.py`.
+
+In the menu, navigate to: **Configure Airvolute DCS2 Adapter Board → Configure for Compatible Hardware**
+
+From the list, select the camera you wish to use.
+
+Confirm your selection and reboot for the changes to take effect.
+
+#### I2C & SPI devices
+##### TC74 Temperature sensor
+On both DCS1.2 and DCS2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
+
+
+##### BMI088 IMU (Accelerometer & Gyroscope)
+
+The DCS2.0 board includes a BMI088 IMU, which combines a 3-axis accelerometer and a 3-axis gyroscope.
+These sensors can be accessed via the Industrial I/O (IIO) subsystem under the following paths:
+
+- Accelerometer: `/sys/bus/iio/devices/iio:device0`
+- Gyroscope: `/sys/bus/iio/devices/iio:device1`
+
+The max sampling rate are:
+- Accelerometer: up to 1600 Hz
+- Gyroscope: up to 2000 Hz
+
+#### Known issues:
+
+- Super modes are currently not supported out of the box. The main limitation for Orin NX and DCS 2.0 or DCS 1.2 lies in the power board adapter not able to consitently provide the power needed which may result in overheating and shutting down the device.
+  - If you want to use super modes, please contact Airvolute support for more information.
+
+The new revision of the power board together with adapter board for DCS 2.0 is scheduled by the end of Q2 2025. 
