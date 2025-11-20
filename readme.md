@@ -2,6 +2,9 @@
 
 # Dependencies
 **! DISLAIMER - INSTALL THOSE INSIDE HOST PC !**
+
+**! THIS IS BETA VERSION FOR JP 6.2 SOME ADDITIONAL CONSIDERATIONS MAY APPLY PLEASE REVIEW SECTION KNOWN LIMITATIONS BEFORE USING JP 6.2 [here](#known-limitation---jetpack-62---beta)!**
+
 ### APT
 
 ```  
@@ -25,15 +28,22 @@ pip install wget
 
 3. **Run dcs_deploy.py**
 For example:
+    JetPack 5.1.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
     ```
     python3 dcs_deploy.py flash orin_nx 512 2.0 default nvme full
     ```
+    
+    JetPack 6.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
+    ```
+    python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full
+    ```
+
+    Note: Please refer to the section Known limitations - JetPack 6.2 - beta [here](#known-limitation---jetpack-62---beta)
 
     You can list supported configs with:
     ```
     python3 dcs_deploy.py list
     ```
-
 4. **After a successful flash, the Jetson will boot and can be logged in using SSH with default credentials:**
     - login: `dcs_user`
     - password: `dronecore`
@@ -266,3 +276,73 @@ $ sudo su
 [   0.1299 ] Sending bct_br
 [   0.1454 ] ERROR: might be timeout in USB write.
 ```
+
+### Known limitation - JetPack 6.2 - beta
+Airvolute BSP for JetPack 6.2 is currently in beta. The flashing process is not fully tested and some features may not work as expected. Please report any issues to Airvolute support or open issues. Regardless of this beta release can be used to asses the new features of JetPack 6.2 and prepare their applications for the new JetPack version.
+
+User can always downgrade to stable JetPack 5.1.2 version by flashing the device with appropriate configuration. Beware the downgrading takes just under 60 minutes.
+#### Downgrade procedure from JP 6.2 to JP 5.1.2
+At the moment it is not possible to downgrade direcrly from JP 6.2 to JP 5.1.2, because all the UEFI, QSPI and rootfs must be compatible and there seems to be some leftovers from JP 6.2 flash.
+
+The procedure to sucesfully downgrade is as follows:
+1. Start flash with JP 5.1.2 configuration.
+2. Wait for the flash to finish. You don't have to connect device to the host PC, we just need to create the flashing environment with images.
+3. Locate the `Linux_for_tegra` folder in the path `~/.dcs_deploy/flash/<config_name>/Linux_for_tegra`. (for example $HOME/.dcs_deploy/flash/orin_nx_nvme_2.0_default_512_full/Linux_for_Tegra)
+4. Run the following commands for Orin NX (Orin NX should be in recovery mode and power cycle is assumed between commands) and DCS 2.0:
+```
+1. Wait until finished.
+sudo ./flash.sh -c bootloader/t186ref/cfg/flash_t234_qspi.xml airvolute-dcs2.0+p3767-0000 internal
+
+or 
+
+sudo ./flash.sh -c bootloader/t186ref/cfg/flash_t234_qspi.xml airvolute-dcs1.2+p3767-0000 internal
+
+
+2. Wait until finished (even error is ok).
+sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml --showlogs --network usb0 airvolute-dcs2.0+p3767-0000 nvme0n1p1
+
+or 
+
+sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme0n1p1 -c tools/kernel_flash/flash_l4t_external.xml --showlogs --network usb0 airvolute-dcs1.2+p3767-0000 nvme0n1p1
+```
+1. After the 2nd flash is finished, you might need to reflash the device with the JP 5.1.2 configuration one more time using standard `dcs-deploy` command. If were using the same configuration to downgrade to JP 5.1.2, you need to use `--regen` flag to be sure, that the images are the ones from the configuration. After this flash you can use the device and `dcs-deploy` as usual.
+
+#### CSI interface
+The following cameras are currently supported:
+- IMX219 (CSI0)
+- IMX477 (CSI0)
+- OV9281 (CSI0)
+- OV64B40 Airvolute Hadron Expander (CSI2/3)
+- TC358743 HDMI capture chip (CSI2/3)
+
+To use any of these cameras, you must apply the corresponding Device Tree Overlay by running `sudo python /opt/nvidia/jetson-io/jetson-io.py`.
+
+In the menu, navigate to: **Configure Airvolute DCS2 Adapter Board → Configure for Compatible Hardware**
+
+From the list, select the camera you wish to use.
+
+Confirm your selection and reboot for the changes to take effect.
+
+#### I2C & SPI devices
+##### TC74 Temperature sensor
+On both DCS1.2 and DCS2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
+
+
+##### BMI088 IMU (Accelerometer & Gyroscope)
+
+The DCS2.0 board includes a BMI088 IMU, which combines a 3-axis accelerometer and a 3-axis gyroscope.
+These sensors can be accessed via the Industrial I/O (IIO) subsystem under the following paths:
+
+- Accelerometer: `/sys/bus/iio/devices/iio:device0`
+- Gyroscope: `/sys/bus/iio/devices/iio:device1`
+
+The max sampling rate are:
+- Accelerometer: up to 1600 Hz
+- Gyroscope: up to 2000 Hz
+
+#### Known issues:
+
+- Super modes are currently not supported out of the box. The main limitation for Orin NX and DCS 2.0 or DCS 1.2 lies in the power board adapter not able to consitently provide the power needed which may result in overheating and shutting down the device.
+  - If you want to use super modes, please contact Airvolute support for more information.
+
+The new revision of the power board together with adapter board for DCS 2.0 is scheduled by the end of Q2 2025. 
