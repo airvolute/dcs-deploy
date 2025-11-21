@@ -9,6 +9,7 @@ from threading import Thread, Event
 import time
 from urllib.parse import urlparse
 import sys as _sys
+import getpass
 
 dcs_deploy_version = "3.0.0"
 
@@ -209,6 +210,7 @@ class DcsDeploy:
         self.selected_config_name = None
         self.load_db()
         self.local_overlay_dir = os.path.join('.', 'local', 'overlays')
+        self.system_encryption_dir = os.path.join(os.getcwd(), 'system_encryption', 'op_tee_tools')
         if self.args.command != 'list':
             self.load_selected_config()
             self.init_filesystem()
@@ -242,6 +244,9 @@ class DcsDeploy:
 
         ab_partition_help = 'Prepare ab partion for system update. Only available for nvme devices'
         subparser.add_argument('--ab_partition', action='store_true', help=ab_partition_help)
+
+        encryption_help = 'Encryption the rootfs partition. Only available for nvme devices'
+        subparser.add_argument('--encryption', action='store_true', help=encryption_help)
 
         opt_app_size_help = 'Set APP partition size in GB. Use when you get "No space left on device" error while flashing custom rootfs'
         subparser.add_argument('--app_size', help=opt_app_size_help)
@@ -384,11 +389,14 @@ class DcsDeploy:
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
         self.rootfs_extract_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra', 'rootfs'))
         self.l4t_root_dir = os.path.realpath(os.path.join(self.flash_path, 'Linux_for_Tegra'))
+        self.op_tee_tools_path = os.path.realpath(os.path.join(self.l4t_root_dir, 'source', 'public', 'nvidia-jetson-optee-source.tbz2'))
+        self.op_tee_tools_dir = os.path.realpath(os.path.join(self.l4t_root_dir, 'source', 'public'))
+        self.enc_key_path = os.path.realpath(os.path.join(self.l4t_root_dir, 'disk_enc.key'))
         self.apply_binaries_path = os.path.join(self.l4t_root_dir, 'apply_binaries.sh')
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
 
         # generate download resource paths
-        resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
+        resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools", "public_sources"]
         self.resource_paths = {}
 
         for res_name in resource_keys:
@@ -445,10 +453,11 @@ class DcsDeploy:
                      "udev", "uuid-runtime", "whois", "openssl", "cpio", "lz4"]
         l4t_other_dependencies = ["python-is-python3"]
         dcs_deploy_dependencies = ["qemu-user-static", "sshpass", "abootimg", "lbzip2", "jq", "coreutils", "findutils" ]
+        disk_encryption_dependencies = ["python3-cryptography", "python3-cffi-backend", "libxml2-utils", "cryptsetup", "python3-pycryptodome", "python3-crypto", "docker.io"]
         
         dependencies = l4t_tool
         # append dcs_deploy_dependencies which are unique
-        for dependency in dcs_deploy_dependencies + l4t_other_dependencies:
+        for dependency in dcs_deploy_dependencies + l4t_other_dependencies + disk_encryption_dependencies:
             if dependency not in dependencies:
                 dependencies.append(dependency)
         
@@ -587,6 +596,19 @@ class DcsDeploy:
         if self.get_resource_url('nv_ota_tools') != None:
             print('Applying Nvidia OTA tools ...')
             ret = self.extract_resource('nv_ota_tools')
+
+        if self.get_resource_url('public_sources') != None:
+            print('Applying Nvidia OP-TEE tools ...')
+            ret = self.extract_resource('public_sources')
+            if self.config['l4t_version'] != '62':
+                ret = extract(self.op_tee_tools_path, self.op_tee_tools_dir)
+            else:
+                print(f"Error: OP-TEE tools archive not found at {self.op_tee_tools_path}")
+                user = getpass.getuser()
+                cmd_exec(f"sudo mkdir -p '{self.op_tee_tools_dir}'")
+                cmd_exec(f"sudo chown -R {user}:{user} '{self.op_tee_tools_dir}'")
+                cmd_exec(f"sudo chmod -R u+rwX '{self.op_tee_tools_dir}'")
+                ret = extract(os.path.realpath(os.path.join(self.l4t_root_dir, 'source', 'nvidia-jetson-optee-source.tbz2')), self.op_tee_tools_dir)
 
         # Regenerate ssh access in rootfs
         print("Purging ssh keys, this part needs sudo privilegies:")
@@ -743,10 +765,65 @@ class DcsDeploy:
 
         self.selected_config_name = config
 
+
+    def update_num_sectors(self, file_path):
+        try:
+            if self.config['l4t_version'] != '62':
+                cmd = f"sudo sed -i 's/NUM_SECTORS/250069680/g' {file_path}"
+            else:
+                cmd = f"sudo sed -i 's/EXT_NUM_SECTORS/250069680/g' {file_path}"
+            ret = cmd_exec(cmd, print_command=True)
+            if ret != 0:
+                print(f"Failed to update NUM_SECTORS in {file_path}. Command returned {ret}.")
+                exit(1)
+            print(f"Updated NUM_SECTORS in {file_path} to 250069680.")
+        except Exception as e:
+            print(f"Failed to update NUM_SECTORS in {file_path}: {str(e)}")
+            exit(1)
+
+    def copy_op_tee_tools(self, destination_dir):
+
+        if not os.path.exists(self.system_encryption_dir):
+            print(f"Source directory does not exist: {self.system_encryption_dir}")
+            exit(1)
+
+        if not os.path.exists(destination_dir):
+            print(f"Destination directory does not exist: {destination_dir}. Creating it...")
+            os.makedirs(destination_dir)
+
+        try:
+            print(f"Copying {self.system_encryption_dir} to {destination_dir}...")
+            cmd_exec(f"sudo cp -r {os.path.join(self.system_encryption_dir, '*')} {destination_dir}", print_command=True)
+            print("Copy completed successfully.")
+        except Exception as e:
+            print(f"Failed to copy op_tee_tools: {str(e)}")
+            exit(1)
+
+    def generate_encryption_key(self):
+        gen_ekb_dir =  os.path.relpath('source/public/optee/samples/hwkey-agent/host/tool/gen_ekb/')
+        self.copy_op_tee_tools(destination_dir = gen_ekb_dir)
+        os.chdir(gen_ekb_dir)
+        try:
+            if self.config['l4t_version'] != '62':
+                script = os.path.join(os.getcwd(), "generate_keys.sh")
+            else:
+                script = os.path.join(os.getcwd(), "generate_keys_jp6_2.sh")    
+            cmd_exec(f"sudo chmod +x '{script}'", print_command=True)
+            ret = cmd_exec(f"sudo bash '{script}'", print_command=True)
+            ret = cmd_exec(f"sudo cp eks_t234.img {self.l4t_root_dir}/bootloader/eks_t234.img", print_command=True)
+            ret = cmd_exec(f"sudo cp eks_t234.img {self.l4t_root_dir}/bootloader/eks.img", print_command=True)
+            ret = cmd_exec(f'sudo cp sym2_t234.key  {self.enc_key_path}', print_command=True)
+            os.chdir(self.l4t_root_dir)
+        except Exception as e:
+            print(f"Failed to generate encryption key: {str(e)}")
+            os.chdir(self.l4t_root_dir)
+            exit(1)
+
     def setup_initrd_flashing(self):
         os.chdir(self.l4t_root_dir)
         #set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
+        self.tegrarcm_v2_path = os.path.relpath('bootloader/tegrarcm_v2')   
         
         if self.config['l4t_version'] != '62':
             if self.config['device'] == 'xavier_nx':
@@ -776,9 +853,15 @@ class DcsDeploy:
             elif self.config['storage'] == 'nvme':
                 self.rootdev = "external"
                 self.external_device = "--external-device nvme0n1p1 "
-                if self.args.ab_partition == True:
+                if self.args.ab_partition and self.args.encryption:
+                    # setup multiple app partitions with encryption
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab_enc.xml')
+                elif self.args.ab_partition:
                     # setup multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+                elif self.args.encryption:
+                    # setup single partition with encryption
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_enc.xml')
                 else:
                     # setup no multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external_custom.xml')
@@ -805,9 +888,15 @@ class DcsDeploy:
                 self.rootdev = "external"
                 self.external_device = ""
                 self.external_device = "--external-device nvme0n1p1 "
-                if self.args.ab_partition == True:
+                if self.args.ab_partition and self.args.encryption:
+                    # setup multiple app partitions with encryption
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab_enc.xml')
+                elif self.args.ab_partition:
                     # setup multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
+                elif self.args.encryption:
+                    # setup single partition with encryption
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_enc.xml')
                 else:
                     # setup no multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_t234_nvme.xml')
@@ -821,8 +910,8 @@ class DcsDeploy:
 
     def generate_images(self):
         self.prepare_status.change_group("images")
-        # check commandline parameter if they are same as previous and images are already generated skip generation
-        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True:
+        # check commandline parameter if they are same as previous and images are already generated skip generation        
+        if self.prepare_status.is_identifier_same_as_prev(["--regen", "--force"]) and self.prepare_status.get_status() == True and not self.args.encryption:
             print("Images already generated! Skipping generating images!")
             return 0
 
@@ -838,12 +927,12 @@ class DcsDeploy:
         # flash external nvme drive
         elif self.config['storage'] == 'nvme':
             #file to check: initrdflashparam.txt - contains last enterred parameters
-            env_vars = ""
+            env_vars = []
             opt_app_size_arg = ""
             external_only = "--external-only" # flash only external device
             
             if self.args.ab_partition == True:
-                env_vars = "ROOTFS_AB=1"
+                env_vars.append("ROOTFS_AB=1")
                 if self.args.rootfs_type == "minimal":
                     opt_app_size = 4
                 else:
@@ -852,6 +941,9 @@ class DcsDeploy:
                 external_only = "" # flash internal and external device
                 #self.rootdev = "external" # set UUID device in kernel commandline: rootfs=PARTUUID=<external-uuid>
 
+            if self.args.encryption == True:
+                env_vars.append("ROOTFS_ENC=1")
+
             if self.args.app_size is not None:
                 opt_app_size_arg = f"-S {self.args.app_size}GiB"
 
@@ -859,8 +951,17 @@ class DcsDeploy:
                 external_only = "" # don't flash only external device
                 
             cmd_exec("pwd")
-            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} " +
-                           f"-c {self.ext_partition_layout} {self.orin_options} --showlogs {self.board_name} {self.rootdev}", print_command=True)
+            self.update_num_sectors(self.ext_partition_layout)
+            env_vars_str = " ".join(env_vars)
+            if self.args.encryption == True:
+                self.generate_encryption_key()
+                ret = cmd_exec(f"sudo ./{self.tegrarcm_v2_path} --new_session --chip 0x23 --uid | sudo tee ECID.key > /dev/null", print_command=True)
+                ret = cmd_exec(f"sudo ./{self.flash_script_path} --showlogs {self.orin_options} -i {self.enc_key_path} --no-flash  {self.board_name} {self.rootdev}", print_command=True)
+                ret = cmd_exec(f"sudo {env_vars_str} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} -i {self.enc_key_path} " +
+                            f"-c {self.ext_partition_layout} --showlogs --external-only --append --network usb0 {self.board_name} {self.rootdev}", print_command=True)
+            else:
+                ret = cmd_exec(f"sudo {env_vars_str} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} " +
+                            f"-c {self.ext_partition_layout} {self.orin_options} --showlogs {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
 
