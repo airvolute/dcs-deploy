@@ -1272,8 +1272,8 @@ class DcsDeploy:
         out_part_layout_file_name=f"{src_part_layout_file_base_name}_custom.xml"
         print(f"selecting source partition file: {src_part_layout_file_name}")
         # update partition number of sectors and generate new xml <file>_custom.xml
-        ret = self.update_xml_sectors(src_part_layout_file_name, out_part_layout_file_name, nvme_disk_size_B//512)
-        #ret = call_bash_function(f"{self.dsc_deploy_app_dir}/scripts/common.func", "part_xml_update_num_sectors", True, src_part_layout_file_name, str(nvme_disk_size_B//512), self.config['l4t_version'])
+        #ret = self.update_xml_sectors(src_part_layout_file_name, out_part_layout_file_name, nvme_disk_size_B//512)
+        ret = call_bash_function(f"{self.dsc_deploy_app_dir}/scripts/common.func", "part_xml_update_num_sectors", True, src_part_layout_file_name, str(nvme_disk_size_B//512), self.config['l4t_version'])
         if ret != 0:
             raise  Exception(f'part_xml_update_num_sectors returned {ret}')
         return os.path.relpath(out_part_layout_file_name)
