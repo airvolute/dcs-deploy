@@ -249,7 +249,7 @@ class DcsDeploy:
         subparser.add_argument('--rootfs', help=rootfs_help)
         
         massflash_devices_help = 'Massflash package generation. Specify number of devices (2-50). ' \
-        'If this option is used, no flashing will be done.Instead, a package for mass flashing will be created. '
+        'If this option is used, no flashing will be done. Instead, a package for mass flashing will be created. '
         subparser.add_argument('--massflash_devices', type=int, choices=range(2, 50), metavar='[2-50]', help=massflash_devices_help)
 
     def create_parser(self):
