@@ -106,7 +106,7 @@
     "local_overlays": ["dcs_first_boot", "hardware_support_layer", "save_version.sh"],
     "nvidia_overlay": "none",
     "public_sources": "https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/sources/public_sources.tbz2",
-    "airvolute_overlay": "https://airvolute.com/download/dcs_deploy/airvolute_overlay-JP6.2-AV-FRAMOS.tbz2",
+    "airvolute_overlay": "https://storage.googleapis.com/dcs-deploy-overlays/airvolute_overlay_1d37ad37.tbz2",
     "l4t": "https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Jetson_Linux_r36.4.3_aarch64.tbz2",
     "nv_ota_tools" : "",
     "rootfs": "https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Tegra_Linux_Sample-Root-Filesystem_r36.4.3_aarch64.tbz2",
