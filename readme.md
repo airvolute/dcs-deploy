@@ -94,7 +94,28 @@ Then you can copy `rootfs_merged.tar.bz2` to your host pc and use point to it wi
 
 - Warning - we advise using `--app_size` parameter when using custom rootfs. If you do not set it adequately, `APP` partition may be too small for your custom rootfs. `app_size` should be bigger than your custom rootfs.
 
+## Massflash package generation
+
+Massflash package is a flash enviroment that can be used to flash multiple devices connected concurrently to one host pc. The package contains all the necessary files to flash the devices without need of downloading or extracting anything again. This is useful for production environments, where multiple devices need to be flashed.
+
+`--massflash_devices` is a parameter that can be used to generate massflash package. The parameter takes an integer value, which is the max number of devices that will be able to flash concurrently. If the parameter is not provided, the massflash package is not generated and the script will flash only one device at a time.
+
+Example usage:
++`` python3 dcs_deploy.py flash orin_nx 512 2.0 default nvme full --massflash_devices 21``
+
+After sucesfull run, the massflash package will be located in `~/.dcs_deploy/flash/<config_name>/Linux_for_Tegra/mfi_<device_name>.tar.gz` directory.
+To use this package you can move it to desired location and extract it using `sudo tar xpfv mfi_<device_name>.tar.gz`.
+Then you can flash the device from the folder using `sudo ./tools/kernel_flash/l4t_initrd_flash.sh --flash-only --massflash 21 --network usb0 --showlogs` command.
+
+When using the massflash it is recommended to prepare the host pc accordingly:
+
+1. Run `l4t_flash_prerequisites.sh` script from `Linux_for_Tegra` folder. Located at `~/.dcs_deploy/flash/<config_name>/Linux_for_Tegra/tools`.
+2. Disable USB autosuspend on the host pc. See [Flashing issues](#3-flashing-issues) section for more information.
+
+Note: We imposed a limit of max 50 devices to be flashed concurrently. It is an arbitrary limit, that can be changed in the future if needed.
+
 ## Flashing to specific UUID, multiple nvme drives
+
 If you want to use multiple nvme drives, this is not an issue. Just make sure **you plug out secondary NVME during flashing process.** After the flashing is successful, you can plug in the secondary NVME. The device will then always boot from the primary NVME (the one that was plugged in during the flashing process).
 
 ## Effectiveness

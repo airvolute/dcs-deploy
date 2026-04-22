@@ -648,6 +648,10 @@ class DcsDeploy:
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
 
+        massflash_devices_help = 'Massflash package generation. Specify number of devices (2-50). ' \
+        'If this option is used, no flashing will be done.Instead, a package for mass flashing will be created. '
+        subparser.add_argument('--massflash_devices', type=int, choices=range(2, 50), metavar='[2-50]', help=massflash_devices_help)
+
         use_config_help = 'Use to select preferred config when multiple configs with same reqired parameters exist,'\
                                 ' but differs in overlays'
         subparser.add_argument('--use-config', help=use_config_help)
@@ -1439,7 +1443,16 @@ class DcsDeploy:
         
         #external_only = True # flash only external device
         #self.gen_external_only = False
-
+        self.massflash_opt=""
+        if  self.args.massflash_devices is not None:
+            # Massflash is supported for now only for orin series
+            if not self.config['device'].startswith('orin'):
+                print("MassFlash is supported only for Orin series devices!")
+                return -1
+            # Massflash will not work for rfs enc...
+            print(80*"-")
+            print(f"Generating MassFlash package for {self.args.massflash_devices} devices...")
+            self.massflash_opt = f"--massflash {self.args.massflash_devices}"
             
         append=""
         if not self.gen_external_only:
@@ -1456,7 +1469,7 @@ class DcsDeploy:
 
                 self.prepare_status.set_processing_step("generate_images-internal")
                 #./${flash_script_path} -u ./rsa.pem -v ./sbk.key $uefi_keys_opt --no-flash --network usb0 -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" --showlogs ${board_config_name} internal
-                ret = cmd_exec(f"sudo {self.env_vars} {overlay_params['env']} ./{self.flash_script_path} --no-flash {self.flashing_network} {overlay_params['args']} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
+                ret = cmd_exec(f"sudo {self.env_vars} {overlay_params['env']} ./{self.flash_script_path} --no-flash {self.massflash_opt} {self.flashing_network} {overlay_params['args']} {self.internal_flash_options} --showlogs {self.board_name} internal", print_command=True)
                 print(f"cmd_exec returned:{ret}")
                 self.prepare_status.set_status(ret)
                 
@@ -1500,7 +1513,7 @@ class DcsDeploy:
         self.prepare_status.set_processing_step("generate_images-external")
         #sudo ROOTFS_ENC=1 ./${flash_script_path} -u ${OUT_dir}/rsa.pem -v ${OUT_dir}/sbk.key  -i ${OUT_dir}/sym2_t234.key -S ${partition_size} --no-flash --network usb0 --showlogs
         #  --external-device ${nvme_device} -c ./tools/kernel_flash/flash_l4t_t234_nvme_rootfs_enc.xml --external-only --append  ${board_config_name} external
-        ret = cmd_exec(f"sudo {self.env_vars} {overlay_params['env']} ./{self.flash_script_path} {self.opt_app_size_arg} --no-flash {self.flashing_network} {overlay_params['args']} --showlogs " + 
+        ret = cmd_exec(f"sudo {self.env_vars} {overlay_params['env']} ./{self.flash_script_path} {self.opt_app_size_arg} --no-flash {self.massflash_opt} {self.flashing_network} {overlay_params['args']} --showlogs " + 
                         f"{self.external_device} -c {self.ext_partition_layout} --external-only {append} {self.board_name} {self.rootdev}", print_command=True)
         print(f"cmd_exec returned:{ret}")
         self.prepare_status.set_status(ret, last_step = True if self.rfs_enc == False else False)
@@ -1567,6 +1580,11 @@ class DcsDeploy:
             exit(7)
         # flash device
         print("-"*80)
+        if self.args.massflash_devices is not None:
+            print(f"MassFlash package generated successfully at: {self.l4t_root_dir}")
+            print(f"Number of devices in package: {self.args.massflash_devices}")
+            print(f"To use the package, follow the instructions in readme.md")
+            exit(0)
         print("Flash images! ...")
         self.prepare_status.change_group("flash")
         self.prepare_status.set_processing_step("flash_only")
