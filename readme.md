@@ -282,12 +282,10 @@ $ sudo su
 [   0.1454 ] ERROR: might be timeout in USB write.
 ```
 
-### Known limitation - JetPack 6.2 - beta
-Airvolute BSP for JetPack 6.2 is currently in beta. The flashing process is not fully tested and some features may not work as expected. Please report any issues to Airvolute support or open issues. Regardless of this beta release can be used to asses the new features of JetPack 6.2 and prepare their applications for the new JetPack version.
-
-User can always downgrade to stable JetPack 5.1.2 version by flashing the device with appropriate configuration. Beware the downgrading takes just under 60 minutes.
 #### Downgrade procedure from JP 6.2 to JP 5.1.2
-At the moment it is not possible to downgrade direcrly from JP 6.2 to JP 5.1.2, because all the UEFI, QSPI and rootfs must be compatible and there seems to be some leftovers from JP 6.2 flash.
+At the moment it is not possible to downgrade directly from JP 6.2 to JP 5.1.2, because all the UEFI, QSPI and rootfs must be compatible and there seems to be some leftovers from JP 6.2 flash.
+
+Beware the downgrading takes just under 60 minutes.
 
 The procedure to sucesfully downgrade is as follows:
 1. Start flash with JP 5.1.2 configuration.
@@ -312,42 +310,93 @@ sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme
 ```
 1. After the 2nd flash is finished, you might need to reflash the device with the JP 5.1.2 configuration one more time using standard `dcs-deploy` command. If were using the same configuration to downgrade to JP 5.1.2, you need to use `--regen` flag to be sure, that the images are the ones from the configuration. After this flash you can use the device and `dcs-deploy` as usual.
 
-#### CSI interface
-The following cameras are currently supported:
-- IMX219 (CSI0)
-- IMX477 (CSI0)
-- OV9281 (CSI0)
-- OV64B40 Airvolute Hadron Expander (CSI2/3)
-- TC358743 HDMI capture chip (CSI2/3)
+## JetPack 6.2 Features
+### Device Tree Overlay
+Instead of replacing the entire device tree in `/boot/dtb/` you can apply overlays, which can be easily switched and disabled.
 
-To use any of these cameras, you must apply the corresponding Device Tree Overlay by running `sudo python /opt/nvidia/jetson-io/jetson-io.py`.
+You can apply the overlays with this Nvidia provided script: `sudo python /opt/nvidia/jetson-io/jetson-io.py`.
+
+Example:
 
 In the menu, navigate to: **Configure Airvolute DCS2 Adapter Board → Configure for Compatible Hardware**
 
-From the list, select the camera you wish to use.
+From the list, select the overlay you wish to use.
 
 Confirm your selection and reboot for the changes to take effect.
 
-#### I2C & SPI devices
-##### TC74 Temperature sensor
-On both DCS1.2 and DCS2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
+#### Camera overlays
+By default we ship DCS with these overlays:
+DCS 2.0:
+- IMX219 (CSI 0)
+- IMX477 (CSI 0)
+- OV9281 (CSI 0)
+- NextVision/TC358743 HDMI capture chip (CSI 2/3)
+- OV64B40 Airvolute Hadron Expander (CSI 2/3)
+- Patron FPV - IMX219 (CSI 0) + OV9281 (CSI 1) + Framos IMX678 (CSI 2/3)
+- Patron FPV - IMX219 (CSI 0) + OV9281 (CSI 1) + Framos IMX838 (CSI 2/3)
+- Patron FPV - IMX219 (CSI 0) + OV9281 (CSI 1) + Framos IMX900 (CSI 2/3)
+
+DCS 1.2:
+- OV64B40 Airvolute Hadron Expander (CSI A)
+- OV9281 (CSI A)
+- IMX219 (CSI A)
+- Stribog - Stereo OV9281 (CSI A & CSI C) + OV9281 (CSI B) + OV64B40 Hadron (CSI F)
+- Stribog - Stereo OV9281 (CSI A & CSI C) + OV9281 (CSI B) + NextVision (CSI F)
 
 
-##### BMI088 IMU (Accelerometer & Gyroscope)
+#### FMU switch overlay (DCS 2.0)
+DCS2.Pilot boards use the Cube autopilot by default when supported.
+If your board does not have a Cube installed, or you want to use the onboard FMU instead, apply the internal FMU overlay.
 
-The DCS2.0 board includes a BMI088 IMU, which combines a 3-axis accelerometer and a 3-axis gyroscope.
-These sensors can be accessed via the Industrial I/O (IIO) subsystem under the following paths:
+#### TC74 Temperature sensor
+On both DCS 1.2 and DCS 2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
+
+#### BMI088 IMU (Accelerometer & Gyroscope)
+DCS 2.0 includes a BMI088 IMU, which combines a 3-axis accelerometer (max 1600 Hz) and a 3-axis gyroscope (max 2000 Hz). 
+These sensors can be accessed and configured via the Industrial I/O (IIO) subsystem under the following paths:
 
 - Accelerometer: `/sys/bus/iio/devices/iio:device0`
 - Gyroscope: `/sys/bus/iio/devices/iio:device1`
 
-The max sampling rate are:
-- Accelerometer: up to 1600 Hz
-- Gyroscope: up to 2000 Hz
+#### ATTPM20P TPM 2.0 (DCS2.Pilot rev.2)
+DCS2.Pilot rev.2 board includes a ATTPM20P chip, which can be accessed as /dev/spidev1.3 
+> SPI access is available, however no TPM driver or functionality has been implemented yet.
 
-#### Known issues:
+### Super modes
+- Super modes are fully supported on all boards when using the Jetson Orin Nano 4GB.
+- For Jetson Orin NX 16GB, super modes are recommended only with the newer DCS2.Default Expansion board. Earlier DCS2.PDB default power boards and DCS 1.2 Pilot boards may not consistently provide the required power for Orin NX in super modes, which can lead to overheating or unexpected shutdowns. 
+- If you plan to use super modes, please contact Airvolute support for compatibility details and recommendations.
 
-- Super modes are currently not supported out of the box. The main limitation for Orin NX and DCS 2.0 or DCS 1.2 lies in the power board adapter not able to consitently provide the power needed which may result in overheating and shutting down the device.
-  - If you want to use super modes, please contact Airvolute support for more information.
+### Supported CSI Cameras
+- OV9281
+- IMX219
+- IMX477
+- NextVision/TC358743 HDMI capture
+- OV64B40 Airvolute Hadron Expander
+- Arducam Jetvariety
+- Framos IMX662
+- Framos IMX676
+- Framos IMX900
+- Framos IMX678
+- Framos IMX838
 
-The new revision of the power board together with adapter board for DCS 2.0 is scheduled by the end of Q2 2025. 
+### JP 6.2 Release Notes
+#### 0.2.0 (27 May 2026)
+- Added driver support for Framos cameras.
+- Added driver support for Arducam Jetvariety cameras.
+- Added Wireguard module into kernel.
+- Added DT Overlays for Stribog, Patron FPV, Internal FMU switch.
+- Removed cvb eeprom dependency.
+
+#### 0.1.7 (16 Feb 2026)
+- Added Real Time Clock support DS1388 for DCS2.Pilot rev.2 board.
+
+#### 0.1.4 (8 Aug 2025)
+- DCS 1.2 Support.
+- Super modes added.
+
+#### 0.1.2 (17 Jul 2025)
+- Added SPI communication support for the TPM 2.0 ATTPM20P on DCS2.Pilot rev.2 board.
+
+#### 0.1.0 (10 Jun 2025)
++ Added driver support for IMU BMI088.
