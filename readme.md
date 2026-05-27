@@ -324,9 +324,10 @@ From the list, select the overlay you wish to use.
 
 Confirm your selection and reboot for the changes to take effect.
 
-#### Camera overlays
+### Camera overlays
 By default we ship DCS with these overlays:
-DCS 2.0:
+
+#### DCS 2.0
 - IMX219 (CSI 0)
 - IMX477 (CSI 0)
 - OV9281 (CSI 0)
@@ -336,7 +337,7 @@ DCS 2.0:
 - Patron FPV - IMX219 (CSI 0) + OV9281 (CSI 1) + Framos IMX838 (CSI 2/3)
 - Patron FPV - IMX219 (CSI 0) + OV9281 (CSI 1) + Framos IMX900 (CSI 2/3)
 
-DCS 1.2:
+#### DCS 1.2
 - OV64B40 Airvolute Hadron Expander (CSI A)
 - OV9281 (CSI A)
 - IMX219 (CSI A)
