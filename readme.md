@@ -349,6 +349,12 @@ By default we ship DCS with these overlays:
 DCS2.Pilot boards use the Cube autopilot by default when supported.
 If your board does not have a Cube installed, or you want to use the onboard FMU instead, apply the internal FMU overlay.
 
+`sudo python /opt/nvidia/jetson-io/jetson-io.py`.
+
+In the menu, navigate to: **Airvolute DCS2 Pilot FMU → Configure for Compatible Hardware → Internal FMU**
+
+> Multiple overlays must be applied at the same time. If you apply and save the camera overlay first, then run `jetson-io.py` again to apply the FMU overlay, the previously applied camera overlay will be overwritten. Make sure to select and apply both the camera and FMU overlays in a single configuration step.
+
 #### TC74 Temperature sensor
 On both DCS 1.2 and DCS 2.0 boards is a temperature sensor connected on I2C-1 bus. It's temperature can be read from this path `/sys/class/hwmon/hwmon0/temp1_input` the value is in millicelsius [m°C] (returned value of 47000 = 47°C).
 
