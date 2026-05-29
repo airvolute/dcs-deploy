@@ -371,8 +371,9 @@ DCS2.Pilot rev.2 board includes a ATTPM20P chip, which can be accessed as /dev/s
 
 ### Super modes
 - Super modes are fully supported on all boards when using the Jetson Orin Nano 4GB.
-- For Jetson Orin NX 16GB, super modes are recommended only with the newer DCS2.Default Expansion board. Earlier DCS2.PDB default power boards and DCS 1.2 Pilot boards may not consistently provide the required power for Orin NX in super modes, which can lead to overheating or unexpected shutdowns. 
-- If you plan to use super modes, please contact Airvolute support for compatibility details and recommendations.
+- For Jetson Orin NX 16GB, super modes are recommended only with the newer DCS2.Default Expansion board. Earlier DCS2.PDB default power boards and DCS 1.2 Pilot boards may not consistently provide the required power for Orin NX in super modes, which can lead to overheating or unexpected shutdowns.
+- When using Jetson Orin NX 16GB in super modes, sufficient cooling is required to prevent overheating. 
+- If you plan to use super modes, please contact Airvolute support for compatibility details, usage recommendations, and recommended heatsink and thermal solutions.
 
 ### Supported CSI Cameras
 - OV9281
@@ -386,6 +387,9 @@ DCS2.Pilot rev.2 board includes a ATTPM20P chip, which can be accessed as /dev/s
 - Framos IMX900
 - Framos IMX678
 - Framos IMX838
+
+### Ethernet switch
+Starting with JP6, we include by default `ethernet_switch_control.py` script, which configures the internal DCS2.Pilot Ethernet switch to resolve known ethernet issues.
 
 ### JP 6.2 Release Notes
 #### 0.2.0 (27 May 2026)
