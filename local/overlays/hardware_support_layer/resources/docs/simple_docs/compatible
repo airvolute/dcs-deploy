@@ -1,0 +1,11 @@
+[
+    {
+      "device": [""],
+      "storage": [""],
+      "board": [""],
+      "board_expansion" : [""],
+      "l4t_version": [""],
+      "rootfs_type": [""]
+    }
+  ]
+  

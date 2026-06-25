@@ -1,0 +1,13 @@
+[Unit]
+Description=USB hub control
+After=remote-fs.target
+After=syslog.target
+After=multi-user.target
+Requires=multi-user.target
+
+[Service]
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/python3 /usr/local/bin/usb_hub_control.py
+
+[Install]
+WantedBy=multi-user.target

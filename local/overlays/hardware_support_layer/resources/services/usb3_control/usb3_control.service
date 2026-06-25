@@ -1,0 +1,13 @@
+[Unit]
+Description=USB 3 control
+After=remote-fs.target
+After=syslog.target
+After=multi-user.target
+Requires=multi-user.target
+
+[Service]
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/local/bin/usb3_control.sh
+
+[Install]
+WantedBy=multi-user.target

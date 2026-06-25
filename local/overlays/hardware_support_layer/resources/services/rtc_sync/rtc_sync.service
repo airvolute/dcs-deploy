@@ -1,0 +1,12 @@
+[Unit]
+Description=rtc_sync
+After=remote-fs.target
+After=syslog.target
+After=multi-user.target
+Requires=multi-user.target
+
+[Service]
+ExecStart=/usr/local/bin/rtc_sync.sh
+
+[Install]
+WantedBy=multi-user.target

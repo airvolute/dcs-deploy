@@ -1,0 +1,10 @@
+[Unit]
+Description=Boost clocks and fan with tj
+After=multi-user.target
+Requires=multi-user.target
+
+[Service]
+ExecStart=/usr/local/bin/boost_clocks_and_fan_tj.sh
+
+[Install]
+WantedBy=multi-user.target
