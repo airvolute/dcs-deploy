@@ -245,6 +245,9 @@ class DcsDeploy:
         opt_app_size_help = 'Set APP partition size in GB. Use when you get "No space left on device" error while flashing custom rootfs'
         subparser.add_argument('--app_size', help=opt_app_size_help)
 
+        ext_num_sectors_help = 'Set external storage sector count. ' 'Example: 2000409264 for a ~1TB NVMe with 512-byte sectors.'
+        subparser.add_argument('--ext_num_sectors', type=int, help=ext_num_sectors_help)
+
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
         
@@ -280,6 +283,25 @@ class DcsDeploy:
             print("AB partition is allowed only for nvme devices! (%s)" % self.config['storage'])
             print("Exitting!")
             exit(6)
+    
+        if self.args.rootfs is not None and self.args.app_size is None:
+            print('''
+                  WARNING! You did not specify --app_size parameter.
+                  You may get 'No space left on device' error while flashing custom rootfs.
+                  ''')
+    
+        if self.args.ext_num_sectors is not None:
+            if self.config['storage'] != 'nvme':
+                print("--ext_num_sectors is intended only for external NVMe flashing.")
+                print("Current storage is: %s" % self.config['storage'])
+                print("Exitting!")
+                exit(6)
+    
+            if self.args.ext_num_sectors <= 0:
+                print("--ext_num_sectors must be a positive integer.")
+                print("Example: --ext_num_sectors 2000409264")
+                print("Exitting!")
+                exit(6)
 
         if self.args.rootfs is not None and self.args.app_size is None:
             print('''
@@ -874,7 +896,7 @@ class DcsDeploy:
         # flash external nvme drive
         elif self.config['storage'] == 'nvme':
             #file to check: initrdflashparam.txt - contains last enterred parameters
-            env_vars = ""
+            env_vars = []
             opt_app_size_arg = ""
             external_only = "--external-only" # flash only external device
             
@@ -891,11 +913,18 @@ class DcsDeploy:
             if self.args.app_size is not None:
                 opt_app_size_arg = f"-S {self.args.app_size}GiB"
 
+            if self.args.ext_num_sectors is not None:
+                env_vars.append(f"EXT_NUM_SECTORS={self.args.ext_num_sectors}")    
+
             if self.config['device'] in ['orin_nx', 'orin_nx_super', 'orin_nx_super_maxn', 'orin_nx_8gb', 'orin_nx_8gb_super', 'orin_nx_8gb_super_maxn', 'orin_nano_8gb', 'orin_nano_8gb_super', 'orin_nano_4gb', 'orin_nano_4gb_super']:
                 external_only = "" # don't flash only external device
                 
+            sudo_prefix = "sudo"
+            if len(env_vars) > 0:
+                sudo_prefix = "sudo env " + " ".join(env_vars)
+
             cmd_exec("pwd")
-            ret = cmd_exec(f"sudo {env_vars} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} " +
+            ret = cmd_exec(f"{sudo_prefix} ./{self.flash_script_path} {opt_app_size_arg} --no-flash {external_only} {self.external_device} " +
                            f"-c {self.ext_partition_layout} {self.orin_options} --showlogs {self.board_name} {self.rootdev}", print_command=True)
         self.prepare_status.set_status(ret, last_step= True)
         return ret
@@ -923,14 +952,23 @@ class DcsDeploy:
         if self.args.app_size:
             opt_app_size_arg = f"-S {self.args.app_size}GiB"
 
-        # For now empty values are used for env vars it is a placeholder for future use
-        env_vars = ""
+        env_vars = []
+
+        if self.args.ab_partition == True:
+            env_vars.append("ROOTFS_AB=1")
+
+        if self.args.ext_num_sectors is not None:
+            env_vars.append(f"EXT_NUM_SECTORS={self.args.ext_num_sectors}")
+
+        sudo_prefix = "sudo"
+        if len(env_vars) > 0:
+            sudo_prefix = "sudo env " + " ".join(env_vars)
 
         massflash_count = self.args.massflash_devices
 
         # Build massflash command
         cmd = (
-            f"sudo {env_vars} ./{self.flash_script_path} --no-flash "
+            f"{sudo_prefix} ./{self.flash_script_path} --no-flash "
             f"{opt_app_size_arg} "
             f"{self.external_device} "
             f"-c {self.ext_partition_layout} "
