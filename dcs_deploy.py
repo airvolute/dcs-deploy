@@ -784,7 +784,7 @@ class DcsDeploy:
         #set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         
-        if self.config['l4t_version'] != '62':
+        if self.config['l4t_version'] not in ['62', '72']:
             if self.config['device'] == 'xavier_nx':
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
                 self.orin_options = ""
@@ -822,7 +822,7 @@ class DcsDeploy:
                 print("Unknown storage [%s]! exitting" % self.config['storage'])
                 exit(9)
 
-        # setup for JP 62
+        # setup for JP 62 and 72
         else:
             if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
