@@ -221,7 +221,7 @@ class DcsDeploy:
         jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [512, 51].'
         subparser.add_argument('jetpack', help=jetpack_help)
 
-        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0].'
+        hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0, jerboa].'
         subparser.add_argument('hwrev', help=hwrev_help)
 
         board_expander_help = 'REQUIRED. Which board expander are we going to use. Options: [none, default].'
