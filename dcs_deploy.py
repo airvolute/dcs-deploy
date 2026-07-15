@@ -579,7 +579,10 @@ class DcsDeploy:
         self.prepare_airvolute_overlay()
         
         self.prepare_status.set_processing_step("apply_binaries_t")
-        ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
+        if self.config['l4t_version'] == '72':
+            ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t")
+        else:
+            ret = cmd_exec("/usr/bin/sudo " + self.apply_binaries_path + " -t False")
         self.prepare_status.set_status(ret)
 
         print('Creating default user ...')
