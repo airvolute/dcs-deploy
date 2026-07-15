@@ -99,6 +99,11 @@ When using the massflash it is recommended to prepare the host pc accordingly:
 
 Note: We imposed a limit of max 50 devices to be flashed concurrently. It is an arbitrary limit, that can be changed in the future if needed.
 
+## Specific external memory size for flashing
+Use parameter `--ext_num_sectors` to specify the number of sectors for the external memory. This is useful when you want to flash a specific size of the external memory. The parameter takes an integer value, which is the number of sectors. If the parameter is not provided, the script will use the default size of the external memory. 
+
+Note: It is particularly useful when trying to flash lower size NVME drives, which are not supported by default.
+
 ## Flashing to specific UUID, multiple nvme drives
 If you want to use multiple nvme drives, this is not an issue. Just make sure **you plug out secondary NVME during flashing process.** After the flashing is successful, you can plug in the secondary NVME. The device will then always boot from the primary NVME (the one that was plugged in during the flashing process).
 
