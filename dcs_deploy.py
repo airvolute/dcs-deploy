@@ -615,18 +615,31 @@ class DcsDeploy:
         return os.environ.get("COCKPIT_PACKAGES_TOKEN") or os.environ.get("GITLAB_TOKEN")
 
     def download_cockpit_packages(self, resource_url, dst_path):
-        headers = {}
         token = self.get_cockpit_packages_token()
-        if token:
-            headers["PRIVATE-TOKEN"] = token
 
-        request = Request(resource_url, headers=headers)
-        with urlopen(request) as response, open(dst_path, "wb") as output_file:
-            while True:
-                chunk = response.read(1024 * 1024)
-                if not chunk:
-                    break
-                output_file.write(chunk)
+        header_sets = [{}]
+        if token:
+            header_sets = [
+                {"PRIVATE-TOKEN": token},
+                {"DEPLOY-TOKEN": token},
+                {"JOB-TOKEN": token},
+            ]
+
+        last_error = None
+        for headers in header_sets:
+            try:
+                request = Request(resource_url, headers=headers)
+                with urlopen(request) as response, open(dst_path, "wb") as output_file:
+                    while True:
+                        chunk = response.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        output_file.write(chunk)
+                return
+            except Exception as e:
+                last_error = e
+
+        raise last_error
 
     def extract_resource(self, resource, extract_path = None, need_sudo = False):
         if extract_path == None:
