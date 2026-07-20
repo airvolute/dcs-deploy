@@ -8,6 +8,7 @@ import wget
 from threading import Thread, Event
 import time
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 import sys as _sys
 
 dcs_deploy_version = "3.0.0"
@@ -258,6 +259,13 @@ class DcsDeploy:
 
         cockpit_packages_help = 'Path or URL to versioned Airvolute Cockpit packages archive.'
         subparser.add_argument('--cockpit-packages', '--cockpit_packages', dest='cockpit_packages', help=cockpit_packages_help)
+
+        cockpit_packages_token_help = (
+            'GitLab token used to download private cockpit packages archive. '
+            'Can also be set with GITLAB_TOKEN or COCKPIT_PACKAGES_TOKEN.'
+        )
+        subparser.add_argument('--cockpit-packages-token', '--cockpit_packages_token',
+                               dest='cockpit_packages_token', help=cockpit_packages_token_help)
         
         massflash_devices_help = 'Massflash package generation. Specify number of devices (2-50). ' \
         'If this option is used, no flashing will be done. Instead, a package for mass flashing will be created. '
@@ -587,16 +595,38 @@ class DcsDeploy:
             print("removing existing file! " + dst_path)
             cmd_exec(f"rm '{dst_path}'", print_command=True)
         try:
-            wget.download(
-                resource_url,
-                dst_path
-            )
+            if resource_name == "cockpit_packages":
+                self.download_cockpit_packages(resource_url, dst_path)
+            else:
+                wget.download(
+                    resource_url,
+                    dst_path
+                )
         except Exception as e:
             print("Got error while downloading resource", resource_name, "Error: ", str(e))
             print("download params: %s, %s" %(resource_url, dst_path))
             return -1
         print()
         return 0
+
+    def get_cockpit_packages_token(self):
+        if self.args.cockpit_packages_token:
+            return self.args.cockpit_packages_token
+        return os.environ.get("COCKPIT_PACKAGES_TOKEN") or os.environ.get("GITLAB_TOKEN")
+
+    def download_cockpit_packages(self, resource_url, dst_path):
+        headers = {}
+        token = self.get_cockpit_packages_token()
+        if token:
+            headers["PRIVATE-TOKEN"] = token
+
+        request = Request(resource_url, headers=headers)
+        with urlopen(request) as response, open(dst_path, "wb") as output_file:
+            while True:
+                chunk = response.read(1024 * 1024)
+                if not chunk:
+                    break
+                output_file.write(chunk)
 
     def extract_resource(self, resource, extract_path = None, need_sudo = False):
         if extract_path == None:

@@ -200,6 +200,17 @@ python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full \
   --cockpit-packages=/mnt/nvme1/airvolute-cockpit-packages/build/airvolute-cockpit-packages-21870ec-dirty.tar.gz \
   --regen
 ```
+
+If `cockpit_packages` points to a private GitLab Package Registry artifact,
+provide a token with package read access:
+
+```
+GITLAB_TOKEN=<token> python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full \
+  --rootfs=/mnt/nvme1/dcs-deploy_old/dcs20_16gb_nx/rootfs_merged.tar.bz2 \
+  --regen
+```
+
+The token can also be passed as `--cockpit-packages-token=<token>`.
 - `save_version.sh` - saves the version of the flashed configuration to the `/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_version.json` file. This file is used to store the information about the flashed configuration. This information can be used to check the version of the flashed configuration on the device.
 
 ### Hardware Supporting Layer (systemctls, udev rules and more)
