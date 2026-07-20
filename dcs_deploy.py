@@ -54,6 +54,14 @@ def check_and_create_symlink(link_path, target_path):
         print(f"Failed to create symlink: {link_path} -> {target_path}")
     return create_ret
 
+def ensure_directory(path: str):
+    if os.path.isdir(path):
+        return
+    if os.path.islink(path):
+        os.makedirs(os.path.realpath(path), exist_ok=True)
+        return
+    os.makedirs(path, exist_ok=True)
+
 def extract(source_file_path:str, destination_path:str) -> int:
     if "tbz2" in source_file_path or "tar.bz2" in source_file_path:
         return cmd_exec("sudo tar xpf " + source_file_path + " --directory " + destination_path + " -I lbzip2")
@@ -451,18 +459,14 @@ class DcsDeploy:
                 continue
             self.resource_paths[res_name] = self.get_download_file_path(self.get_resource_url(res_name))
 
-        if not os.path.isdir(self.download_path):
-            os.makedirs(self.download_path)
+        ensure_directory(self.dsc_deploy_root)
+        ensure_directory(self.download_path)
 
         # remove old download directories
         self.cleanup_old_download_dir()
 
         if self.config['device'] == 'xavier_nx': 
             self.device_type = 't194'
-
-        # Handle dcs-deploy root dir
-        if not os.path.isdir(self.dsc_deploy_root):
-            os.mkdir(self.dsc_deploy_root)
 
         # create dcs-deploy download dir
         for key in self.resource_paths:
