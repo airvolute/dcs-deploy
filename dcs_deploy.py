@@ -247,6 +247,9 @@ class DcsDeploy:
 
         rootfs_help = 'Path to customized root filesystem. Keep in mind that this needs to be a valid tbz2 archive.' 
         subparser.add_argument('--rootfs', help=rootfs_help)
+
+        cockpit_packages_help = 'Path or URL to versioned Airvolute Cockpit packages archive.'
+        subparser.add_argument('--cockpit-packages', '--cockpit_packages', dest='cockpit_packages', help=cockpit_packages_help)
         
         massflash_devices_help = 'Massflash package generation. Specify number of devices (2-50). ' \
         'If this option is used, no flashing will be done. Instead, a package for mass flashing will be created. '
@@ -286,6 +289,22 @@ class DcsDeploy:
                   WARNING! You did not specify --app_size parameter. 
                   You may get 'No space left on device' error while flashing custom rootfs.
                   ''')
+
+        if self.config_has_local_overlay("airvolute_cockpit"):
+            cockpit_packages = self.get_cockpit_packages_source()
+            fallback_packages = os.path.join(self.local_overlay_dir, "airvolute_cockpit", "resources", "packages")
+            if cockpit_packages is None and not os.path.isdir(fallback_packages):
+                print("Airvolute Cockpit overlay is enabled, but no cockpit packages archive is configured.")
+                print("Provide --cockpit-packages=/path/to/airvolute-cockpit-packages-<version>.tar.gz")
+                print("or set 'cockpit_packages' URL/path in local/config_db.json.")
+                print("Exitting!")
+                exit(6)
+            if cockpit_packages is not None and self.is_local_resource(cockpit_packages):
+                cockpit_packages_path = self.local_resource_path(cockpit_packages)
+                if not os.path.isfile(cockpit_packages_path):
+                    print(f"Error: The specified cockpit packages archive does not exist: {cockpit_packages}")
+                    print("Exitting!")
+                    exit(6)
 
     def process_optional_args(self):
         if self.args.version == True:
@@ -352,6 +371,8 @@ class DcsDeploy:
     def get_download_file_path(self, url:str) -> str:
         if url == None:
             return ""
+        if self.is_local_resource(url):
+            return self.local_resource_path(url)
         path = self.download_path
         u = urlparse(url)
         path += "/" + u.hostname
@@ -361,6 +382,20 @@ class DcsDeploy:
         path += u.path.replace(replace_str, '')
         return path
         #return os.path.dirname(path)
+
+    def is_local_resource(self, resource:str) -> bool:
+        if resource is None:
+            return False
+        u = urlparse(resource)
+        return u.scheme == "file" or u.scheme == "" or resource.startswith("/")
+
+    def local_resource_path(self, resource:str) -> str:
+        if resource is None:
+            return ""
+        u = urlparse(resource)
+        if u.scheme == "file":
+            return os.path.abspath(os.path.join("/", u.netloc, u.path.lstrip("/")))
+        return os.path.abspath(resource)
 
     def cleanup_old_download_dir(self):
         old_download_dir = self.config['device'] + '_' + self.config['storage'] + '_' + self.config['board'] + '_' + self.config['board_expansion'] + '_'
@@ -391,7 +426,7 @@ class DcsDeploy:
         self.create_user_script_path = os.path.join(self.l4t_root_dir, 'tools', 'l4t_create_default_user.sh')
 
         # generate download resource paths
-        resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools"]
+        resource_keys = ["rootfs", "l4t", "nvidia_overlay", "airvolute_overlay", "nv_ota_tools", "cockpit_packages"]
         self.resource_paths = {}
 
         for res_name in resource_keys:
@@ -403,6 +438,16 @@ class DcsDeploy:
                     print(f"Error: The specified rootfs path does not exist: {self.args.rootfs}")
                     exit(1)
                 self.resource_paths[res_name] = self.args.rootfs
+                continue
+            if res_name == "cockpit_packages" and self.args.cockpit_packages is not None:
+                cockpit_packages_path = self.local_resource_path(self.args.cockpit_packages)
+                if self.is_local_resource(self.args.cockpit_packages) and not os.path.exists(cockpit_packages_path):
+                    print(f"Error: The specified cockpit packages archive does not exist: {self.args.cockpit_packages}")
+                    exit(1)
+                self.resource_paths[res_name] = (
+                    cockpit_packages_path if self.is_local_resource(self.args.cockpit_packages)
+                    else self.get_download_file_path(self.args.cockpit_packages)
+                )
                 continue
             self.resource_paths[res_name] = self.get_download_file_path(self.get_resource_url(res_name))
 
@@ -470,6 +515,11 @@ class DcsDeploy:
     def get_missing_resources(self, force_all_missing = False):
         res = []
         for resouce in self.resource_paths:
+            if self.is_local_resource(self.get_resource_url(resouce)) or (
+                resouce == "cockpit_packages" and self.args.cockpit_packages is not None and
+                self.is_local_resource(self.args.cockpit_packages)
+            ):
+                continue
             if os.path.isfile(self.resource_paths[resouce]) and force_all_missing == False:
                 continue
             # return only resource which is possible to download
@@ -494,17 +544,32 @@ class DcsDeploy:
         return True
 
     def get_resource_url(self, resource_name):
-        url = self.config[resource_name]
+        if resource_name == "cockpit_packages" and self.args.cockpit_packages is not None:
+            return self.args.cockpit_packages
+        url = self.config.get(resource_name)
         if url == None or url == "none" or url == "":
             return None
         return url
 
+    def get_cockpit_packages_source(self):
+        if self.args.cockpit_packages is not None:
+            return self.args.cockpit_packages
+        return self.get_resource_url("cockpit_packages")
+
+    def config_has_local_overlay(self, overlay_name):
+        for overlay_entry in self.config.get("local_overlays", []):
+            if isinstance(overlay_entry, dict):
+                current_overlay = next(iter(overlay_entry))
+            else:
+                current_overlay = overlay_entry
+            if current_overlay == overlay_name:
+                return True
+        return False
+
     def download_resource(self, resource_name, dst_path):
-        if resource_name  not in self.config:
+        resource_url = self.get_resource_url(resource_name)
+        if resource_url is None:
             return 1
-        if self.get_resource_url(resource_name) == None:
-            print("Skipping downloading resource" + resource_name)
-            return 2
         print("Downloading %s:" % resource_name)
         # remove any existing temporary files
         cmd_exec("rm -f " + dst_path + "*.tmp")
@@ -519,12 +584,12 @@ class DcsDeploy:
             cmd_exec(f"rm '{dst_path}'", print_command=True)
         try:
             wget.download(
-                self.config[resource_name],
+                resource_url,
                 dst_path
             )
         except Exception as e:
             print("Got error while downloading resource", resource_name, "Error: ", str(e))
-            print("download params: %s, %s" %(self.config[resource_name], dst_path))
+            print("download params: %s, %s" %(resource_url, dst_path))
             return -1
         print()
         return 0
@@ -729,6 +794,14 @@ class DcsDeploy:
             custom_args = {}
 
         overlay_script_name = os.path.join(self.local_overlay_dir, overlay_name, "apply_" + overlay_name + ".sh")
+
+        if (
+            overlay_name == "airvolute_cockpit" and
+            "cockpit_packages" in self.resource_paths and
+            self.resource_paths["cockpit_packages"] != ""
+        ):
+            custom_args = custom_args.copy()
+            custom_args.setdefault("cockpit_packages_archive", self.resource_paths["cockpit_packages"])
 
         custom_args_str = " ".join(f"{k}={v}" for k, v in custom_args.items())
 
