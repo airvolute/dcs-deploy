@@ -16,16 +16,6 @@ fi
 
 echo "Starting Airvolute Cockpit setup."
 
-export DEBIAN_FRONTEND=noninteractive
-
-apt-get update
-apt-get install -y \
-    cockpit \
-    cockpit-networkmanager \
-    cockpit-packagekit \
-    cockpit-storaged \
-    tcpdump
-
 install -d -m 0755 /usr/share/cockpit/branding/ubuntu
 if [ -d /usr/local/share/airvolute/cockpit/branding ]; then
     cp -a /usr/local/share/airvolute/cockpit/branding/. /usr/share/cockpit/branding/ubuntu/

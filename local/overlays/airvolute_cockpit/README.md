@@ -35,21 +35,32 @@ packages/
   airvolute-services/
   airvolute-traffic-monitor/
   airvolute-doodle-radio/
+debs/
+  cockpit_*.deb
+  cockpit-networkmanager_*.deb
+  cockpit-packagekit_*.deb
+  cockpit-storaged_*.deb
+  tcpdump_*.deb
+  other-runtime-dependencies_*.deb
 branding/
 password-policy/
 ```
 
 The `packages/*` directories are prebuilt Cockpit package outputs. The
-`branding` and `password-policy` directories are support payloads used by the
-first-boot setup.
+`debs/*.deb` files are official Ubuntu Cockpit packages and their dependencies
+for the target JetPack/Ubuntu rootfs. The `branding` and `password-policy`
+directories are support payloads used by the first-boot setup.
 
 If no `cockpit_packages` artifact is configured, the overlay falls back to
-`resources/packages`. This is only for development/migration; the production
-source of truth should be the release artifact from `airvolute-cockpit-packages`.
+`resources/packages` and `resources/debs`. This is only for
+development/migration; the production source of truth should be the release
+artifact from `airvolute-cockpit-packages`.
 
 ## What it installs into the rootfs
 
 - Prebuilt Airvolute Cockpit pages under `/usr/local/share/cockpit/`
+- Official Ubuntu Cockpit packages from `debs/*.deb`, installed into the rootfs
+  with `dpkg --root`
 - Airvolute branding assets under `/usr/local/share/airvolute/cockpit/branding`
 - Airvolute password-policy script under
   `/usr/local/share/airvolute/cockpit/password-policy`
@@ -59,27 +70,19 @@ source of truth should be the release artifact from `airvolute-cockpit-packages`
 ## What happens on first boot
 
 The first-boot service runs `/usr/local/bin/airvolute_cockpit_first_boot.sh`.
-It installs official Ubuntu Cockpit packages with apt:
-
-```text
-cockpit
-cockpit-networkmanager
-cockpit-packagekit
-cockpit-storaged
-tcpdump
-```
-
-Then it applies branding, installs the password-policy script into Cockpit's
-shell package, enables `cockpit.socket`, and writes this marker:
+It applies branding, installs the password-policy script into Cockpit's shell
+package, enables `cockpit.socket`, and writes this marker:
 
 ```text
 /var/lib/airvolute/cockpit-setup.done
 ```
 
-If apt/network is not ready, the service fails and retries.
+If Cockpit is not installed correctly in the rootfs, the service fails and
+retries.
 
 ## Why this design
 
-Official Cockpit stays managed by Ubuntu packages and remains upgradable with
-apt. Airvolute custom pages are static Cockpit packages on top of that base.
-This avoids maintaining a downstream Cockpit fork.
+Official Cockpit stays managed as Ubuntu packages, but is installed offline into
+the rootfs during image generation to match the existing `dcs-deploy` package
+installation flow. Airvolute custom pages are static Cockpit packages on top of
+that base. This avoids maintaining a downstream Cockpit fork.

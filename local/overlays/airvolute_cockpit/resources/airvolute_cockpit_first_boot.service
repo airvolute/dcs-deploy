@@ -1,7 +1,5 @@
 [Unit]
-Description=Install official Cockpit and Airvolute Cockpit customizations
-After=network-online.target
-Wants=network-online.target
+Description=Apply Airvolute Cockpit customizations
 ConditionPathExists=!/var/lib/airvolute/cockpit-setup.done
 
 [Service]
