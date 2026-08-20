@@ -315,6 +315,20 @@ sudo ./tools/kernel_flash/l4t_initrd_flash.sh --erase-all --external-device nvme
 ```
 1. After the 2nd flash is finished, you might need to reflash the device with the JP 5.1.2 configuration one more time using standard `dcs-deploy` command. If were using the same configuration to downgrade to JP 5.1.2, you need to use `--regen` flag to be sure, that the images are the ones from the configuration. After this flash you can use the device and `dcs-deploy` as usual.
 
+
+### Detect jetson version
+For detecting if version is correct and active use jtop.
+    Install from Github guide "https://github.com/rbonghi/jetson_stats"
+    Commands:
+        sudo apt update
+		sudo apt install python3-pip python3-setuptools -y
+		sudo pip3 install git+https://github.com/rbonghi/jetson_stats.git
+		sudo pip3 install -U jetson-stats
+		sudo reboot
+        sudo jtop --install-service
+        sudo reboot
+        jtop
+
 ## JetPack 6.2 Features
 ### Device Tree Overlay
 Instead of replacing the entire device tree in `/boot/dtb/` you can apply overlays, which can be easily switched and disabled.
