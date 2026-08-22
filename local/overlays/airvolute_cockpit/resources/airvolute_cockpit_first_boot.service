@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply Airvolute Cockpit customizations
+ConditionPathExists=!/var/lib/airvolute/cockpit-setup.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/airvolute_cockpit_first_boot.sh
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

@@ -1,3 +1,7 @@
 __pycache__/
 .vscode/
 *.pyc
+.dcs_deploy/
+local/overlays/airvolute_cockpit/resources/packages/
+local/overlays/airvolute_cockpit/resources/branding/
+local/overlays/airvolute_cockpit/resources/password-policy/
