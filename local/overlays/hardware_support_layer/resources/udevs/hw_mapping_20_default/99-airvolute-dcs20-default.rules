@@ -4,14 +4,17 @@ ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev0.0", SYMLINK+="airvolute/spi
 # SPI-JET SPI0.1
 ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev0.1", SYMLINK+="airvolute/spi0.1-spi-jet"
 
-# SPI-JET SPI2.0
+# SPI-JET SPI1.0
 ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.0", SYMLINK+="airvolute/spi1.0-imu-acc"
 
-# SPI-JET SPI2.1
+# SPI-JET SPI1.1
 ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.1", SYMLINK+="airvolute/spi1.1-imu-gyr"
 
-# SPI-JET SPI2.2
+# SPI-JET SPI1.2
 ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.2", SYMLINK+="airvolute/spi1.2-baro"
+
+# SPI-JET SPI1.3
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.3", SYMLINK+="airvolute/spi1.3-tpm"
 
 # GPS-JET
 ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyTHS1", SYMLINK+="airvolute/ttyTHS1-gps-jet"
