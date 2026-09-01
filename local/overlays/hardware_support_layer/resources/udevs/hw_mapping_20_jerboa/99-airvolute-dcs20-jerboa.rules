@@ -1,0 +1,26 @@
+# SPI-JET SPI1.3
+ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.3", SYMLINK+="airvolute/spi1.3-tpm"
+
+# GPS-JET
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyTHS1", SYMLINK+="airvolute/ttyTHS1-gps-jet"
+
+# FMU USB 
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyACM0", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="5741", SYMLINK+="airvolute/ttyACM0-on-board-fmu"
+
+# I2C 1 CSI1 B
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-cam1"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-temp-sens"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-rtc"
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-1", SYMLINK+="airvolute/i2c-1-usb-c-mux"
+
+# I2C 7 - CSI2/3 C
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-7", SYMLINK+="airvolute/i2c-7-cam23"
+
+# I2C 2 CSI0 A
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-2", SYMLINK+="airvolute/i2c-2-cam0"
+
+# I2C 0
+ACTION=="add", SUBSYSTEM=="i2c-dev", KERNEL=="i2c-0", SYMLINK+="airvolute/i2c-0-eeprom"
+
+# CAN 
+ACTION=="add", SUBSYSTEM=="net", INTERFACE=="can0", SYMLINK+="airvolute/can0"
