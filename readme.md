@@ -3,53 +3,53 @@
 # Dependencies
 **! DISLAIMER - INSTALL THOSE INSIDE HOST PC !**
 
-**! THIS IS BETA VERSION FOR JP 6.2 SOME ADDITIONAL CONSIDERATIONS MAY APPLY PLEASE REVIEW SECTION KNOWN LIMITATIONS BEFORE USING JP 6.2 [here](#known-limitation---jetpack-62---beta)!**
 
 ### APT
 
 ```  
-sudo apt install qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils
+sudo apt install git qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils libxml2-utils nfs-kernel-server
 ```    
 ### Python
-```
-pip install wget  
-```
+
+`sudo apt install python3-pip`
+or
+`pip install wget`
+
 
 # Basic usage
 1. **Put Jetson into force recovery mode**
-    - Short FC pin with ground on DCS boards (See [Control](https://docs.airvolute.com/autopilots/dcs2/.pilot-boards/dcs2.pilot-v-1.0/connectors-and-pinouts#control) section for your specific board. This example is for DCS 2.0 pilot board.)
+    - Short FC pin with ground on DCS boards (See [Control](https://docs.airvolute.com/autopilots/dronecore-2/boards/pilot-boards/dcs2.pilot#control) section for your specific board. This example is for DCS 2.0 pilot board.)
     - You can check if the device is really in force recovery mode with `lsusb` command. There should be Nvidia entry in the query.
-    - Next, connect the device to the host pc using [dev micro usb connector](https://docs.airvolute.com/autopilots/dcs2/.pilot-boards/dcs2.pilot-v-1.0/connectors-and-pinouts#top-side-onboard-connectors) - again example for DCS 2.0 board.
+    - Next, connect the device to the host pc using [dev micro usb connector](https://docs.airvolute.com/autopilots/dronecore-2/boards/pilot-boards/dcs2.pilot#usb_dev)
 
-2. **cd into dcs-deploy repo**
+2. **Clone and enter dcs-deploy**
     ```
-    cd /path/to/dcs-deploy
+    git clone https://github.com/airvolute/dcs-deploy
+    cd dcs-deploy
     ```
 
-3. **Run dcs_deploy.py**
-For example:
-    JetPack 5.1.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
-    ```
-    python3 dcs_deploy.py flash orin_nx 512 2.0 default nvme full
-    ```
-    
+3. **Flash DCS using dcs_deploy.py**
+
+    ### Examples:
+
     JetPack 6.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
-    ```
-    python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full
-    ```
+    `python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full`
 
-    Note: Please refer to the section Known limitations - JetPack 6.2 - beta [here](#known-limitation---jetpack-62---beta)
-
-    You can list supported configs with:
+    JetPack 5.1.2, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
+    `python3 dcs_deploy.py flash orin_nx 512 2.0 default nvme full`   
+   
+    #### You can list supported configs with:
     ```
     python3 dcs_deploy.py list
     ```
+
 4. **After a successful flash, the Jetson will boot and can be logged in using SSH with default credentials:**
-    - login: `dcs_user`
-    - password: `dronecore`
+    ```
+    ssh dcs_user@192.168.55.1
+    ```
+    Password: `dronecore`
 
-If you shut the Jetson down after flash and then boot it again, make sure you remove cable/jumper that enables Force recovery mode.
-
+    If you power off the Jetson then cold boot it, make sure you remove cable/jumper that enables Force recovery mode.
 
 # Features
 ## Custom root filesystem
