@@ -227,7 +227,7 @@ class DcsDeploy:
         board_expander_help = 'REQUIRED. Which board expander are we going to use. Options: [none, default].'
         subparser.add_argument('board_expansion', help=board_expander_help)
 
-        storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme].'
+        storage_help = 'REQUIRED. Which storage medium are we going to use. Options: [emmc, nvme, usb].'
         subparser.add_argument('storage', help=storage_help)
 
         rootfs_type_help = 'REQUIRED. Which rootfs type are we going to use. Options: [minimal, full, airvolute].'
@@ -833,7 +833,7 @@ class DcsDeploy:
                 self.external_device = ""
             elif self.config['storage'] == 'nvme':
                 self.rootdev = "external"
-                self.external_device = "--external-device sda1 "
+                self.external_device = "--external-device nvme0n1p1 "
                 if self.args.ab_partition == True:
                     # setup multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
@@ -862,13 +862,18 @@ class DcsDeploy:
             if self.config['storage'] == 'nvme':
                 self.rootdev = "external"
                 self.external_device = ""
-                self.external_device = "--external-device sda1 "
+                self.external_device = "--external-device nvme0n1p1 "
                 if self.args.ab_partition == True:
                     # setup multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
                 else:
                     # setup no multiple app partitions
-                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external.xml')
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_t234_nvme.xml')
+            elif self.config['storage'] == 'usb':
+                self.rootdev = "external"
+                self.external_device = ""
+                self.external_device = "--external-device sda1 "
+                self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external.xml')
             else:
                 print("Unknown storage [%s]! exitting" % self.config['storage'])
                 exit(9)
@@ -894,7 +899,7 @@ class DcsDeploy:
         if self.config['storage'] == 'emmc':
             ret = cmd_exec(f"sudo ./{self.flash_script_path} --no-flash --showlogs {self.board_name} {self.rootdev}")
         # flash external nvme drive
-        elif self.config['storage'] == 'nvme':
+        elif self.config['storage'] in ['nvme', 'usb']:
             #file to check: initrdflashparam.txt - contains last enterred parameters
             env_vars = []
             opt_app_size_arg = ""
