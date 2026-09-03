@@ -833,7 +833,7 @@ class DcsDeploy:
                 self.external_device = ""
             elif self.config['storage'] == 'nvme':
                 self.rootdev = "external"
-                self.external_device = "--external-device nvme0n1p1 "
+                self.external_device = "--external-device sda1 "
                 if self.args.ab_partition == True:
                     # setup multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
@@ -862,13 +862,13 @@ class DcsDeploy:
             if self.config['storage'] == 'nvme':
                 self.rootdev = "external"
                 self.external_device = ""
-                self.external_device = "--external-device nvme0n1p1 "
+                self.external_device = "--external-device sda1 "
                 if self.args.ab_partition == True:
                     # setup multiple app partitions
                     self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_nvme_rootfs_ab.xml')
                 else:
                     # setup no multiple app partitions
-                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_t234_nvme.xml')
+                    self.ext_partition_layout = os.path.relpath('tools/kernel_flash/flash_l4t_external.xml')
             else:
                 print("Unknown storage [%s]! exitting" % self.config['storage'])
                 exit(9)
