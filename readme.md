@@ -40,6 +40,11 @@ For example:
 
     Note: Please refer to the section Known limitations - JetPack 6.2 - beta [here](#known-limitation---jetpack-62---beta)
 
+    JetPack 6.2.3, ORIN NX, NVME, Airvolute DCS 2.0 board (with default expander), full rootfs from Nvidia:
+    ```
+    python3 dcs_deploy.py flash orin_nx 623 2.0 default nvme full
+    ```
+
     You can list supported configs with:
     ```
     python3 dcs_deploy.py list
@@ -296,7 +301,7 @@ The procedure to sucesfully downgrade is as follows:
 1. Start flash with JP 5.1.2 configuration.
 2. Wait for the flash to finish. You don't have to connect device to the host PC, we just need to create the flashing environment with images.
 3. Locate the `Linux_for_tegra` folder in the path `~/.dcs_deploy/flash/<config_name>/Linux_for_tegra`. (for example $HOME/.dcs_deploy/flash/orin_nx_nvme_2.0_default_512_full/Linux_for_Tegra)
-4. Run the following commands for Orin NX (Orin NX should be in recovery mode and power cycle is assumed between commands) and DCS 2.0:
+4. Run the following commands for Orin NX (Orin NX should be in recovery mode and power cycle is assumed between commands) and DCS 2.0 (DCS1.2):
 ```
 1. Wait until finished.
 sudo ./flash.sh -c bootloader/t186ref/cfg/flash_t234_qspi.xml airvolute-dcs2.0+p3767-0000 internal
@@ -411,6 +416,10 @@ DCS2.Pilot rev.2 board includes a ATTPM20P chip, which can be accessed as /dev/s
 Starting with JP6, we include by default `ethernet_switch_control.py` script, which configures the internal DCS2.Pilot Ethernet switch to resolve known ethernet issues.
 
 ### JP 6.2 Release Notes
+
+#### 0.3.0 (1 Sep 2026)
+- Added Jetson 6.2.3.
+
 #### 0.2.0 (27 May 2026)
 - Added driver support for Framos cameras.
 - Added driver support for Arducam Jetvariety cameras.

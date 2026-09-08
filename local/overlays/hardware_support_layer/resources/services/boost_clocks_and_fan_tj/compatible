@@ -4,7 +4,7 @@
     "storage": [""],
     "board": [""],
     "board_expansion" : [""],
-    "l4t_version": ["62"],
+    "l4t_version": ["62", "623"],
     "rootfs_type": [""]
   }
 ]
