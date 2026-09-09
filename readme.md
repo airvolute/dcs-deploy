@@ -415,27 +415,5 @@ DCS2.Pilot rev.2 board includes a ATTPM20P chip, which can be accessed as /dev/s
 ### Ethernet switch
 Starting with JP6, we include by default `ethernet_switch_control.py` script, which configures the internal DCS2.Pilot Ethernet switch to resolve known ethernet issues.
 
-### JP 6.2 Release Notes
-
-#### 0.3.0 (1 Sep 2026)
-- Added Jetson 6.2.3.
-
-#### 0.2.0 (27 May 2026)
-- Added driver support for Framos cameras.
-- Added driver support for Arducam Jetvariety cameras.
-- Added Wireguard module into kernel.
-- Added DT Overlays for Stribog, Patron FPV, Internal FMU switch.
-- Removed cvb eeprom dependency.
-
-#### 0.1.7 (16 Feb 2026)
-- Added Real Time Clock support DS1388 for DCS2.Pilot rev.2 board.
-
-#### 0.1.4 (8 Aug 2025)
-- DCS 1.2 Support.
-- Super modes added.
-
-#### 0.1.2 (17 Jul 2025)
-- Added SPI communication support for the TPM 2.0 ATTPM20P on DCS2.Pilot rev.2 board.
-
-#### 0.1.0 (10 Jun 2025)
-+ Added driver support for IMU BMI088.
+# List of changes
+For whole list of changes follow [CHANGELOG.md](CHANGELOG.md) and the setup instructions on the selected branch to prepare the toolchain, L4T directory, and kernel sources.
