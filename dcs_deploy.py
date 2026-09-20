@@ -255,6 +255,9 @@ class DcsDeploy:
         'If this option is used, no flashing will be done. Instead, a package for mass flashing will be created. '
         subparser.add_argument('--massflash_devices', type=int, choices=range(2, 50), metavar='[2-50]', help=massflash_devices_help)
 
+        home_path_help = 'Optional. Specify a custom home path. Defaults to the user home directory.'
+        subparser.add_argument('--home_path', help=home_path_help, default=os.path.expanduser('~'))
+
     def create_parser(self):
         """
         Create an ArgumentParser and all its options
@@ -403,7 +406,7 @@ class DcsDeploy:
             self.config['rootfs_type']
         )
 
-        self.home = os.path.expanduser('~')
+        self.home = self.args.home_path
         self.dsc_deploy_root = os.path.join(self.home, '.dcs_deploy')
         self.download_path = os.path.join(self.dsc_deploy_root, 'download')
         self.flash_path = os.path.join(self.dsc_deploy_root, 'flash', config_relative_path)
