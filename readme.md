@@ -195,6 +195,27 @@ To try this out you can add ` [{"custom_arguments_showcase.sh": {"custom_arg1": 
 #### Local overlays by Airvolute
 - `dcs_first_boot` - sets some basic settings on the device, regenerate SSH keys, enable services from `hardware_support_layer`. This service is run only once, at the first boot of the device.
 - `hardware_support_layer` - a set of services, udevs and other tools that are run at the first boot of the device. These services are responsible for setting up the hardware to work properly with the Airvolute DroneCore boards. All the software and configuration files installed by this layer can be reviewed in the logs folder on the device (`/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_data.json`).
+- `airvolute_cockpit` - installs official Ubuntu Cockpit `.deb` packages and Airvolute Cockpit page bundles into the rootfs, then enables a first-boot service that applies branding, enables `cockpit.socket`, and installs the Airvolute password-policy shell script. For production, configure a versioned `cockpit_packages` archive URL in `local/config_db.json`; this keeps the `airvolute-cockpit-packages` repository as the source of truth and keeps `dcs-deploy` limited to deployment glue. For local development, pass the archive directly with `--cockpit-packages=/path/to/airvolute-cockpit-packages-<version>.tar.gz`.
+
+Example with a locally built Cockpit packages artifact:
+
+```
+python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full \
+  --rootfs=/mnt/nvme1/dcs-deploy_old/dcs20_16gb_nx/rootfs_merged.tar.bz2 \
+  --cockpit-packages=/mnt/nvme1/airvolute-cockpit-packages/build/airvolute-cockpit-packages-21870ec-dirty.tar.gz \
+  --regen
+```
+
+If `cockpit_packages` points to a private GitLab Package Registry artifact,
+provide a token with package read access:
+
+```
+GITLAB_TOKEN=<token> python3 dcs_deploy.py flash orin_nx 62 2.0 default nvme full \
+  --rootfs=/mnt/nvme1/dcs-deploy_old/dcs20_16gb_nx/rootfs_merged.tar.bz2 \
+  --regen
+```
+
+The token can also be passed as `--cockpit-packages-token=<token>`.
 - `save_version.sh` - saves the version of the flashed configuration to the `/home/dcs_user/Airvolute/logs/dcs-deploy/dcs_deploy_version.json` file. This file is used to store the information about the flashed configuration. This information can be used to check the version of the flashed configuration on the device.
 
 ### Hardware Supporting Layer (systemctls, udev rules and more)
