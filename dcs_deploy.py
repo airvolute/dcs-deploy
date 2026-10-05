@@ -218,7 +218,7 @@ class DcsDeploy:
         target_device_help = 'REQUIRED. Which type of device are we setting up. Options: [orin_nx, xavier_nx]'
         subparser.add_argument('target_device', help=target_device_help)
 
-        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [512, 51].'
+        jetpack_help = 'REQUIRED. Which jetpack are we going to use. Options: [623, 62, 512, 51].'
         subparser.add_argument('jetpack', help=jetpack_help)
 
         hwrev_help = 'REQUIRED. Which hardware revision of carrier board are we going to use. Options: [1.2, 2.0, jerboa].'
@@ -806,7 +806,7 @@ class DcsDeploy:
         #set variables for initrd flash
         self.flash_script_path = os.path.relpath('tools/kernel_flash/l4t_initrd_flash.sh')
         
-        if self.config['l4t_version'] != '62':
+        if self.config['l4t_version'] not in ['62', '623']:
             if self.config['device'] == 'xavier_nx':
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3668-0001-qspi-emmc"
                 self.orin_options = ""
@@ -844,7 +844,7 @@ class DcsDeploy:
                 print("Unknown storage [%s]! exitting" % self.config['storage'])
                 exit(9)
 
-        # setup for JP 62
+        # setup for JP 62 and JP 623
         else:
             if self.config['device'] in ['orin_nx', 'orin_nx_8gb', 'orin_nano_8gb', 'orin_nano_4gb']:
                 self.board_name = 'airvolute-dcs' + self.config['board'] + "+p3767-0000"
