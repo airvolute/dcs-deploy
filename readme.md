@@ -7,8 +7,7 @@
 ### APT
 
 ```  
-sudo apt install git qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils libxml2-utils nfs-kernel-server
-sudo apt-get install -y lz4 python-is-python3
+sudo apt install git qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils libxml2-utils nfs-kernel-server lz4 python-is-python3
 ```    
 ### Python
 
