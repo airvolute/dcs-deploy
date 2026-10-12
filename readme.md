@@ -11,7 +11,7 @@ sudo apt install git qemu-user-static sshpass abootimg lbzip2 jq coreutils findu
 ```    
 ### Python
 
-`sudo apt install python3-pip`
+`sudo apt install wget`
 or
 `pip install wget`
 
