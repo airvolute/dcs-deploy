@@ -7,11 +7,11 @@
 ### APT
 
 ```  
-sudo apt install git qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils libxml2-utils nfs-kernel-server
+sudo apt install git qemu-user-static sshpass abootimg lbzip2 jq coreutils findutils libxml2-utils nfs-kernel-server lz4 python-is-python3
 ```    
 ### Python
 
-`sudo apt install python3-pip`
+`sudo apt install wget`
 or
 `pip install wget`
 
