@@ -16,6 +16,9 @@ ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.2", SYMLINK+="airvolute/spi
 # SPI-JET SPI1.2
 ACTION=="add", SUBSYSTEM=="spidev", KERNEL=="spidev1.3", SYMLINK+="airvolute/spi1.3-tpm"
 
+# PAYLOAD-JET
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyTHS3", SYMLINK+="airvolute/ttyTHS3-payload-jet"
+
 # GPS-JET
 ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyTHS1", SYMLINK+="airvolute/ttyTHS1-gps-jet"
 
